@@ -4,6 +4,7 @@ import os
 from pymongo import MongoClient
 
 from utils.config import get_config, MONGODB_URI, get_mongodb_connection
+from utils.db import DatabaseManager
 from utils.env_loader import load_environment_variables
 
 DEFAULT_DEPARTMENTS = [
@@ -12,15 +13,15 @@ DEFAULT_DEPARTMENTS = [
 
 
 def get_prompt_collection():
-    db = get_mongodb_connection()
+    db_manager = DatabaseManager.get_instance()
     collection_name = os.environ.get("MONGODB_PROMPTS_COLLECTION", "prompts")
-    return db[collection_name]
+    return db_manager.get_collection(collection_name)
 
 
 def get_department_collection():
-    db = get_mongodb_connection()
+    db_manager = DatabaseManager.get_instance()
     collection_name = os.environ.get("MONGODB_DEPARTMENTS_COLLECTION", "departments")
-    return db[collection_name]
+    return db_manager.get_collection(collection_name)
 
 
 def get_current_datetime():

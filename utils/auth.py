@@ -6,39 +6,17 @@ import streamlit as st
 from pymongo import MongoClient
 
 from utils.config import get_config, MONGODB_URI, REQUIRE_LOGIN, IP_WHITELIST, IP_CHECK_ENABLED
+from utils.db import DatabaseManager
 from utils.env_loader import load_environment_variables
 
 load_environment_variables()
 
 
-# utils/auth.py のMongoDBクライアント取得部分を修正
-def get_mongo_client():
-    """MongoDB Atlasに接続するクライアントを取得"""
-    if not MONGODB_URI:
-        raise ValueError("MongoDB接続情報が設定されていません。環境変数または設定ファイルを確認してください。")
-
-    try:
-        client = MongoClient(
-            MONGODB_URI,
-            serverSelectionTimeoutMS=5000,
-            connectTimeoutMS=5000,
-            socketTimeoutMS=30000,
-            ssl=True
-        )
-        return client
-
-    except Exception as e:
-        st.error(f"MongoDBへの接続に失敗しました: {str(e)}")
-        raise ConnectionError(f"MongoDBへの接続エラー: {str(e)}")
-
-
 def get_users_collection():
-    client = get_mongo_client()
-    db_name = os.environ.get("MONGODB_DB_NAME", "discharge_summary_app")
+    """ユーザーコレクションを取得"""
+    db_manager = DatabaseManager.get_instance()
     collection_name = os.environ.get("MONGODB_USERS_COLLECTION", "users")
-
-    db = client[db_name]
-    return db[collection_name]
+    return db_manager.get_collection(collection_name)
 
 
 def hash_password(password):
