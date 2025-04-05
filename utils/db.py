@@ -12,13 +12,11 @@ class DatabaseManager:
 
     @classmethod
     def get_instance(cls):
-        """シングルトンインスタンスを取得"""
         if cls._instance is None:
             cls._instance = DatabaseManager()
         return cls._instance
 
     def __init__(self):
-        """初期化処理 - MongoDB接続を確立"""
         if DatabaseManager._client is not None:
             return
 
@@ -39,16 +37,13 @@ class DatabaseManager:
 
     @staticmethod
     def get_client():
-        """MongoDBクライアントを取得"""
         return DatabaseManager._client
 
     def get_database(self, db_name=None):
-        """データベースを取得"""
         if db_name is None:
             db_name = os.environ.get("MONGODB_DB_NAME", "discharge_summary_app")
         return self.get_client()[db_name]
 
     def get_collection(self, collection_name, db_name=None):
-        """コレクションを取得"""
         db = self.get_database(db_name)
         return db[collection_name]
