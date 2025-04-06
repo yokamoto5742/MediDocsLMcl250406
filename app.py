@@ -148,7 +148,8 @@ def clear_inputs():
             st.session_state[key] = ""
 
 
-def main_app():
+def render_sidebar():
+    """サイドバーのUI要素をレンダリングする"""
     user = get_current_user()
     if user:
         st.sidebar.success(f"ログイン中: {user['username']}")
@@ -180,13 +181,6 @@ def main_app():
 
     st.session_state.selected_department = selected_dept
 
-    if st.session_state.current_page == "prompt_edit":
-        prompt_management_ui()
-        return
-    elif st.session_state.current_page == "department_edit":
-        department_management_ui()
-        return
-
     st.sidebar.markdown("・入力および出力テキストは保存されません")
     st.sidebar.markdown("・出力内容は必ず確認してください")
 
@@ -198,6 +192,9 @@ def main_app():
             change_page("prompt_edit")
             st.rerun()
 
+
+def render_input_section():
+    """テキスト入力エリアと操作ボタンをレンダリングする"""
     if "clear_input" not in st.session_state:
         st.session_state.clear_input = False
 
@@ -212,32 +209,38 @@ def main_app():
 
     with col1:
         if st.button("退院時サマリ作成", type="primary"):
-            if not GEMINI_CREDENTIALS:
-                st.error("⚠️ Gemini APIの認証情報が設定されていません。環境変数を確認してください。")
-                return
-
-            if not input_text or len(input_text.strip()) < 10:
-                st.warning("⚠️ カルテ情報を入力してください")
-                return
-
-            try:
-                with st.spinner("退院時サマリを作成中..."):
-                    discharge_summary = generate_discharge_summary(input_text, st.session_state.selected_department)
-
-                    discharge_summary = format_discharge_summary(discharge_summary)
-
-                    st.session_state.discharge_summary = discharge_summary
-
-                    parsed_summary = parse_discharge_summary(discharge_summary)
-                    st.session_state.parsed_summary = parsed_summary
-
-            except Exception as e:
-                st.error(f"エラーが発生しました: {str(e)}")
+            process_discharge_summary(input_text)
 
     with col2:
         if st.button("テキストをクリア", on_click=clear_inputs):
             pass
 
+
+def process_discharge_summary(input_text):
+    """退院時サマリを生成して処理する"""
+    if not GEMINI_CREDENTIALS:
+        st.error("⚠️ Gemini APIの認証情報が設定されていません。環境変数を確認してください。")
+        return
+
+    if not input_text or len(input_text.strip()) < 10:
+        st.warning("⚠️ カルテ情報を入力してください")
+        return
+
+    try:
+        with st.spinner("退院時サマリを作成中..."):
+            discharge_summary = generate_discharge_summary(input_text, st.session_state.selected_department)
+            discharge_summary = format_discharge_summary(discharge_summary)
+            st.session_state.discharge_summary = discharge_summary
+
+            parsed_summary = parse_discharge_summary(discharge_summary)
+            st.session_state.parsed_summary = parsed_summary
+
+    except Exception as e:
+        st.error(f"エラーが発生しました: {str(e)}")
+
+
+def render_summary_results():
+    """生成された退院時サマリの結果を表示する"""
     if st.session_state.discharge_summary:
         if st.session_state.parsed_summary:
             tabs = st.tabs([
@@ -263,6 +266,20 @@ def main_app():
                             )
 
         st.info("💡 テキストエリアの右上にマウスを合わせ、左クリックでコピーできます")
+
+
+def main_app():
+    """メインアプリケーションのUI"""
+    if st.session_state.current_page == "prompt_edit":
+        prompt_management_ui()
+        return
+    elif st.session_state.current_page == "department_edit":
+        department_management_ui()
+        return
+
+    render_sidebar()
+    render_input_section()
+    render_summary_results()
 
 
 def main():
