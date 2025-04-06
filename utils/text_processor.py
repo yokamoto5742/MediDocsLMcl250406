@@ -3,7 +3,12 @@ def preprocess_text(text):
 
 
 def format_discharge_summary(summary_text):
-    processed_text = summary_text.replace('*', '').replace('＊', '').replace('#', '').replace(' ', '')
+    processed_text = (
+        summary_text.replace('*', '')
+        .replace('＊', '')
+        .replace('#', '')
+        .replace(' ', '')
+    )
 
     return processed_text
 
