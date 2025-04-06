@@ -23,7 +23,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# セッション状態の初期化
 if "discharge_summary" not in st.session_state:
     st.session_state.discharge_summary = ""
 if "parsed_summary" not in st.session_state:
@@ -34,8 +33,6 @@ if "selected_department" not in st.session_state:
     st.session_state.selected_department = "default"
 if "current_page" not in st.session_state:
     st.session_state.current_page = "main"
-
-
 
 
 def toggle_password_change():
@@ -149,7 +146,6 @@ def clear_inputs():
 
 
 def render_sidebar():
-    """サイドバーのUI要素をレンダリングする"""
     user = get_current_user()
     if user:
         st.sidebar.success(f"ログイン中: {user['username']}")
@@ -194,7 +190,6 @@ def render_sidebar():
 
 
 def render_input_section():
-    """テキスト入力エリアと操作ボタンをレンダリングする"""
     if "clear_input" not in st.session_state:
         st.session_state.clear_input = False
 
@@ -217,7 +212,6 @@ def render_input_section():
 
 
 def process_discharge_summary(input_text):
-    """退院時サマリを生成して処理する"""
     if not GEMINI_CREDENTIALS:
         st.error("⚠️ Gemini APIの認証情報が設定されていません。環境変数を確認してください。")
         return
@@ -240,7 +234,6 @@ def process_discharge_summary(input_text):
 
 
 def render_summary_results():
-    """生成された退院時サマリの結果を表示する"""
     if st.session_state.discharge_summary:
         if st.session_state.parsed_summary:
             tabs = st.tabs([
@@ -269,7 +262,6 @@ def render_summary_results():
 
 
 def main_app():
-    """メインアプリケーションのUI"""
     if st.session_state.current_page == "prompt_edit":
         prompt_management_ui()
         return
