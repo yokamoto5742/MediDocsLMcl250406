@@ -3,7 +3,7 @@ import os
 
 from pymongo import MongoClient
 
-from utils.config import get_config, MONGODB_URI, get_mongodb_connection
+from utils.config import get_config, MONGODB_URI
 from utils.db import DatabaseManager
 from utils.env_loader import load_environment_variables
 
