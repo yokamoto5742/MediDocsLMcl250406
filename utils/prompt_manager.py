@@ -77,16 +77,12 @@ def create_department(name):
 def delete_department(name):
     department_collection = get_department_collection()
     prompt_collection = get_prompt_collection()
-
-    # 削除前にこの診療科に紐づくプロンプトを確認
-    prompt_count = prompt_collection.count_documents({"department": name})
-    if prompt_count > 0:
-        return False, "この診療科に紐づくプロンプトが存在するため削除できません"
-
-    # 診療科を削除
     result = department_collection.delete_one({"name": name})
+
     if result.deleted_count == 0:
         return False, "診療科が見つかりません"
+
+    prompt_collection.delete_many({"department": name})
 
     return True, "診療科を削除しました"
 

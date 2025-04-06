@@ -46,10 +46,6 @@ def change_page(page):
 def department_management_ui():
     st.title("診療科管理")
 
-    if st.button("メイン画面に戻る", key="back_to_main_from_dept"):
-        change_page("main")
-        st.rerun()
-
     departments = get_all_departments()
     for dept in departments:
         col1, col2 = st.columns([4, 1])
@@ -65,7 +61,6 @@ def department_management_ui():
                         st.error(message)
                     st.rerun()
 
-
     with st.form("add_department_form"):
         new_dept = st.text_input("診療科名")
         submit = st.form_submit_button("診療科を追加")
@@ -78,42 +73,40 @@ def department_management_ui():
                 st.error(message)
             st.rerun()
 
+    if st.button("メイン画面に戻る", key="back_to_main_from_dept"):
+        change_page("main")
+        st.rerun()
+
 
 def prompt_management_ui():
     st.title("プロンプト管理")
 
-    if st.button("メイン画面に戻る", key="back_to_main"):
-        change_page("main")
-        st.rerun()
+
 
     departments = ["default"] + get_all_departments()
     selected_dept = st.selectbox(
         "診療科を選択",
         departments,
-        format_func=lambda x: "全科共通" if x == "default" else x
+        format_func=lambda x: "全科共通" if x == "default" else x,
+        key="prompt_department_selector"  # 固有のキーを指定
     )
 
     prompt_data = get_prompt_by_department(selected_dept)
 
-    with st.form("edit_prompt_form"):
+    with st.form(key=f"edit_prompt_form_{selected_dept}"):
         prompt_name = st.text_input(
             "プロンプト名",
-            value=prompt_data.get("name", "") if prompt_data else "退院時サマリ"
+            value=prompt_data.get("name", "") if prompt_data else "退院時サマリ",
+            key=f"prompt_name_{selected_dept}"
         )
         prompt_content = st.text_area(
             "内容",
             value=prompt_data.get("content", "") if prompt_data else "",
-            height=300
+            height=300,
+            key=f"prompt_content_{selected_dept}"
         )
 
-        col1, col2 = st.columns(2)
-        with col1:
-            submit = st.form_submit_button("保存")
-        with col2:
-            if selected_dept != "default":
-                delete_button = st.form_submit_button("削除")
-            else:
-                delete_button = False
+        submit = st.form_submit_button("プロンプトを保存")
 
         if submit:
             success, message = create_or_update_prompt(selected_dept, prompt_name, prompt_content)
@@ -122,16 +115,19 @@ def prompt_management_ui():
             else:
                 st.error(message)
 
-        if delete_button:
+    if selected_dept != "default":
+        if st.button("プロンプトを削除", key=f"delete_prompt_{selected_dept}", type="primary"):
             success, message = delete_prompt(selected_dept)
             if success:
                 st.success(message)
+                st.session_state.prompt_department_selector = "default"
                 st.rerun()
             else:
                 st.error(message)
 
-if "input_text" not in st.session_state:
-    st.session_state.input_text = ""
+    if st.button("メイン画面に戻る", key="back_to_main"):
+        change_page("main")
+        st.rerun()
 
 
 def clear_inputs():
