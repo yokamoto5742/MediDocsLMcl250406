@@ -4,6 +4,7 @@ from pymongo import MongoClient
 import streamlit as st
 
 from utils.config import MONGODB_URI
+from utils.exceptions import DatabaseError
 
 
 class DatabaseManager:
@@ -21,7 +22,7 @@ class DatabaseManager:
             return
 
         if not MONGODB_URI:
-            raise ValueError("MongoDB接続情報が設定されていません。環境変数または設定ファイルを確認してください。")
+            raise DatabaseError("MongoDB接続情報が設定されていません。環境変数または設定ファイルを確認してください。")
 
         try:
             DatabaseManager._client = MongoClient(
@@ -32,8 +33,7 @@ class DatabaseManager:
                 ssl=True
             )
         except Exception as e:
-            st.error(f"MongoDBへの接続に失敗しました: {str(e)}")
-            raise ConnectionError(f"MongoDBへの接続エラー: {str(e)}")
+            raise DatabaseError(f"MongoDBへの接続に失敗しました: {str(e)}")
 
     @staticmethod
     def get_client():

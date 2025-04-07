@@ -11,6 +11,8 @@ from utils.prompt_manager import (
     create_department, delete_department
 )
 from utils.text_processor import format_discharge_summary, parse_discharge_summary
+from utils.error_handlers import handle_error
+from utils.exceptions import AppError, AuthError, APIError, DatabaseError
 
 load_environment_variables()
 initialize_database()
@@ -43,6 +45,7 @@ def change_page(page):
     st.session_state.current_page = page
 
 
+@handle_error
 def department_management_ui():
     st.title("診療科管理")
 
@@ -58,7 +61,7 @@ def department_management_ui():
                     if success:
                         st.success(message)
                     else:
-                        st.error(message)
+                        raise AppError(message)
                     st.rerun()
 
     with st.form("add_department_form"):
@@ -70,7 +73,7 @@ def department_management_ui():
             if success:
                 st.success(message)
             else:
-                st.error(message)
+                raise AppError(message)
             st.rerun()
 
     if st.button("メイン画面に戻る", key="back_to_main_from_dept"):
@@ -78,10 +81,9 @@ def department_management_ui():
         st.rerun()
 
 
+@handle_error
 def prompt_management_ui():
     st.title("プロンプト管理")
-
-
 
     departments = ["default"] + get_all_departments()
     selected_dept = st.selectbox(
@@ -113,7 +115,7 @@ def prompt_management_ui():
             if success:
                 st.success(message)
             else:
-                st.error(message)
+                raise AppError(message)
 
     if selected_dept != "default":
         if st.button("プロンプトを削除", key=f"delete_prompt_{selected_dept}", type="primary"):
@@ -123,7 +125,7 @@ def prompt_management_ui():
                 st.session_state.prompt_department_selector = "default"
                 st.rerun()
             else:
-                st.error(message)
+                raise AppError(message)
 
     if st.button("メイン画面に戻る", key="back_to_main"):
         change_page("main")
@@ -141,6 +143,7 @@ def clear_inputs():
             st.session_state[key] = ""
 
 
+@handle_error
 def render_sidebar():
     user = get_current_user()
     if user:
@@ -207,10 +210,10 @@ def render_input_section():
             pass
 
 
+@handle_error
 def process_discharge_summary(input_text):
     if not GEMINI_CREDENTIALS:
-        st.error("⚠️ Gemini APIの認証情報が設定されていません。環境変数を確認してください。")
-        return
+        raise APIError("Gemini APIの認証情報が設定されていません。環境変数を確認してください。")
 
     if not input_text or len(input_text.strip()) < 10:
         st.warning("⚠️ カルテ情報を入力してください")
@@ -226,7 +229,7 @@ def process_discharge_summary(input_text):
             st.session_state.parsed_summary = parsed_summary
 
     except Exception as e:
-        st.error(f"エラーが発生しました: {str(e)}")
+        raise APIError(f"退院時サマリの作成中にエラーが発生しました: {str(e)}")
 
 
 def render_summary_results():
@@ -257,6 +260,7 @@ def render_summary_results():
         st.info("💡 テキストエリアの右上にマウスを合わせ、左クリックでコピーできます")
 
 
+@handle_error
 def main_app():
     if st.session_state.current_page == "prompt_edit":
         prompt_management_ui()
@@ -270,6 +274,7 @@ def main_app():
     render_summary_results()
 
 
+@handle_error
 def main():
     if IP_CHECK_ENABLED:
         if not check_ip_access(IP_WHITELIST):
