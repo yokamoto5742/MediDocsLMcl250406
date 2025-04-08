@@ -2,7 +2,6 @@ import streamlit as st
 from utils.exceptions import AppError, AuthError, APIError, DatabaseError
 
 def handle_error(func):
-    """関数をデコレートしてエラーハンドリングを提供する"""
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
