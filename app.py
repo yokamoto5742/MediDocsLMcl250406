@@ -48,7 +48,9 @@ def change_page(page):
 
 @handle_error
 def department_management_ui():
-    st.title("診療科管理")
+    if st.button("メイン画面に戻る", key="back_to_main_from_dept"):
+        change_page("main")
+        st.rerun()
 
     departments = get_all_departments()
     for dept in departments:
@@ -56,7 +58,7 @@ def department_management_ui():
         with col1:
             st.write(dept)
         with col2:
-            if dept not in ["内科"]:  # 内科は削除不可
+            if dept not in ["内科"]:
                 if st.button("削除", key=f"delete_{dept}"):
                     success, message = delete_department(dept)
                     if success:
@@ -77,21 +79,19 @@ def department_management_ui():
                 raise AppError(message)
             st.rerun()
 
-    if st.button("メイン画面に戻る", key="back_to_main_from_dept"):
-        change_page("main")
-        st.rerun()
-
 
 @handle_error
 def prompt_management_ui():
-    st.title("プロンプト管理")
+    if st.button("メイン画面に戻る", key="back_to_main"):
+        change_page("main")
+        st.rerun()
 
     departments = ["default"] + get_all_departments()
     selected_dept = st.selectbox(
         "診療科を選択",
         departments,
         format_func=lambda x: "全科共通" if x == "default" else x,
-        key="prompt_department_selector"  # 固有のキーを指定
+        key="prompt_department_selector"
     )
 
     prompt_data = get_prompt_by_department(selected_dept)
@@ -127,10 +127,6 @@ def prompt_management_ui():
                 st.rerun()
             else:
                 raise AppError(message)
-
-    if st.button("メイン画面に戻る", key="back_to_main"):
-        change_page("main")
-        st.rerun()
 
 
 def clear_inputs():
