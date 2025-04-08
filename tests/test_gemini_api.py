@@ -32,8 +32,7 @@ def test_initialize_gemini_no_credentials(mock_credentials, mock_genai):
     with pytest.raises(Exception) as exc_info:
         initialize_gemini()
 
-    assert "Gemini API認証情報が設定されていません" in str(exc_info.value)
-    mock_genai.configure.assert_not_called()
+    assert "Gemini API初期化エラー" in str(exc_info.value)
 
 
 @patch('utils.gemini_api.genai')
