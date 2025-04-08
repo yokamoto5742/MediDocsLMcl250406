@@ -81,12 +81,27 @@ def create_department(name):
             return False
 
         department_collection = get_department_collection()
+        prompt_collection = get_prompt_collection()  # 追加
 
         existing = department_collection.find_one({"name": name})
         if existing:
             return False, MESSAGES["DEPARTMENT_EXISTS"]
 
         insert_document(department_collection, {"name": name})
+
+        default_prompt = prompt_collection.find_one({"department": "default", "is_default": True})
+        if not default_prompt:
+            config = get_config()
+            default_prompt_content = config['PROMPTS']['discharge_summary']
+        else:
+            default_prompt_content = default_prompt.get("content", "")
+
+        insert_document(prompt_collection, {
+            "department": name,
+            "name": "退院時サマリ",
+            "content": default_prompt_content,
+            "is_default": False
+        })
 
         return True, MESSAGES["DEPARTMENT_CREATED"]
     except DatabaseError as e:
@@ -195,12 +210,16 @@ def delete_prompt(department):
             return False, "デフォルトプロンプトは削除できません"
 
         prompt_collection = get_prompt_collection()
+        department_collection = get_department_collection()
+
         result = prompt_collection.delete_one({"department": department})
 
         if result.deleted_count == 0:
             return False, "プロンプトが見つかりません"
 
-        return True, "プロンプトを削除しました"
+        department_collection.delete_one({"name": department})
+
+        return True, "プロンプトと関連する診療科を削除しました"
     except DatabaseError as e:
         return False, str(e)
     except Exception as e:

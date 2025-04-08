@@ -86,13 +86,20 @@ def prompt_management_ui():
         change_page("main")
         st.rerun()
 
+    if "selected_dept_for_prompt" not in st.session_state:
+        st.session_state.selected_dept_for_prompt = "default"
+
     departments = ["default"] + get_all_departments()
     selected_dept = st.selectbox(
         "診療科を選択",
         departments,
+        index=departments.index(
+            st.session_state.selected_dept_for_prompt) if st.session_state.selected_dept_for_prompt in departments else 0,
         format_func=lambda x: "全科共通" if x == "default" else x,
         key="prompt_department_selector"
     )
+
+    st.session_state.selected_dept_for_prompt = selected_dept
 
     prompt_data = get_prompt_by_department(selected_dept)
 
@@ -123,7 +130,7 @@ def prompt_management_ui():
             success, message = delete_prompt(selected_dept)
             if success:
                 st.success(message)
-                st.session_state.prompt_department_selector = "default"
+                st.session_state.selected_dept_for_prompt = "default"
                 st.rerun()
             else:
                 raise AppError(message)
