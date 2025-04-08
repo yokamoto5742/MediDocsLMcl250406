@@ -1,4 +1,3 @@
-# メッセージ定数
 MESSAGES = {
     # 認証関連
     "LOGIN_REQUIRED": "ログインが必要です",
@@ -25,6 +24,5 @@ MESSAGES = {
     "INPUT_TOO_SHORT": "⚠️ カルテ情報を入力してください"
 }
 
-# デフォルト設定
 DEFAULT_DEPARTMENTS = ["内科", "消化器内科", "整形外科", "眼科"]
 DEFAULT_SECTION_NAMES = ["入院期間", "現病歴", "入院時検査", "入院中の治療経過", "退院申し送り", "禁忌/アレルギー"]
