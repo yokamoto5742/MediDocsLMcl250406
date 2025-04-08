@@ -1,5 +1,4 @@
-def preprocess_text(text):
-    return text
+from utils.constants import DEFAULT_SECTION_NAMES
 
 
 def format_discharge_summary(summary_text):
@@ -14,14 +13,7 @@ def format_discharge_summary(summary_text):
 
 
 def parse_discharge_summary(summary_text):
-    sections = {
-        "入院期間": "",
-        "現病歴": "",
-        "入院時検査": "",
-        "入院中の治療経過": "",
-        "退院申し送り": "",
-        "禁忌/アレルギー": "",
-    }
+    sections = {section: "" for section in DEFAULT_SECTION_NAMES}
 
     section_aliases = {
         "禁忌・アレルギー": "禁忌/アレルギー"

@@ -3,6 +3,7 @@ import streamlit as st
 
 from utils.auth import login_ui, require_login, logout, get_current_user, password_change_ui, can_edit_prompts, check_ip_access
 from utils.config import get_config, GEMINI_CREDENTIALS, REQUIRE_LOGIN, IP_CHECK_ENABLED, IP_WHITELIST
+from utils.constants import MESSAGES
 from utils.env_loader import load_environment_variables
 from utils.gemini_api import generate_discharge_summary
 from utils.prompt_manager import (
@@ -213,10 +214,10 @@ def render_input_section():
 @handle_error
 def process_discharge_summary(input_text):
     if not GEMINI_CREDENTIALS:
-        raise APIError("Gemini APIの認証情報が設定されていません。環境変数を確認してください。")
+        raise APIError(MESSAGES["API_CREDENTIALS_MISSING"])
 
     if not input_text or len(input_text.strip()) < 10:
-        st.warning("⚠️ カルテ情報を入力してください")
+        st.warning(MESSAGES["INPUT_TOO_SHORT"])
         return
 
     try:

@@ -4,6 +4,7 @@ import os
 import google.generativeai as genai
 
 from utils.config import get_config, GEMINI_CREDENTIALS, GEMINI_MODEL
+from utils.constants import MESSAGES
 from utils.prompt_manager import get_prompt_by_department
 from utils.exceptions import APIError
 
@@ -14,7 +15,7 @@ def initialize_gemini():
             genai.configure(api_key=GEMINI_CREDENTIALS)
             return True
         else:
-            raise APIError("Gemini API認証情報が設定されていません。")
+            raise APIError(MESSAGES["API_CREDENTIALS_MISSING"])
 
     except Exception as e:
         raise APIError(f"Gemini API初期化エラー: {str(e)}")

@@ -4,13 +4,10 @@ import os
 from pymongo import MongoClient
 
 from utils.config import get_config, MONGODB_URI
+from utils.constants import DEFAULT_DEPARTMENTS, MESSAGES
 from utils.db import DatabaseManager
 from utils.env_loader import load_environment_variables
 from utils.exceptions import DatabaseError, AppError
-
-DEFAULT_DEPARTMENTS = [
-    "内科", "消化器内科", "整形外科", "眼科",
-]
 
 
 def get_prompt_collection():
@@ -81,17 +78,17 @@ def get_all_departments():
 def create_department(name):
     try:
         if not name:
-            return False, "診療科名を入力してください"
+            return False
 
         department_collection = get_department_collection()
 
         existing = department_collection.find_one({"name": name})
         if existing:
-            return False, "この診療科は既に存在します"
+            return False, MESSAGES["DEPARTMENT_EXISTS"]
 
         insert_document(department_collection, {"name": name})
 
-        return True, "診療科を登録しました"
+        return True, MESSAGES["DEPARTMENT_CREATED"]
     except DatabaseError as e:
         return False, str(e)
     except Exception as e:

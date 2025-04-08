@@ -6,6 +6,7 @@ import streamlit as st
 from pymongo import MongoClient
 
 from utils.config import get_config, MONGODB_URI, REQUIRE_LOGIN, IP_WHITELIST, IP_CHECK_ENABLED
+from utils.constants import MESSAGES
 from utils.db import DatabaseManager
 from utils.env_loader import load_environment_variables
 from utils.error_handlers import handle_error
@@ -37,7 +38,7 @@ def register_user(username, password, is_admin=False):
         users_collection = get_users_collection()
 
         if users_collection.find_one({"username": username}):
-            raise AuthError("このユーザー名は既に使用されています")
+            raise AuthError(MESSAGES["USER_EXISTS"])
 
         # 新規ユーザー情報の作成
         user_data = {
@@ -47,7 +48,7 @@ def register_user(username, password, is_admin=False):
         }
 
         users_collection.insert_one(user_data)
-        return True, "ユーザー登録が完了しました"
+        return True, MESSAGES["REGISTRATION_SUCCESS"]
     except AuthError as e:
         return False, str(e)
     except Exception as e:
