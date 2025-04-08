@@ -36,6 +36,8 @@ if "selected_department" not in st.session_state:
     st.session_state.selected_department = "default"
 if "current_page" not in st.session_state:
     st.session_state.current_page = "main"
+if "success_message" not in st.session_state:
+    st.session_state.success_message = None
 
 
 def toggle_password_change():
@@ -82,6 +84,10 @@ def department_management_ui():
 
 @handle_error
 def prompt_management_ui():
+    if st.session_state.success_message:
+        st.success(st.session_state.success_message)
+        st.session_state.success_message = None
+
     if st.button("メイン画面に戻る", key="back_to_main"):
         change_page("main")
         st.rerun()
@@ -129,7 +135,7 @@ def prompt_management_ui():
         if st.button("プロンプトを削除", key=f"delete_prompt_{selected_dept}", type="primary"):
             success, message = delete_prompt(selected_dept)
             if success:
-                st.success(message)
+                st.session_state.success_message = message
                 st.session_state.selected_dept_for_prompt = "default"
                 st.rerun()
             else:
