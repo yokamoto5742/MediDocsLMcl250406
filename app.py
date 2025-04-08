@@ -105,7 +105,7 @@ def prompt_management_ui():
         prompt_content = st.text_area(
             "内容",
             value=prompt_data.get("content", "") if prompt_data else "",
-            height=300,
+            height=200,
             key=f"prompt_content_{selected_dept}"
         )
 
