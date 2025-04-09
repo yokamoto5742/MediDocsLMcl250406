@@ -54,38 +54,56 @@ def department_management_ui():
         change_page("main")
         st.rerun()
 
+    if "show_move_options" not in st.session_state:
+        st.session_state.show_move_options = {}
+
     departments = get_all_departments()
 
     # 診療科一覧とその順序変更ボタンを表示
     for i, dept in enumerate(departments):
-        col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+        col1, col2, col3 = st.columns([4, 1, 1])
         with col1:
             st.write(dept)
 
         with col2:
-            # 上へ移動ボタン（最初の項目以外）
-            if i > 0:
-                if st.button("↑", key=f"up_{dept}"):
-                    success, message = update_department_order(dept, i - 1)
-                    if success:
-                        st.success(message)
-                    else:
-                        raise AppError(message)
+            # 移動ボタン - 上下をまとめる
+            if dept not in st.session_state.show_move_options:
+                if st.button("⇅", key=f"move_{dept}"):
+                    st.session_state.show_move_options[dept] = True
                     st.rerun()
+            else:
+                # 移動オプションを表示
+                move_options_container = st.container()
+                with move_options_container:
+                    move_col1, move_col2, move_col3 = st.columns(3)
+
+                    with move_col1:
+                        if i > 0 and st.button("↑", key=f"up_action_{dept}"):
+                            success, message = update_department_order(dept, i - 1)
+                            if success:
+                                st.success(message)
+                                # 移動後はUIを閉じる
+                                del st.session_state.show_move_options[dept]
+                            else:
+                                raise AppError(message)
+                            st.rerun()
+
+                    with move_col2:
+                        if i < len(departments) - 1 and st.button("↓", key=f"down_action_{dept}"):
+                            success, message = update_department_order(dept, i + 1)
+                            if success:
+                                st.success(message)
+                                del st.session_state.show_move_options[dept]
+                            else:
+                                raise AppError(message)
+                            st.rerun()
+
+                    with move_col3:
+                        if st.button("✕", key=f"cancel_move_{dept}"):
+                            del st.session_state.show_move_options[dept]
+                            st.rerun()
 
         with col3:
-            # 下へ移動ボタン（最後の項目以外）
-            if i < len(departments) - 1:
-                if st.button("↓", key=f"down_{dept}"):
-                    success, message = update_department_order(dept, i + 1)
-                    if success:
-                        st.success(message)
-                    else:
-                        raise AppError(message)
-                    st.rerun()
-
-        with col4:
-            # 削除ボタン（保護された診療科以外）
             if dept not in ["内科"]:
                 if st.button("削除", key=f"delete_{dept}"):
                     success, message = delete_department(dept)
@@ -95,7 +113,7 @@ def department_management_ui():
                         raise AppError(message)
                     st.rerun()
 
-    with st.form("add_department_form"):
+    with st.form(key="add_department_form_unique"):
         new_dept = st.text_input("診療科名")
         submit = st.form_submit_button("診療科を追加")
 
