@@ -9,7 +9,7 @@ from utils.gemini_api import generate_discharge_summary
 from utils.prompt_manager import (
     initialize_database, get_all_departments, get_all_prompts,
     create_or_update_prompt, delete_prompt, get_prompt_by_department,
-    create_department, delete_department
+    create_department, delete_department, update_department_order
 )
 from utils.text_processor import format_discharge_summary, parse_discharge_summary
 from utils.error_handlers import handle_error
@@ -55,11 +55,37 @@ def department_management_ui():
         st.rerun()
 
     departments = get_all_departments()
-    for dept in departments:
-        col1, col2 = st.columns([4, 1])
+
+    # 診療科一覧とその順序変更ボタンを表示
+    for i, dept in enumerate(departments):
+        col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
         with col1:
             st.write(dept)
+
         with col2:
+            # 上へ移動ボタン（最初の項目以外）
+            if i > 0:
+                if st.button("↑", key=f"up_{dept}"):
+                    success, message = update_department_order(dept, i - 1)
+                    if success:
+                        st.success(message)
+                    else:
+                        raise AppError(message)
+                    st.rerun()
+
+        with col3:
+            # 下へ移動ボタン（最後の項目以外）
+            if i < len(departments) - 1:
+                if st.button("↓", key=f"down_{dept}"):
+                    success, message = update_department_order(dept, i + 1)
+                    if success:
+                        st.success(message)
+                    else:
+                        raise AppError(message)
+                    st.rerun()
+
+        with col4:
+            # 削除ボタン（保護された診療科以外）
             if dept not in ["内科"]:
                 if st.button("削除", key=f"delete_{dept}"):
                     success, message = delete_department(dept)
