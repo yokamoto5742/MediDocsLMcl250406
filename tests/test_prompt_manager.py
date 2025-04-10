@@ -15,9 +15,9 @@ from utils.prompt_manager import (
 def mock_db_connection():
     """MongoDB接続のモック"""
     with patch('utils.db.DatabaseManager.get_instance') as mock_conn:
-        mock_db = MagicMock()
-        mock_conn.return_value.get_database.return_value = mock_db
-        yield mock_db
+        mock_instance = MagicMock()
+        mock_conn.return_value = mock_instance
+        yield mock_instance
 
 
 @pytest.fixture
@@ -165,9 +165,8 @@ def test_get_all_departments(mock_department_collection):
 
 def test_create_department_empty_name(mock_department_collection):
     """診療科作成のテスト（空の名前）"""
-    result, message = create_department("")
+    result = create_department("")
     assert result == False
-    assert "診療科名を入力してください" in message
     mock_department_collection.find_one.assert_not_called()
 
 
