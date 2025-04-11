@@ -2,10 +2,11 @@ import os
 import streamlit as st
 
 from utils.auth import login_ui, require_login, logout, get_current_user, password_change_ui, can_edit_prompts, check_ip_access
-from utils.config import get_config, GEMINI_CREDENTIALS, REQUIRE_LOGIN, IP_CHECK_ENABLED, IP_WHITELIST
+from utils.config import get_config, GEMINI_CREDENTIALS, CLAUDE_API_KEY, SELECTED_AI_MODEL, REQUIRE_LOGIN, IP_CHECK_ENABLED, IP_WHITELIST
+from utils.claude_api import generate_discharge_summary as claude_generate_discharge_summary
 from utils.constants import MESSAGES
 from utils.env_loader import load_environment_variables
-from utils.gemini_api import generate_discharge_summary
+from utils.gemini_api import generate_discharge_summary as gemini_generate_discharge_summary
 from utils.prompt_manager import (
     initialize_database, get_all_departments, get_all_prompts,
     create_or_update_prompt, delete_prompt, get_prompt_by_department,
@@ -219,6 +220,25 @@ def render_sidebar():
                     st.session_state.show_password_change = False
                     st.rerun()
 
+    available_models = []
+    if GEMINI_CREDENTIALS:
+        available_models.append("Gemini")
+    if CLAUDE_API_KEY:
+        available_models.append("Claude")
+
+    if len(available_models) > 1:
+        if "selected_model" not in st.session_state:
+            st.session_state.selected_model = SELECTED_AI_MODEL.capitalize()
+
+        selected_model = st.sidebar.selectbox(
+            "AIモデル",
+            available_models,
+            index=available_models.index(
+                st.session_state.selected_model) if st.session_state.selected_model.capitalize() in available_models else 0,
+            key="model_selector"
+        )
+        st.session_state.selected_model = selected_model
+
     departments = ["default"] + get_all_departments()
     selected_dept = st.sidebar.selectbox(
         "診療科",
@@ -266,16 +286,22 @@ def render_input_section():
 
 @handle_error
 def process_discharge_summary(input_text):
-    if not GEMINI_CREDENTIALS:
-        raise APIError(MESSAGES["API_CREDENTIALS_MISSING"])
+    if not GEMINI_CREDENTIALS and not CLAUDE_API_KEY:
+        raise APIError(MESSAGES["NO_API_CREDENTIALS"])
 
-    if not input_text or len(input_text.strip()) < 10:
+    if not input_text or len(input_text.strip()) < 100:
         st.warning(MESSAGES["INPUT_TOO_SHORT"])
         return
 
     try:
         with st.spinner("退院時サマリを作成中..."):
-            discharge_summary = generate_discharge_summary(input_text, st.session_state.selected_department)
+            selected_model = getattr(st.session_state, "selected_model", SELECTED_AI_MODEL.capitalize())
+
+            if selected_model == "Claude" and CLAUDE_API_KEY:
+                discharge_summary = claude_generate_discharge_summary(input_text, st.session_state.selected_department)
+            else:
+                discharge_summary = gemini_generate_discharge_summary(input_text, st.session_state.selected_department)
+
             discharge_summary = format_discharge_summary(discharge_summary)
             st.session_state.discharge_summary = discharge_summary
 
