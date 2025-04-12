@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from utils.auth import login_ui, require_login, logout, get_current_user, password_change_ui, can_edit_prompts, check_ip_access
-from utils.config import get_config, GEMINI_CREDENTIALS, CLAUDE_API_KEY, SELECTED_AI_MODEL, REQUIRE_LOGIN, IP_CHECK_ENABLED, IP_WHITELIST
+from utils.config import get_config, GEMINI_CREDENTIALS, GEMINI_MODEL, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, SELECTED_AI_MODEL, REQUIRE_LOGIN, IP_CHECK_ENABLED, IP_WHITELIST
 from utils.claude_api import generate_discharge_summary as claude_generate_discharge_summary
 from utils.constants import MESSAGES
 from utils.db import get_usage_collection
