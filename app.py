@@ -244,6 +244,26 @@ def render_sidebar():
         )
         st.session_state.selected_model = selected_model
 
+        if st.session_state.selected_model == "Gemini":
+            if "gemini_model_type" not in st.session_state:
+                st.session_state.gemini_model_type = GEMINI_MODEL
+
+            gemini_model_options = [GEMINI_MODEL, GEMINI_FLASH_MODEL]
+            gemini_model_names = {
+                GEMINI_MODEL: "Gemini Pro",
+                GEMINI_FLASH_MODEL: "Gemini Flash"
+            }
+
+            selected_gemini_model = st.sidebar.selectbox(
+                "Geminiモデルタイプ",
+                gemini_model_options,
+                format_func=lambda x: gemini_model_names.get(x, x),
+                index=gemini_model_options.index(
+                    st.session_state.gemini_model_type) if st.session_state.gemini_model_type in gemini_model_options else 0
+            )
+
+            st.session_state.gemini_model_type = selected_gemini_model
+
     departments = ["default"] + get_all_departments()
     selected_dept = st.sidebar.selectbox(
         "診療科",
@@ -310,9 +330,17 @@ def process_discharge_summary(input_text):
             selected_model = getattr(st.session_state, "selected_model", SELECTED_AI_MODEL.capitalize())
 
             if selected_model == "Claude" and CLAUDE_API_KEY:
-                discharge_summary, input_tokens, output_tokens = claude_generate_discharge_summary(input_text, st.session_state.selected_department)
+                discharge_summary, input_tokens, output_tokens = claude_generate_discharge_summary(
+                    input_text,
+                    st.session_state.selected_department,
+                )
             else:
-                discharge_summary, input_tokens, output_tokens = gemini_generate_discharge_summary(input_text, st.session_state.selected_department)
+                gemini_model = getattr(st.session_state, "gemini_model_type", GEMINI_MODEL)
+                discharge_summary, input_tokens, output_tokens = gemini_generate_discharge_summary(
+                    input_text,
+                    st.session_state.selected_department,
+                    gemini_model,
+                )
 
             discharge_summary = format_discharge_summary(discharge_summary)
             st.session_state.discharge_summary = discharge_summary

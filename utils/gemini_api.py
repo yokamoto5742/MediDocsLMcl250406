@@ -35,10 +35,11 @@ def create_discharge_summary_prompt(medical_text, department="default"):
     return prompt
 
 
-def generate_discharge_summary(medical_text, department="default"):
+def generate_discharge_summary(medical_text, department="default", model_name=None):
     try:
         initialize_gemini()
-        model_name = os.environ.get("GEMINI_MODEL")
+        if not model_name:
+            model_name = GEMINI_MODEL
         model = genai.GenerativeModel(model_name)
 
         prompt = create_discharge_summary_prompt(medical_text, department)
