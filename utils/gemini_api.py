@@ -49,7 +49,14 @@ def generate_discharge_summary(medical_text, department="default"):
         else:
             summary_text = str(response)
 
-        return summary_text
+        input_tokens = 0
+        output_tokens = 0
+
+        if hasattr(response, 'usage_metadata'):
+            input_tokens = response.usage_metadata.prompt_token_count
+            output_tokens = response.usage_metadata.candidates_token_count
+
+        return summary_text, input_tokens, output_tokens
 
     except APIError as e:
         raise e

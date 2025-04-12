@@ -38,7 +38,7 @@ def generate_discharge_summary(medical_text, department="default"):
         client = Anthropic(api_key=CLAUDE_API_KEY)
 
         prompt = create_discharge_summary_prompt(medical_text, department)
-        
+
         response = client.messages.create(
             model=model_name,
             max_tokens=5000,
@@ -52,7 +52,10 @@ def generate_discharge_summary(medical_text, department="default"):
         else:
             summary_text = "レスポンスが空でした"
 
-        return summary_text
+        input_tokens = response.usage.input_tokens
+        output_tokens = response.usage.output_tokens
+
+        return summary_text, input_tokens, output_tokens
 
     except APIError as e:
         raise e

@@ -1,11 +1,17 @@
+import datetime
 import os
+
+import pandas as pd
 import streamlit as st
 
 from utils.auth import login_ui, require_login, logout, get_current_user, password_change_ui, can_edit_prompts, check_ip_access
 from utils.config import get_config, GEMINI_CREDENTIALS, CLAUDE_API_KEY, SELECTED_AI_MODEL, REQUIRE_LOGIN, IP_CHECK_ENABLED, IP_WHITELIST
 from utils.claude_api import generate_discharge_summary as claude_generate_discharge_summary
 from utils.constants import MESSAGES
+from utils.db import get_usage_collection
 from utils.env_loader import load_environment_variables
+from utils.error_handlers import handle_error
+from utils.exceptions import AppError, AuthError, APIError, DatabaseError
 from utils.gemini_api import generate_discharge_summary as gemini_generate_discharge_summary
 from utils.prompt_manager import (
     initialize_database, get_all_departments, get_all_prompts,
@@ -13,8 +19,7 @@ from utils.prompt_manager import (
     create_department, delete_department, update_department_order
 )
 from utils.text_processor import format_discharge_summary, parse_discharge_summary
-from utils.error_handlers import handle_error
-from utils.exceptions import AppError, AuthError, APIError, DatabaseError
+
 
 load_environment_variables()
 initialize_database()
@@ -254,11 +259,18 @@ def render_sidebar():
     st.sidebar.markdown("・出力内容は必ず確認してください")
 
     if can_edit_prompts():
-        if st.sidebar.button("診療科管理", key="department_management"):
-            change_page("department_edit")
-            st.rerun()
-        if st.sidebar.button("プロンプト管理", key="prompt_management"):
-            change_page("prompt_edit")
+        col1, col2 = st.sidebar.columns(2)
+        with col1:
+            if st.button("診療科管理", key="department_management"):
+                change_page("department_edit")
+                st.rerun()
+        with col2:
+            if st.button("プロンプト管理", key="prompt_management"):
+                change_page("prompt_edit")
+                st.rerun()
+
+        if st.sidebar.button("統計情報", key="usage_statistics"):
+            change_page("statistics")
             st.rerun()
 
 
@@ -298,15 +310,26 @@ def process_discharge_summary(input_text):
             selected_model = getattr(st.session_state, "selected_model", SELECTED_AI_MODEL.capitalize())
 
             if selected_model == "Claude" and CLAUDE_API_KEY:
-                discharge_summary = claude_generate_discharge_summary(input_text, st.session_state.selected_department)
+                discharge_summary, input_tokens, output_tokens = claude_generate_discharge_summary(input_text, st.session_state.selected_department)
             else:
-                discharge_summary = gemini_generate_discharge_summary(input_text, st.session_state.selected_department)
+                discharge_summary, input_tokens, output_tokens = gemini_generate_discharge_summary(input_text, st.session_state.selected_department)
 
             discharge_summary = format_discharge_summary(discharge_summary)
             st.session_state.discharge_summary = discharge_summary
 
             parsed_summary = parse_discharge_summary(discharge_summary)
             st.session_state.parsed_summary = parsed_summary
+
+            usage_collection = get_usage_collection()
+            usage_data = {
+                "date": datetime.datetime.now(),
+                "model": selected_model,
+                "department": st.session_state.selected_department,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "total_tokens": input_tokens + output_tokens
+            }
+            usage_collection.insert_one(usage_data)
 
     except Exception as e:
         raise APIError(f"退院時サマリの作成中にエラーが発生しました: {str(e)}")
@@ -341,12 +364,101 @@ def render_summary_results():
 
 
 @handle_error
+def usage_statistics_ui():
+    if st.button("メイン画面に戻る", key="back_to_main_from_stats"):
+        change_page("main")
+        st.rerun()
+
+    usage_collection = get_usage_collection()
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        today = datetime.datetime.now().date()
+        start_date = st.date_input("開始日", today - datetime.timedelta(days=30))
+        end_date = st.date_input("終了日", today)
+
+    with col2:
+        models = ["すべて", "Claude", "Gemini"]
+        selected_model = st.selectbox("AIモデル", models, index=0)
+
+    start_datetime = datetime.datetime.combine(start_date, datetime.time.min)
+    end_datetime = datetime.datetime.combine(end_date, datetime.time.max)
+
+    query = {
+        "date": {
+            "$gte": start_datetime,
+            "$lte": end_datetime
+        }
+    }
+
+    if selected_model != "すべて":
+        query["model"] = selected_model
+
+    pipeline = [
+        {"$match": query},
+        {"$group": {
+            "_id": {
+                "year": {"$year": "$date"},
+                "month": {"$month": "$date"},
+                "day": {"$dayOfMonth": "$date"}
+            },
+            "count": {"$sum": 1},
+            "total_input_tokens": {"$sum": "$input_tokens"},
+            "total_output_tokens": {"$sum": "$output_tokens"},
+            "total_tokens": {"$sum": "$total_tokens"}
+        }},
+        {"$sort": {"_id.year": 1, "_id.month": 1, "_id.day": 1}}
+    ]
+
+    daily_stats = list(usage_collection.aggregate(pipeline))
+
+    if not daily_stats:
+        st.info("指定した期間のデータがありません")
+        return
+
+    st.subheader("日別作成件数/トークン数")
+
+    data = []
+    for stat in daily_stats:
+        date_str = f"{stat['_id']['year']}-{stat['_id']['month']:02d}-{stat['_id']['day']:02d}"
+        data.append({
+            "日付": date_str,
+            "作成件数": stat["count"],
+            "入力トークン": stat["total_input_tokens"],
+            "出力トークン": stat["total_output_tokens"],
+            "合計トークン": stat["total_tokens"],
+            "平均入力トークン": round(stat["total_input_tokens"] / stat["count"]),
+            "平均出力トークン": round(stat["total_output_tokens"] / stat["count"]),
+            "平均合計トークン": round(stat["total_tokens"] / stat["count"])
+        })
+
+    df = pd.DataFrame(data)
+    st.dataframe(df)
+
+    total_count = sum(stat["count"] for stat in daily_stats)
+    total_input_tokens = sum(stat["total_input_tokens"] for stat in daily_stats)
+    total_output_tokens = sum(stat["total_output_tokens"] for stat in daily_stats)
+    total_tokens = sum(stat["total_tokens"] for stat in daily_stats)
+
+    st.subheader("期間合計")
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("作成件数", total_count)
+    col2.metric("入力トークン", f"{total_input_tokens:,}")
+    col3.metric("出力トークン", f"{total_output_tokens:,}")
+    col4.metric("合計トークン", f"{total_tokens:,}")
+
+
+@handle_error
 def main_app():
     if st.session_state.current_page == "prompt_edit":
         prompt_management_ui()
         return
     elif st.session_state.current_page == "department_edit":
         department_management_ui()
+        return
+    elif st.session_state.current_page == "statistics":
+        usage_statistics_ui()
         return
 
     render_sidebar()
