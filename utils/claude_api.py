@@ -9,15 +9,6 @@ from utils.exceptions import APIError
 
 
 def initialize_claude():
-    """
-    Claude APIを初期化する関数
-    
-    Returns:
-        bool: 初期化が成功したかどうか
-        
-    Raises:
-        APIError: 初期化に失敗した場合
-    """
     try:
         if CLAUDE_API_KEY:
             return True
@@ -28,16 +19,6 @@ def initialize_claude():
 
 
 def create_discharge_summary_prompt(medical_text, department="default"):
-    """
-    退院時サマリ作成用のプロンプトを作成する
-    
-    Args:
-        medical_text (str): 医療テキストデータ
-        department (str, optional): 診療科. デフォルトは "default"
-        
-    Returns:
-        str: 作成されたプロンプト
-    """
     prompt_data = get_prompt_by_department(department)
 
     if not prompt_data:
@@ -51,19 +32,6 @@ def create_discharge_summary_prompt(medical_text, department="default"):
 
 
 def generate_discharge_summary(medical_text, department="default"):
-    """
-    Claude APIを使用して退院時サマリを生成する関数
-    
-    Args:
-        medical_text (str): 医療テキストデータ
-        department (str, optional): 診療科. デフォルトは "default"
-        
-    Returns:
-        str: 生成された退院時サマリ
-        
-    Raises:
-        APIError: API呼び出しに失敗した場合
-    """
     try:
         initialize_claude()
         model_name = CLAUDE_MODEL
@@ -73,13 +41,12 @@ def generate_discharge_summary(medical_text, department="default"):
         
         response = client.messages.create(
             model=model_name,
-            max_tokens=4000,
+            max_tokens=5000,
             messages=[
                 {"role": "user", "content": prompt}
             ]
         )
 
-        # レスポンスからテキストを抽出
         if response.content:
             summary_text = response.content[0].text
         else:

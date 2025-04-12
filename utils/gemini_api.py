@@ -44,7 +44,6 @@ def generate_discharge_summary(medical_text, department="default"):
         prompt = create_discharge_summary_prompt(medical_text, department)
         response = model.generate_content(prompt)
 
-        # レスポンスからテキストを抽出
         if hasattr(response, 'text'):
             summary_text = response.text
         else:
