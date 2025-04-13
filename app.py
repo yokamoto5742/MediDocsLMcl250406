@@ -423,58 +423,73 @@ def usage_statistics_ui():
     if selected_model != "すべて":
         query["model"] = selected_model
 
-    pipeline = [
+    total_summary = usage_collection.aggregate([
         {"$match": query},
         {"$group": {
-            "_id": {
-                "year": {"$year": "$date"},
-                "month": {"$month": "$date"},
-                "day": {"$dayOfMonth": "$date"}
-            },
+            "_id": None,
             "count": {"$sum": 1},
             "total_input_tokens": {"$sum": "$input_tokens"},
             "total_output_tokens": {"$sum": "$output_tokens"},
             "total_tokens": {"$sum": "$total_tokens"}
-        }},
-        {"$sort": {"_id.year": 1, "_id.month": 1, "_id.day": 1}}
-    ]
+        }}
+    ])
 
-    daily_stats = list(usage_collection.aggregate(pipeline))
+    total_summary = list(total_summary)
 
-    if not daily_stats:
+    if not total_summary:
         st.info("指定した期間のデータがありません")
         return
 
-    st.subheader("日別作成件数/トークン数")
+    dept_summary = usage_collection.aggregate([
+        {"$match": query},
+        {"$group": {
+            "_id": "$department",
+            "count": {"$sum": 1},
+            "input_tokens": {"$sum": "$input_tokens"},
+            "output_tokens": {"$sum": "$output_tokens"},
+            "total_tokens": {"$sum": "$total_tokens"}
+        }},
+        {"$sort": {"count": -1}}
+    ])
+
+    dept_summary = list(dept_summary)
+
+    records = usage_collection.find(
+        query,
+        {
+            "date": 1,
+            "input_tokens": 1,
+            "output_tokens": 1,
+            "total_tokens": 1,
+            "_id": 0
+        }
+    ).sort("date", -1)  # 日付の降順で取得
 
     data = []
-    for stat in daily_stats:
-        date_str = f"{stat['_id']['year']}-{stat['_id']['month']:02d}-{stat['_id']['day']:02d}"
+    for stat in dept_summary:
+        dept_name = "全科共通" if stat["_id"] == "default" else stat["_id"]
         data.append({
-            "日付": date_str,
+            "診療科": dept_name,
             "作成件数": stat["count"],
-            "入力トークン": stat["total_input_tokens"],
-            "出力トークン": stat["total_output_tokens"],
-            "合計トークン": stat["total_tokens"],
-            "平均入力トークン": round(stat["total_input_tokens"] / stat["count"]),
-            "平均出力トークン": round(stat["total_output_tokens"] / stat["count"]),
-            "平均合計トークン": round(stat["total_tokens"] / stat["count"])
+            "入力トークン": stat["input_tokens"],
+            "出力トークン": stat["output_tokens"],
+            "合計トークン": stat["total_tokens"]
         })
 
     df = pd.DataFrame(data)
     st.dataframe(df)
 
-    total_count = sum(stat["count"] for stat in daily_stats)
-    total_input_tokens = sum(stat["total_input_tokens"] for stat in daily_stats)
-    total_output_tokens = sum(stat["total_output_tokens"] for stat in daily_stats)
-    total_tokens = sum(stat["total_tokens"] for stat in daily_stats)
+    detail_data = []
+    for record in records:
+        detail_data.append({
+            "日付": record["date"].strftime("%Y-%m-%d"),
+            "入力トークン": record["input_tokens"],
+            "出力トークン": record["output_tokens"],
+            "合計トークン": record["total_tokens"]
+        })
 
-    st.subheader("期間合計")
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("作成件数", total_count)
-    col2.metric("入力トークン", f"{total_input_tokens:,}")
-    col3.metric("出力トークン", f"{total_output_tokens:,}")
-    col4.metric("合計トークン", f"{total_tokens:,}")
+    detail_df = pd.DataFrame(detail_data)
+    st.dataframe(detail_df)
 
 
 @handle_error
