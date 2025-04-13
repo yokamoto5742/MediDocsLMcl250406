@@ -477,19 +477,19 @@ def usage_statistics_ui():
         })
 
     df = pd.DataFrame(data)
-    st.dataframe(df)
+    st.dataframe(df, hide_index=True)
 
     detail_data = []
     for record in records:
         detail_data.append({
-            "日付": record["date"].strftime("%Y-%m-%d"),
+            "作成日": record["date"].strftime("%Y-%m-%d"),
             "入力トークン": record["input_tokens"],
             "出力トークン": record["output_tokens"],
             "合計トークン": record["total_tokens"]
         })
 
     detail_df = pd.DataFrame(detail_data)
-    st.dataframe(detail_df)
+    st.dataframe(detail_df, hide_index=True)
 
 
 @handle_error
