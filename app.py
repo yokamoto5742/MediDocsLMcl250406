@@ -329,11 +329,13 @@ def process_discharge_summary(input_text):
         with st.spinner("退院時サマリを作成中..."):
             selected_model = getattr(st.session_state, "selected_model", SELECTED_AI_MODEL.capitalize())
 
+            # 346行付近 - Geminiの場合のモデル詳細情報を保存するよう変更
             if selected_model == "Claude" and CLAUDE_API_KEY:
                 discharge_summary, input_tokens, output_tokens = claude_generate_discharge_summary(
                     input_text,
                     st.session_state.selected_department,
                 )
+                model_detail = selected_model
             else:
                 gemini_model = getattr(st.session_state, "gemini_model_type", GEMINI_MODEL)
                 discharge_summary, input_tokens, output_tokens = gemini_generate_discharge_summary(
@@ -341,6 +343,7 @@ def process_discharge_summary(input_text):
                     st.session_state.selected_department,
                     gemini_model,
                 )
+                model_detail = f"{selected_model} ({gemini_model})"
 
             discharge_summary = format_discharge_summary(discharge_summary)
             st.session_state.discharge_summary = discharge_summary
@@ -352,6 +355,7 @@ def process_discharge_summary(input_text):
             usage_data = {
                 "date": datetime.datetime.now(),
                 "model": selected_model,
+                "model_detail": model_detail,
                 "department": st.session_state.selected_department,
                 "input_tokens": input_tokens,
                 "output_tokens": output_tokens,
@@ -458,6 +462,8 @@ def usage_statistics_ui():
         query,
         {
             "date": 1,
+            "model": 1,
+            "model_detail": 1,
             "input_tokens": 1,
             "output_tokens": 1,
             "total_tokens": 1,
@@ -481,8 +487,10 @@ def usage_statistics_ui():
 
     detail_data = []
     for record in records:
+        model_info = record.get("model_detail", record.get("model", "不明"))
         detail_data.append({
             "作成日": record["date"].strftime("%Y-%m-%d"),
+            "AIモデル": model_info,
             "入力トークン": record["input_tokens"],
             "出力トークン": record["output_tokens"],
             "合計トークン": record["total_tokens"]
