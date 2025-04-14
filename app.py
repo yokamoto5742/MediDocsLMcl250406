@@ -231,7 +231,7 @@ def render_sidebar():
     if CLAUDE_API_KEY:
         available_models.append("Claude")
 
-    if len(available_models) > 0:
+    if len(available_models) > 1:
         if "selected_model" not in st.session_state:
             st.session_state.selected_model = SELECTED_AI_MODEL.capitalize()
             if st.session_state.selected_model.capitalize() not in available_models:
@@ -246,25 +246,28 @@ def render_sidebar():
         )
         st.session_state.selected_model = selected_model
 
-        if st.session_state.selected_model == "Gemini":
-            if "gemini_model_type" not in st.session_state:
-                st.session_state.gemini_model_type = GEMINI_MODEL
+    elif len(available_models) == 1:
+        st.session_state.selected_model = available_models[0]
 
-            gemini_model_options = [GEMINI_MODEL, GEMINI_FLASH_MODEL]
-            gemini_model_names = {
-                GEMINI_MODEL: "Gemini_Pro",
-                GEMINI_FLASH_MODEL: "Gemini_Flash"
-            }
+    if GEMINI_CREDENTIALS and (len(available_models) == 1 or st.session_state.selected_model == "Gemini"):
+        if "gemini_model_type" not in st.session_state:
+            st.session_state.gemini_model_type = GEMINI_MODEL
 
-            selected_gemini_model = st.sidebar.selectbox(
-                "モデルタイプ",
-                gemini_model_options,
-                format_func=lambda x: gemini_model_names.get(x, x),
-                index=gemini_model_options.index(
-                    st.session_state.gemini_model_type) if st.session_state.gemini_model_type in gemini_model_options else 0
-            )
+        gemini_model_options = [GEMINI_MODEL, GEMINI_FLASH_MODEL]
+        gemini_model_names = {
+            GEMINI_MODEL: "Gemini_Pro",
+            GEMINI_FLASH_MODEL: "Gemini_Flash"
+        }
 
-            st.session_state.gemini_model_type = selected_gemini_model
+        selected_gemini_model = st.sidebar.selectbox(
+            "モデルタイプ",
+            gemini_model_options,
+            format_func=lambda x: gemini_model_names.get(x, x),
+            index=gemini_model_options.index(
+                st.session_state.gemini_model_type) if st.session_state.gemini_model_type in gemini_model_options else 0
+        )
+
+        st.session_state.gemini_model_type = selected_gemini_model
 
     departments = ["default"] + get_all_departments()
     selected_dept = st.sidebar.selectbox(
