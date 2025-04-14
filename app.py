@@ -231,9 +231,11 @@ def render_sidebar():
     if CLAUDE_API_KEY:
         available_models.append("Claude")
 
-    if len(available_models) > 1:
+    if len(available_models) > 0:
         if "selected_model" not in st.session_state:
             st.session_state.selected_model = SELECTED_AI_MODEL.capitalize()
+            if st.session_state.selected_model.capitalize() not in available_models:
+                st.session_state.selected_model = available_models[0]
 
         selected_model = st.sidebar.selectbox(
             "AIモデル",
@@ -486,7 +488,17 @@ def usage_statistics_ui():
 
     detail_data = []
     for record in records:
-        model_info = record.get("model_detail", record.get("model", "不明"))
+        model = record.get("model", "")
+        model_detail = record.get("model_detail", "")
+
+        if model == "Gemini":
+            if "flash" in str(model_detail).lower():
+                model_info = "Gemini_Flash"
+            else:
+                model_info = "Gemini_Pro"
+        else:
+            model_info = model
+
         detail_data.append({
             "作成日": record["date"].strftime("%Y-%m-%d"),
             "AIモデル": model_info,
