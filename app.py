@@ -329,7 +329,6 @@ def process_discharge_summary(input_text):
         with st.spinner("退院時サマリを作成中..."):
             selected_model = getattr(st.session_state, "selected_model", SELECTED_AI_MODEL.capitalize())
 
-            # 346行付近 - Geminiの場合のモデル詳細情報を保存するよう変更
             if selected_model == "Claude" and CLAUDE_API_KEY:
                 discharge_summary, input_tokens, output_tokens = claude_generate_discharge_summary(
                     input_text,
@@ -343,7 +342,7 @@ def process_discharge_summary(input_text):
                     st.session_state.selected_department,
                     gemini_model,
                 )
-                model_detail = f"{selected_model} ({gemini_model})"
+                model_detail = gemini_model
 
             discharge_summary = format_discharge_summary(discharge_summary)
             st.session_state.discharge_summary = discharge_summary
