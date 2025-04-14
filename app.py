@@ -255,7 +255,7 @@ def render_sidebar():
             }
 
             selected_gemini_model = st.sidebar.selectbox(
-                "Geminiモデルタイプ",
+                "モデルタイプ",
                 gemini_model_options,
                 format_func=lambda x: gemini_model_names.get(x, x),
                 index=gemini_model_options.index(
