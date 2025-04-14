@@ -250,8 +250,8 @@ def render_sidebar():
 
             gemini_model_options = [GEMINI_MODEL, GEMINI_FLASH_MODEL]
             gemini_model_names = {
-                GEMINI_MODEL: "Gemini Pro",
-                GEMINI_FLASH_MODEL: "Gemini Flash"
+                GEMINI_MODEL: "Gemini_Pro",
+                GEMINI_FLASH_MODEL: "Gemini_Flash"
             }
 
             selected_gemini_model = st.sidebar.selectbox(
