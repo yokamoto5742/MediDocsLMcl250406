@@ -244,7 +244,7 @@ def render_sidebar():
             "AIモデル",
             available_models,
             index=available_models.index(
-                st.session_state.selected_model) if st.session_state.selected_model.capitalize() in available_models else 0,
+                st.session_state.selected_model) if st.session_state.selected_model in available_models else 0,
             key="model_selector"
         )
         st.session_state.selected_model = selected_model
