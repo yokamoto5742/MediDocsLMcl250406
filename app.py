@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from utils.auth import login_ui, require_login, logout, get_current_user, password_change_ui, can_edit_prompts, check_ip_access
-from utils.config import get_config, GEMINI_CREDENTIALS, GEMINI_MODEL, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, SELECTED_AI_MODEL, REQUIRE_LOGIN, IP_CHECK_ENABLED, IP_WHITELIST
+from utils.config import get_config, GEMINI_CREDENTIALS, GEMINI_MODEL, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, CLAUDE_MODEL, SELECTED_AI_MODEL, REQUIRE_LOGIN, IP_CHECK_ENABLED, IP_WHITELIST
 from utils.claude_api import generate_discharge_summary as claude_generate_discharge_summary
 from utils.constants import MESSAGES
 from utils.db import get_usage_collection
@@ -226,16 +226,21 @@ def render_sidebar():
                     st.rerun()
 
     available_models = []
-    if GEMINI_CREDENTIALS:
-        available_models.append("Gemini")
+    if GEMINI_MODEL and GEMINI_CREDENTIALS:
+        available_models.append("Gemini_Pro")
+    if GEMINI_FLASH_MODEL and GEMINI_CREDENTIALS:
+        available_models.append("Gemini_Flash")
     if CLAUDE_API_KEY:
         available_models.append("Claude")
 
     if len(available_models) > 1:
         if "selected_model" not in st.session_state:
-            st.session_state.selected_model = SELECTED_AI_MODEL.capitalize()
-            if st.session_state.selected_model.capitalize() not in available_models:
-                st.session_state.selected_model = available_models[0]
+            default_model = SELECTED_AI_MODEL.capitalize()
+            if default_model == "Gemini" and "Gemini_Pro" in available_models:
+                default_model = "Gemini_Pro"
+            if default_model not in available_models and available_models:
+                default_model = available_models[0]
+            st.session_state.selected_model = default_model
 
         selected_model = st.sidebar.selectbox(
             "AIモデル",
@@ -248,26 +253,6 @@ def render_sidebar():
 
     elif len(available_models) == 1:
         st.session_state.selected_model = available_models[0]
-
-    if GEMINI_CREDENTIALS and (len(available_models) == 1 or st.session_state.selected_model == "Gemini"):
-        if "gemini_model_type" not in st.session_state:
-            st.session_state.gemini_model_type = GEMINI_MODEL
-
-        gemini_model_options = [GEMINI_MODEL, GEMINI_FLASH_MODEL]
-        gemini_model_names = {
-            GEMINI_MODEL: "Gemini_Pro",
-            GEMINI_FLASH_MODEL: "Gemini_Flash"
-        }
-
-        selected_gemini_model = st.sidebar.selectbox(
-            "モデルタイプ",
-            gemini_model_options,
-            format_func=lambda x: gemini_model_names.get(x, x),
-            index=gemini_model_options.index(
-                st.session_state.gemini_model_type) if st.session_state.gemini_model_type in gemini_model_options else 0
-        )
-
-        st.session_state.gemini_model_type = selected_gemini_model
 
     departments = ["default"] + get_all_departments()
     selected_dept = st.sidebar.selectbox(
@@ -332,7 +317,8 @@ def process_discharge_summary(input_text):
 
     try:
         with st.spinner("退院時サマリを作成中..."):
-            selected_model = getattr(st.session_state, "selected_model", SELECTED_AI_MODEL.capitalize())
+            selected_model = getattr(st.session_state, "selected_model",
+                                     available_models[0] if available_models else None)
 
             if selected_model == "Claude" and CLAUDE_API_KEY:
                 discharge_summary, input_tokens, output_tokens = claude_generate_discharge_summary(
@@ -340,14 +326,22 @@ def process_discharge_summary(input_text):
                     st.session_state.selected_department,
                 )
                 model_detail = selected_model
-            else:
-                gemini_model = getattr(st.session_state, "gemini_model_type", GEMINI_MODEL)
+            elif selected_model == "Gemini_Pro" and GEMINI_MODEL and GEMINI_CREDENTIALS:
                 discharge_summary, input_tokens, output_tokens = gemini_generate_discharge_summary(
                     input_text,
                     st.session_state.selected_department,
-                    gemini_model,
+                    GEMINI_MODEL,
                 )
-                model_detail = gemini_model
+                model_detail = GEMINI_MODEL
+            elif selected_model == "Gemini_Flash" and GEMINI_FLASH_MODEL and GEMINI_CREDENTIALS:
+                discharge_summary, input_tokens, output_tokens = gemini_generate_discharge_summary(
+                    input_text,
+                    st.session_state.selected_department,
+                    GEMINI_FLASH_MODEL,
+                )
+                model_detail = GEMINI_FLASH_MODEL
+            else:
+                raise APIError(MESSAGES["NO_API_CREDENTIALS"])
 
             discharge_summary = format_discharge_summary(discharge_summary)
             st.session_state.discharge_summary = discharge_summary
