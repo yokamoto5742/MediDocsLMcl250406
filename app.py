@@ -235,9 +235,7 @@ def render_sidebar():
 
     if len(available_models) > 1:
         if "selected_model" not in st.session_state:
-            default_model = SELECTED_AI_MODEL.capitalize()
-            if default_model == "Gemini" and "Gemini_Pro" in available_models:
-                default_model = "Gemini_Pro"
+            default_model = SELECTED_AI_MODEL
             if default_model not in available_models and available_models:
                 default_model = available_models[0]
             st.session_state.selected_model = default_model
