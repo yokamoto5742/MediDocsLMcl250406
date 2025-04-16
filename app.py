@@ -60,6 +60,18 @@ def department_management_ui():
         change_page("main")
         st.rerun()
 
+    with st.form(key="add_department_form_unique"):
+        new_dept = st.text_input("診療科", placeholder="追加する診療科を入力してください", label_visibility="collapsed")
+        submit = st.form_submit_button("追加")
+
+        if submit and new_dept:
+            success, message = create_department(new_dept)
+            if success:
+                st.success(message)
+            else:
+                raise AppError(message)
+            st.rerun()
+
     if "show_move_options" not in st.session_state:
         st.session_state.show_move_options = {}
 
@@ -118,18 +130,6 @@ def department_management_ui():
                     else:
                         raise AppError(message)
                     st.rerun()
-
-    with st.form(key="add_department_form_unique"):
-        new_dept = st.text_input("診療科名")
-        submit = st.form_submit_button("診療科を追加")
-
-        if submit and new_dept:
-            success, message = create_department(new_dept)
-            if success:
-                st.success(message)
-            else:
-                raise AppError(message)
-            st.rerun()
 
 
 @handle_error
