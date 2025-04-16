@@ -399,7 +399,7 @@ def usage_statistics_ui():
 
     with col1:
         today = datetime.datetime.now().date()
-        start_date = st.date_input("開始日", today - datetime.timedelta(days=30))
+        start_date = st.date_input("開始日", today - datetime.timedelta(days=7))
         end_date = st.date_input("終了日", today)
 
     with col2:
