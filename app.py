@@ -526,7 +526,6 @@ def usage_statistics_ui():
 
         detail_data.append({
             "作成日": record["date"].strftime("%Y-%m-%d"),
-            "文書名": record.get("app_type", "不明"),
             "AIモデル": model_info,
             "入力トークン": record["input_tokens"],
             "出力トークン": record["output_tokens"],
