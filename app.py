@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from utils.auth import login_ui, require_login, logout, get_current_user, password_change_ui, can_edit_prompts, check_ip_access
-from utils.config import get_config, GEMINI_CREDENTIALS, GEMINI_MODEL, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, CLAUDE_MODEL, SELECTED_AI_MODEL, REQUIRE_LOGIN, IP_CHECK_ENABLED, IP_WHITELIST
+from utils.config import get_config, GEMINI_CREDENTIALS, GEMINI_MODEL, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, CLAUDE_MODEL, SELECTED_AI_MODEL, REQUIRE_LOGIN, IP_CHECK_ENABLED, IP_WHITELIST, MAX_INPUT_TOKENS, MIN_INPUT_TOKENS
 from utils.claude_api import generate_discharge_summary as claude_generate_discharge_summary
 from utils.constants import MESSAGES
 from utils.db import get_usage_collection
@@ -305,8 +305,17 @@ def process_discharge_summary(input_text):
     if not GEMINI_CREDENTIALS and not CLAUDE_API_KEY:
         raise APIError(MESSAGES["NO_API_CREDENTIALS"])
 
-    if not input_text or len(input_text.strip()) < 100:
-        st.warning(MESSAGES["INPUT_TOO_SHORT"])
+    if not input_text:
+        st.warning(MESSAGES["NO_INPUT"])
+        return
+
+    input_length = len(input_text.strip())
+    if input_length < MIN_INPUT_TOKENS:
+        st.warning(f"{MESSAGES['INPUT_TOO_SHORT']}")
+        return
+
+    if input_length > MAX_INPUT_TOKENS:
+        st.warning(f"{MESSAGES['INPUT_TOO_LONG']}")
         return
 
     try:

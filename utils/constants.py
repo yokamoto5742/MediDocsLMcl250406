@@ -20,7 +20,9 @@ MESSAGES = {
 
     # エラーメッセージ
     "FIELD_REQUIRED": "すべての項目を入力してください",
-    "INPUT_TOO_SHORT": "⚠️ カルテ情報を入力してください",
+    "NO_INPUT": "⚠️ カルテ情報を入力してください",
+    "INPUT_TOO_SHORT": "⚠️ 入力テキストが短すぎます",
+    "INPUT_TOO_LONG": "⚠️ 入力テキストが長すぎます",
     "API_CREDENTIALS_MISSING": "⚠️ Gemini APIの認証情報が設定されていません。環境変数を確認してください。",
     "CLAUDE_API_CREDENTIALS_MISSING": "⚠️ Claude APIの認証情報が設定されていません。環境変数を確認してください。",
     "NO_API_CREDENTIALS": "⚠️ 使用可能なAI APIの認証情報が設定されていません。環境変数を確認してください。",
