@@ -357,6 +357,7 @@ def process_discharge_summary(input_text):
             usage_collection = get_usage_collection()
             usage_data = {
                 "date": datetime.datetime.now(),
+                "app_type": "discharge_summary",
                 "model": selected_model,
                 "model_detail": model_detail,
                 "department": st.session_state.selected_department,
@@ -417,6 +418,10 @@ def usage_statistics_ui():
         models = ["すべて", "Claude", "Gemini_Pro", "Gemini_Flash"]
         selected_model = st.selectbox("モデル選択", models, index=0)
 
+    with st.columns(2)[0]:
+        app_types = ["退院時サマリ","不明", "すべて"]
+        selected_app_type = st.selectbox("文書名", app_types, index=0)
+
     start_datetime = datetime.datetime.combine(start_date, datetime.time.min)
     end_datetime = datetime.datetime.combine(end_date, datetime.time.max)
 
@@ -436,6 +441,12 @@ def usage_statistics_ui():
             query["model_detail"] = {"$regex": "flash", "$options": "i"}
         else:  # Claude
             query["model"] = selected_model
+
+    if selected_app_type != "すべて":
+        if selected_app_type == "不明":
+            query["app_type"] = {"$exists": False}
+        else:
+            query["app_type"] = selected_app_type
 
     total_summary = usage_collection.aggregate([
         {"$match": query},
@@ -457,7 +468,7 @@ def usage_statistics_ui():
     dept_summary = usage_collection.aggregate([
         {"$match": query},
         {"$group": {
-            "_id": "$department",
+            "_id": {"department": "$department", "app_type": "$app_type"},
             "count": {"$sum": 1},
             "input_tokens": {"$sum": "$input_tokens"},
             "output_tokens": {"$sum": "$output_tokens"},
@@ -483,9 +494,13 @@ def usage_statistics_ui():
 
     data = []
     for stat in dept_summary:
-        dept_name = "全科共通" if stat["_id"] == "default" else stat["_id"]
+        dept_name = "全科共通" if stat["_id"]["department"] == "default" else stat["_id"]["department"]
+        app_type = "不明"
+        if "app_type" in stat["_id"] and stat["_id"]["app_type"] is not None:
+            app_type = stat["_id"]["app_type"]
         data.append({
             "診療科": dept_name,
+            "文書名": app_type,
             "作成件数": stat["count"],
             "入力トークン": stat["input_tokens"],
             "出力トークン": stat["output_tokens"],
@@ -510,6 +525,7 @@ def usage_statistics_ui():
 
         detail_data.append({
             "作成日": record["date"].strftime("%Y-%m-%d"),
+            "文書名": record.get("app_type", "不明") if record.get("app_type") else "不明",
             "AIモデル": model_info,
             "入力トークン": record["input_tokens"],
             "出力トークン": record["output_tokens"],
