@@ -50,6 +50,8 @@ if "current_page" not in st.session_state:
     st.session_state.current_page = "main"
 if "success_message" not in st.session_state:
     st.session_state.success_message = None
+if "available_models" not in st.session_state:
+    st.session_state.available_models = []
 
 
 def toggle_password_change():
@@ -237,7 +239,7 @@ def render_sidebar():
     )
     st.session_state.selected_department = selected_dept
 
-    available_models = []
+    st.session_state.available_models = []
     if GEMINI_MODEL and GEMINI_CREDENTIALS:
         available_models.append("Gemini_Pro")
     if GEMINI_FLASH_MODEL and GEMINI_CREDENTIALS:
@@ -323,7 +325,8 @@ def process_discharge_summary(input_text):
     try:
         with st.spinner("退院時サマリを作成中..."):
             selected_model = getattr(st.session_state, "selected_model",
-                                     available_models[0] if available_models else None)
+                                     st.session_state.available_models[
+                                         0] if st.session_state.available_models else None)
 
             if selected_model == "Claude" and CLAUDE_API_KEY:
                 discharge_summary, input_tokens, output_tokens = claude_generate_discharge_summary(
