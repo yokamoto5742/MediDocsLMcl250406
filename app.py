@@ -4,8 +4,16 @@ import os
 import pandas as pd
 import streamlit as st
 
-from utils.auth import login_ui, require_login, logout, get_current_user, password_change_ui, can_edit_prompts, check_ip_access
-from utils.config import get_config, GEMINI_CREDENTIALS, GEMINI_MODEL, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, CLAUDE_MODEL, SELECTED_AI_MODEL, REQUIRE_LOGIN, IP_CHECK_ENABLED, IP_WHITELIST, MAX_INPUT_TOKENS, MIN_INPUT_TOKENS
+from utils.auth import (
+    login_ui, require_login, logout, 
+    get_current_user, password_change_ui, can_edit_prompts, check_ip_access
+)
+from utils.config import (
+    get_config, GEMINI_CREDENTIALS, GEMINI_MODEL, GEMINI_FLASH_MODEL, 
+    CLAUDE_API_KEY, CLAUDE_MODEL, SELECTED_AI_MODEL, 
+    REQUIRE_LOGIN, IP_CHECK_ENABLED, IP_WHITELIST, 
+    MAX_INPUT_TOKENS, MIN_INPUT_TOKENS
+)
 from utils.claude_api import generate_discharge_summary as claude_generate_discharge_summary
 from utils.constants import MESSAGES
 from utils.db import get_usage_collection
@@ -20,10 +28,8 @@ from utils.prompt_manager import (
 )
 from utils.text_processor import format_discharge_summary, parse_discharge_summary
 
-
 load_environment_variables()
 initialize_database()
-
 require_login_setting = REQUIRE_LOGIN
 
 st.set_page_config(
@@ -56,7 +62,7 @@ def change_page(page):
 
 @handle_error
 def department_management_ui():
-    if st.button("メイン画面に戻る", key="back_to_main_from_dept"):
+    if st.button("作成画面に戻る", key="back_to_main_from_dept"):
         change_page("main")
         st.rerun()
 
@@ -77,20 +83,17 @@ def department_management_ui():
 
     departments = get_all_departments()
 
-    # 診療科一覧とその順序変更ボタンを表示
     for i, dept in enumerate(departments):
         col1, col2, col3 = st.columns([4, 1, 1])
         with col1:
             st.write(dept)
 
         with col2:
-            # 移動ボタン - 上下をまとめる
             if dept not in st.session_state.show_move_options:
                 if st.button("⇅", key=f"move_{dept}"):
                     st.session_state.show_move_options[dept] = True
                     st.rerun()
             else:
-                # 移動オプションを表示
                 move_options_container = st.container()
                 with move_options_container:
                     move_col1, move_col2, move_col3 = st.columns(3)
@@ -100,7 +103,6 @@ def department_management_ui():
                             success, message = update_department_order(dept, i - 1)
                             if success:
                                 st.success(message)
-                                # 移動後はUIを閉じる
                                 del st.session_state.show_move_options[dept]
                             else:
                                 raise AppError(message)
@@ -138,7 +140,7 @@ def prompt_management_ui():
         st.success(st.session_state.success_message)
         st.session_state.success_message = None
 
-    if st.button("メイン画面に戻る", key="back_to_main"):
+    if st.button("作成画面に戻る", key="back_to_main"):
         change_page("main")
         st.rerun()
 
@@ -251,7 +253,7 @@ def render_sidebar():
             st.session_state.selected_model = default_model
 
         selected_model = st.sidebar.selectbox(
-            "AIモデル",
+            "モデル選択",
             available_models,
             index=available_models.index(
                 st.session_state.selected_model) if st.session_state.selected_model in available_models else 0,
@@ -263,7 +265,7 @@ def render_sidebar():
         st.session_state.selected_model = available_models[0]
 
     st.sidebar.markdown("・入力および出力テキストは保存されません")
-    st.sidebar.markdown("・出力内容は必ず確認してください")
+    st.sidebar.markdown("・出力結果は必ず確認してください")
 
     if can_edit_prompts():
         if st.sidebar.button("診療科管理", key="department_management"):
@@ -393,12 +395,12 @@ def render_summary_results():
                             height=150
                             )
 
-        st.info("💡 テキストエリアの右上にマウスを合わせ、左クリックでコピーできます")
+        st.info("💡 テキストエリアの右上にマウスを合わせて左クリックでコピーできます")
 
 
 @handle_error
 def usage_statistics_ui():
-    if st.button("メイン画面に戻る", key="back_to_main_from_stats"):
+    if st.button("作成画面に戻る", key="back_to_main_from_stats"):
         change_page("main")
         st.rerun()
 
@@ -413,7 +415,7 @@ def usage_statistics_ui():
 
     with col2:
         models = ["すべて", "Claude", "Gemini_Pro", "Gemini_Flash"]
-        selected_model = st.selectbox("AIモデル", models, index=0)
+        selected_model = st.selectbox("モデル選択", models, index=0)
 
     start_datetime = datetime.datetime.combine(start_date, datetime.time.min)
     end_datetime = datetime.datetime.combine(end_date, datetime.time.max)
@@ -477,7 +479,7 @@ def usage_statistics_ui():
             "total_tokens": 1,
             "_id": 0
         }
-    ).sort("date", -1)  # 日付の降順で取得
+    ).sort("date", -1)  # 日付の降順
 
     data = []
     for stat in dept_summary:
