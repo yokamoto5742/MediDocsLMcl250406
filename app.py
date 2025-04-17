@@ -241,30 +241,30 @@ def render_sidebar():
 
     st.session_state.available_models = []
     if GEMINI_MODEL and GEMINI_CREDENTIALS:
-        available_models.append("Gemini_Pro")
+        st.session_state.available_models.append("Gemini_Pro")
     if GEMINI_FLASH_MODEL and GEMINI_CREDENTIALS:
-        available_models.append("Gemini_Flash")
+        st.session_state.available_models.append("Gemini_Flash")
     if CLAUDE_API_KEY:
-        available_models.append("Claude")
+        st.session_state.available_models.append("Claude")
 
-    if len(available_models) > 1:
+    if len(st.session_state.available_models) > 1:
         if "selected_model" not in st.session_state:
             default_model = SELECTED_AI_MODEL
-            if default_model not in available_models and available_models:
-                default_model = available_models[0]
+            if default_model not in st.session_state.available_models and st.session_state.available_models:
+                default_model = st.session_state.available_models[0]
             st.session_state.selected_model = default_model
 
         selected_model = st.sidebar.selectbox(
             "モデル選択",
-            available_models,
-            index=available_models.index(
-                st.session_state.selected_model) if st.session_state.selected_model in available_models else 0,
+            st.session_state.available_models,
+            index=st.session_state.available_models.index(
+                st.session_state.selected_model) if st.session_state.selected_model in st.session_state.available_models else 0,
             key="model_selector"
         )
         st.session_state.selected_model = selected_model
 
-    elif len(available_models) == 1:
-        st.session_state.selected_model = available_models[0]
+    elif len(st.session_state.available_models) == 1:
+        st.session_state.selected_model = st.session_state.available_models[0]
 
     st.sidebar.markdown("・入力および出力テキストは保存されません")
     st.sidebar.markdown("・出力結果は必ず確認してください")
@@ -360,7 +360,7 @@ def process_discharge_summary(input_text):
             usage_collection = get_usage_collection()
             usage_data = {
                 "date": datetime.datetime.now(),
-                "app_type": "discharge_summary",
+                "app_type": "退院時サマリ",
                 "model": selected_model,
                 "model_detail": model_detail,
                 "department": st.session_state.selected_department,
