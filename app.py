@@ -255,7 +255,7 @@ def render_sidebar():
             st.session_state.selected_model = default_model
 
         selected_model = st.sidebar.selectbox(
-            "モデル選択",
+            "AIモデル",
             st.session_state.available_models,
             index=st.session_state.available_models.index(
                 st.session_state.selected_model) if st.session_state.selected_model in st.session_state.available_models else 0,
@@ -419,7 +419,7 @@ def usage_statistics_ui():
 
     with col2:
         models = ["すべて", "Claude", "Gemini_Pro", "Gemini_Flash"]
-        selected_model = st.selectbox("モデル選択", models, index=0)
+        selected_model = st.selectbox("AIモデル", models, index=0)
 
     with st.columns(2)[0]:
         app_types = ["退院時サマリ","不明", "すべて"]
