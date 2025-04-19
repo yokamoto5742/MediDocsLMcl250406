@@ -4,10 +4,10 @@ from utils.config import REQUIRE_LOGIN, IP_CHECK_ENABLED, IP_WHITELIST
 from utils.env_loader import load_environment_variables
 from utils.error_handlers import handle_error
 from utils.prompt_manager import initialize_database
-from pages.department_management import department_management_ui
-from pages.prompt_management import prompt_management_ui
-from pages.statistics import usage_statistics_ui
-from pages.main import main_app as main_page_app
+from screens.department_management import department_management_ui
+from screens.prompt_management import prompt_management_ui
+from screens.statistics import usage_statistics_ui
+from screens.main import main_app as main_page_app
 
 load_environment_variables()
 initialize_database()
