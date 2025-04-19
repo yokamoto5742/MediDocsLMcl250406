@@ -415,14 +415,18 @@ def usage_statistics_ui():
     with col1:
         today = datetime.datetime.now().date()
         start_date = st.date_input("開始日", today - datetime.timedelta(days=7))
-        end_date = st.date_input("終了日", today)
 
     with col2:
         models = ["すべて", "Claude", "Gemini_Pro", "Gemini_Flash"]
         selected_model = st.selectbox("AIモデル", models, index=0)
 
-    with st.columns(2)[0]:
-        app_types = ["退院時サマリ","不明", "すべて"]
+    col3, col4 = st.columns(2)
+
+    with col3:
+        end_date = st.date_input("終了日", today)
+
+    with col4:
+        app_types = ["退院時サマリ", "不明", "すべて"]
         selected_app_type = st.selectbox("文書名", app_types, index=0)
 
     start_datetime = datetime.datetime.combine(start_date, datetime.time.min)
