@@ -2,7 +2,7 @@ import streamlit as st
 from utils.error_handlers import handle_error
 from services.summary_service import process_discharge_summary
 from utils.text_processor import parse_discharge_summary
-from components.navigation import render_sidebar
+from ui_components.navigation import render_sidebar
 
 def clear_inputs():
     st.session_state.input_text = ""

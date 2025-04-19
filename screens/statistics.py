@@ -3,7 +3,7 @@ import pandas as pd
 import streamlit as st
 from utils.error_handlers import handle_error
 from utils.db import get_usage_collection
-from components.navigation import change_page
+from ui_components.navigation import change_page
 
 @handle_error
 def usage_statistics_ui():

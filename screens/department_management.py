@@ -2,7 +2,7 @@ import streamlit as st
 from utils.error_handlers import handle_error
 from utils.exceptions import AppError
 from utils.prompt_manager import get_all_departments, create_department, delete_department, update_department_order
-from components.navigation import change_page
+from ui_components.navigation import change_page
 
 @handle_error
 def department_management_ui():
