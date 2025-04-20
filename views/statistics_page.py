@@ -5,6 +5,13 @@ from utils.error_handlers import handle_error
 from utils.db import get_usage_collection
 from components.navigation import change_page
 
+MODEL_MAPPING = {
+    "Gemini_Pro": {"pattern": "gemini", "exclude": "flash"},
+    "Gemini_Flash": {"pattern": "flash", "exclude": None},
+    "Claude": {"pattern": "claude", "exclude": None}
+}
+
+
 @handle_error
 def usage_statistics_ui():
     if st.button("作成画面に戻る", key="back_to_main_from_stats"):
@@ -43,13 +50,11 @@ def usage_statistics_ui():
     }
 
     if selected_model != "すべて":
-        if selected_model == "Gemini_Pro":
-            query["model_detail"] = {"$regex": "gemini", "$options": "i"}
-            query["model_detail"]["$not"] = {"$regex": "flash", "$options": "i"}
-        elif selected_model == "Gemini_Flash":
-            query["model_detail"] = {"$regex": "flash", "$options": "i"}
-        else:  # Claude
-            query["model_detail"] = {"$regex": "claude", "$options": "i"}
+        model_config = MODEL_MAPPING.get(selected_model)
+        if model_config:
+            query["model_detail"] = {"$regex": model_config["pattern"], "$options": "i"}
+            if model_config["exclude"]:
+                query["model_detail"]["$not"] = {"$regex": model_config["exclude"], "$options": "i"}
 
     if selected_app_type != "すべて":
         if selected_app_type == "不明":
@@ -118,14 +123,18 @@ def usage_statistics_ui():
 
     detail_data = []
     for record in records:
-        model_detail = record.get("model_detail", "")
+        model_detail = str(record.get("model_detail", "")).lower()
+        model_info = "Claude"  # デフォルト値
 
-        if "flash" in str(model_detail).lower():
-            model_info = "Gemini_Flash"
-        elif "gemini" in str(model_detail).lower():
-            model_info = "Gemini_Pro"
-        else:
-            model_info = "Claude"
+        for model_name, config in MODEL_MAPPING.items():
+            pattern = config["pattern"]
+            exclude = config["exclude"]
+
+            if pattern in model_detail:
+                if exclude and exclude in model_detail:
+                    continue
+                model_info = model_name
+                break
 
         detail_data.append({
             "作成日": record["date"].strftime("%Y-%m-%d"),
