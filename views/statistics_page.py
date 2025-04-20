@@ -44,13 +44,12 @@ def usage_statistics_ui():
 
     if selected_model != "すべて":
         if selected_model == "Gemini_Pro":
-            query["model"] = "Gemini"
-            query["model_detail"] = {"$not": {"$regex": "flash", "$options": "i"}}
+            query["model_detail"] = {"$regex": "gemini", "$options": "i"}
+            query["model_detail"]["$not"] = {"$regex": "flash", "$options": "i"}
         elif selected_model == "Gemini_Flash":
-            query["model"] = "Gemini"
             query["model_detail"] = {"$regex": "flash", "$options": "i"}
         else:  # Claude
-            query["model"] = selected_model
+            query["model_detail"] = {"$regex": "claude", "$options": "i"}
 
     if selected_app_type != "すべて":
         if selected_app_type == "不明":
@@ -93,7 +92,6 @@ def usage_statistics_ui():
         query,
         {
             "date": 1,
-            "model": 1,
             "model_detail": 1,
             "input_tokens": 1,
             "output_tokens": 1,
@@ -120,16 +118,14 @@ def usage_statistics_ui():
 
     detail_data = []
     for record in records:
-        model = record.get("model", "")
         model_detail = record.get("model_detail", "")
 
-        if model == "Gemini":
-            if "flash" in str(model_detail).lower():
-                model_info = "Gemini_Flash"
-            else:
-                model_info = "Gemini_Pro"
+        if "flash" in str(model_detail).lower():
+            model_info = "Gemini_Flash"
+        elif "gemini" in str(model_detail).lower():
+            model_info = "Gemini_Pro"
         else:
-            model_info = model
+            model_info = "Claude"
 
         detail_data.append({
             "作成日": record["date"].strftime("%Y-%m-%d"),

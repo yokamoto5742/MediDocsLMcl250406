@@ -66,7 +66,6 @@ def process_discharge_summary(input_text):
             usage_data = {
                 "date": datetime.datetime.now(),
                 "app_type": "退院時サマリ",
-                "model": selected_model,
                 "model_detail": model_detail,
                 "department": st.session_state.selected_department,
                 "input_tokens": input_tokens,
