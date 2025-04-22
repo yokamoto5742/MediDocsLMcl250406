@@ -63,7 +63,7 @@ def render_summary_results():
         st.info("💡 テキストエリアの右上にマウスを合わせて左クリックでコピーできます")
 
 @handle_error
-def main_app():
+def main_page_app():
     render_sidebar()
     render_input_section()
     render_summary_results()

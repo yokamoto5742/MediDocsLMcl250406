@@ -7,7 +7,7 @@ from utils.prompt_manager import initialize_database
 from views.department_management_page import department_management_ui
 from views.prompt_management_page import prompt_management_ui
 from views.statistics_page import usage_statistics_ui
-from views.main_page import main_app as main_page_app
+from views.main_page import main_page_app
 
 load_environment_variables()
 initialize_database()
