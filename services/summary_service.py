@@ -124,7 +124,7 @@ def process_discharge_summary(input_text):
                     "input_tokens": input_tokens,
                     "output_tokens": output_tokens,
                     "total_tokens": input_tokens + output_tokens,
-                    "processing_time": processing_time
+                    "processing_time": round(processing_time)
                 }
                 usage_collection.insert_one(usage_data)
             except Exception as db_error:
