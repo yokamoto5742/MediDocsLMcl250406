@@ -15,6 +15,47 @@ from utils.db import get_usage_collection
 from utils.config import GEMINI_CREDENTIALS, CLAUDE_API_KEY, GEMINI_MODEL, GEMINI_FLASH_MODEL, MAX_INPUT_TOKENS, MIN_INPUT_TOKENS
 
 
+def generate_summary_task(input_text, selected_department, selected_model, result_queue):
+    try:
+        if selected_model == "Claude" and CLAUDE_API_KEY:
+            discharge_summary, input_tokens, output_tokens = claude_generate_discharge_summary(
+                input_text,
+                selected_department,
+            )
+            model_detail = selected_model
+        elif selected_model == "Gemini_Pro" and GEMINI_MODEL and GEMINI_CREDENTIALS:
+            discharge_summary, input_tokens, output_tokens = gemini_generate_discharge_summary(
+                input_text,
+                selected_department,
+                GEMINI_MODEL,
+            )
+            model_detail = GEMINI_MODEL
+        elif selected_model == "Gemini_Flash" and GEMINI_FLASH_MODEL and GEMINI_CREDENTIALS:
+            discharge_summary, input_tokens, output_tokens = gemini_generate_discharge_summary(
+                input_text,
+                selected_department,
+                GEMINI_FLASH_MODEL,
+            )
+            model_detail = GEMINI_FLASH_MODEL
+        else:
+            raise APIError(MESSAGES["NO_API_CREDENTIALS"])
+
+        discharge_summary = format_discharge_summary(discharge_summary)
+        parsed_summary = parse_discharge_summary(discharge_summary)
+
+        result_queue.put({
+            "success": True,
+            "discharge_summary": discharge_summary,
+            "parsed_summary": parsed_summary,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "model_detail": model_detail
+        })
+
+    except Exception as e:
+        result_queue.put({"success": False, "error": e})
+
+
 @handle_error
 def process_discharge_summary(input_text):
     if not GEMINI_CREDENTIALS and not CLAUDE_API_KEY:
@@ -43,46 +84,6 @@ def process_discharge_summary(input_text):
                                  available_models[0] if available_models else None)
         selected_department = getattr(st.session_state, "selected_department", "default")
 
-        def generate_summary_task(input_text, selected_department, selected_model, result_queue):
-            try:
-                if selected_model == "Claude" and CLAUDE_API_KEY:
-                    discharge_summary, input_tokens, output_tokens = claude_generate_discharge_summary(
-                        input_text,
-                        selected_department,
-                    )
-                    model_detail = selected_model
-                elif selected_model == "Gemini_Pro" and GEMINI_MODEL and GEMINI_CREDENTIALS:
-                    discharge_summary, input_tokens, output_tokens = gemini_generate_discharge_summary(
-                        input_text,
-                        selected_department,
-                        GEMINI_MODEL,
-                    )
-                    model_detail = GEMINI_MODEL
-                elif selected_model == "Gemini_Flash" and GEMINI_FLASH_MODEL and GEMINI_CREDENTIALS:
-                    discharge_summary, input_tokens, output_tokens = gemini_generate_discharge_summary(
-                        input_text,
-                        selected_department,
-                        GEMINI_FLASH_MODEL,
-                    )
-                    model_detail = GEMINI_FLASH_MODEL
-                else:
-                    raise APIError(MESSAGES["NO_API_CREDENTIALS"])
-
-                discharge_summary = format_discharge_summary(discharge_summary)
-                parsed_summary = parse_discharge_summary(discharge_summary)
-
-                result_queue.put({
-                    "success": True,
-                    "discharge_summary": discharge_summary,
-                    "parsed_summary": parsed_summary,
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "model_detail": model_detail
-                })
-
-            except Exception as e:
-                result_queue.put({"success": False, "error": e})
-
         summary_thread = threading.Thread(
             target=generate_summary_task,
             args=(input_text, selected_department, selected_model, result_queue)
@@ -91,10 +92,11 @@ def process_discharge_summary(input_text):
         elapsed_time = 0
 
         with st.spinner("退院時サマリを作成中..."):
+            status_placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
             while summary_thread.is_alive():
-                status_placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
                 time.sleep(1)
                 elapsed_time = int((datetime.datetime.now() - start_time).total_seconds())
+                status_placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
 
         summary_thread.join()
         status_placeholder.empty()
