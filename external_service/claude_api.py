@@ -31,7 +31,7 @@ def create_discharge_summary_prompt(medical_text, department="default"):
     return prompt
 
 
-def generate_discharge_summary(medical_text, department="default"):
+def claude_generate_discharge_summary(medical_text, department="default"):
     try:
         initialize_claude()
         model_name = CLAUDE_MODEL

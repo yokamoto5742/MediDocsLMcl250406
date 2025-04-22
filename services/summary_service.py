@@ -2,8 +2,8 @@ import datetime
 
 import streamlit as st
 
-from external_service.claude_api import generate_discharge_summary as claude_generate_discharge_summary
-from external_service.gemini_api import generate_discharge_summary as gemini_generate_discharge_summary
+from external_service.claude_api import claude_generate_discharge_summary
+from external_service.gemini_api import gemini_generate_discharge_summary
 from utils.constants import APP_TYPE, DOCUMENT_NAME
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError

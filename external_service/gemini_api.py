@@ -35,7 +35,7 @@ def create_discharge_summary_prompt(medical_text, department="default"):
     return prompt
 
 
-def generate_discharge_summary(medical_text, department="default", model_name=None):
+def gemini_generate_discharge_summary(medical_text, department="default", model_name=None):
     try:
         initialize_gemini()
         if not model_name:
