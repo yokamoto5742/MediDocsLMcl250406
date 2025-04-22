@@ -88,7 +88,8 @@ def usage_statistics_ui():
             "count": {"$sum": 1},
             "input_tokens": {"$sum": "$input_tokens"},
             "output_tokens": {"$sum": "$output_tokens"},
-            "total_tokens": {"$sum": "$total_tokens"}
+            "total_tokens": {"$sum": "$total_tokens"},
+            "processing_time": {"$sum": "$processing_time"}
         }},
         {"$sort": {"count": -1}}
     ])
@@ -103,6 +104,7 @@ def usage_statistics_ui():
             "input_tokens": 1,
             "output_tokens": 1,
             "total_tokens": 1,
+            "processing_time": 1,
             "_id": 0
         }
     ).sort("date", -1)
@@ -117,7 +119,7 @@ def usage_statistics_ui():
             "作成件数": stat["count"],
             "入力トークン": stat["input_tokens"],
             "出力トークン": stat["output_tokens"],
-            "合計トークン": stat["total_tokens"]
+            "合計トークン": stat["total_tokens"],
         })
 
     df = pd.DataFrame(data)
@@ -144,7 +146,8 @@ def usage_statistics_ui():
             "AIモデル": model_info,
             "入力トークン": record["input_tokens"],
             "出力トークン": record["output_tokens"],
-            "合計トークン": record["total_tokens"]
+            "合計トークン": record["total_tokens"],
+            "処理時間(秒)": round(record["processing_time"]),
         })
 
     detail_df = pd.DataFrame(detail_data)
