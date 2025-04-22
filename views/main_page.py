@@ -8,6 +8,7 @@ def clear_inputs():
     st.session_state.input_text = ""
     st.session_state.discharge_summary = ""
     st.session_state.parsed_summary = {}
+    st.session_state.summary_generation_time = None
     st.session_state.clear_input = True
 
     for key in list(st.session_state.keys()):
@@ -35,8 +36,13 @@ def render_input_section():
         if st.button("テキストをクリア", on_click=clear_inputs):
             pass
 
+
 def render_summary_results():
     if st.session_state.discharge_summary:
+        if "summary_generation_time" in st.session_state and st.session_state.summary_generation_time is not None:
+            processing_time = st.session_state.summary_generation_time
+            st.info(f"⏱️ 処理時間: {processing_time:.2f} 秒")
+
         if st.session_state.parsed_summary:
             tabs = st.tabs([
                 "全文", "入院期間", "現病歴", "入院時検査",

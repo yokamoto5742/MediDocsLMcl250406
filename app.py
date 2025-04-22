@@ -34,6 +34,8 @@ if "success_message" not in st.session_state:
     st.session_state.success_message = None
 if "available_models" not in st.session_state:
     st.session_state.available_models = []
+if "summary_generation_time" not in st.session_state:
+    st.session_state.summary_generation_time = None
 
 @handle_error
 def main_app():

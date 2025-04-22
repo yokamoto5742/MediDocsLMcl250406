@@ -12,6 +12,7 @@ from utils.db import get_usage_collection
 from utils.config import GEMINI_CREDENTIALS, CLAUDE_API_KEY, GEMINI_MODEL, GEMINI_FLASH_MODEL, MAX_INPUT_TOKENS, MIN_INPUT_TOKENS
 from utils.constants import MESSAGES
 
+
 @handle_error
 def process_discharge_summary(input_text):
     if not GEMINI_CREDENTIALS and not CLAUDE_API_KEY:
@@ -31,6 +32,8 @@ def process_discharge_summary(input_text):
         return
 
     try:
+        start_time = datetime.datetime.now()
+
         with st.spinner("退院時サマリを作成中..."):
             selected_model = getattr(st.session_state, "selected_model",
                                      st.session_state.available_models[
@@ -65,6 +68,10 @@ def process_discharge_summary(input_text):
             parsed_summary = parse_discharge_summary(discharge_summary)
             st.session_state.parsed_summary = parsed_summary
 
+            end_time = datetime.datetime.now()
+            processing_time = (end_time - start_time).total_seconds()
+            st.session_state.summary_generation_time = processing_time
+
             usage_collection = get_usage_collection()
             usage_data = {
                 "date": datetime.datetime.now(),
@@ -74,7 +81,8 @@ def process_discharge_summary(input_text):
                 "department": st.session_state.selected_department,
                 "input_tokens": input_tokens,
                 "output_tokens": output_tokens,
-                "total_tokens": input_tokens + output_tokens
+                "total_tokens": input_tokens + output_tokens,
+                "processing_time": processing_time  # 処理時間も保存
             }
             usage_collection.insert_one(usage_data)
 
