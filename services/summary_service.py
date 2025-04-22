@@ -2,7 +2,7 @@ import datetime
 import streamlit as st
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
-from utils.claude_api import generate_discharge_summary as claude_generate_discharge_summary
+from external_service.claude_api import generate_discharge_summary as claude_generate_discharge_summary
 from utils.gemini_api import generate_discharge_summary as gemini_generate_discharge_summary
 from utils.text_processor import format_discharge_summary, parse_discharge_summary
 from utils.db import get_usage_collection
