@@ -99,6 +99,7 @@ def usage_statistics_ui():
         {
             "date": 1,
             "model_detail": 1,
+            "document_name": 1,
             "input_tokens": 1,
             "output_tokens": 1,
             "total_tokens": 1,
