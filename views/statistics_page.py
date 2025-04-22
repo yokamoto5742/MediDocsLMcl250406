@@ -1,6 +1,9 @@
 import datetime
+
 import pandas as pd
 import streamlit as st
+
+from utils.constants import DOCUMENT_NAME_OPTIONS
 from utils.error_handlers import handle_error
 from utils.db import get_usage_collection
 from ui_components.navigation import change_page
@@ -36,8 +39,7 @@ def usage_statistics_ui():
         end_date = st.date_input("終了日", today)
 
     with col4:
-        app_types = ["退院時サマリ", "不明", "すべて"]
-        selected_app_type = st.selectbox("文書名", app_types, index=0)
+        selected_document_name = st.selectbox("文書名", DOCUMENT_NAME_OPTIONS, index=0)
 
     start_datetime = datetime.datetime.combine(start_date, datetime.time.min)
     end_datetime = datetime.datetime.combine(end_date, datetime.time.max)
@@ -56,11 +58,11 @@ def usage_statistics_ui():
             if model_config["exclude"]:
                 query["model_detail"]["$not"] = {"$regex": model_config["exclude"], "$options": "i"}
 
-    if selected_app_type != "すべて":
-        if selected_app_type == "不明":
-            query["app_type"] = {"$exists": False}
+    if selected_document_name != "すべて":
+        if selected_document_name == "不明":
+            query["document_name"] = {"$exists": False}
         else:
-            query["app_type"] = selected_app_type
+            query["document_name"] = selected_document_name
 
     total_summary = usage_collection.aggregate([
         {"$match": query},
@@ -82,7 +84,7 @@ def usage_statistics_ui():
     dept_summary = usage_collection.aggregate([
         {"$match": query},
         {"$group": {
-            "_id": {"department": "$department", "app_type": "$app_type"},
+            "_id": {"department": "$department", "document_name": "$document_name"},
             "count": {"$sum": 1},
             "input_tokens": {"$sum": "$input_tokens"},
             "output_tokens": {"$sum": "$output_tokens"},
@@ -90,7 +92,6 @@ def usage_statistics_ui():
         }},
         {"$sort": {"count": -1}}
     ])
-
     dept_summary = list(dept_summary)
 
     records = usage_collection.find(
@@ -108,10 +109,10 @@ def usage_statistics_ui():
     data = []
     for stat in dept_summary:
         dept_name = "全科共通" if stat["_id"]["department"] == "default" else stat["_id"]["department"]
-        app_type = stat["_id"].get("app_type", "不明")
+        document_name = stat["_id"].get("document_name", "不明")
         data.append({
             "診療科": dept_name,
-            "文書名": app_type,
+            "文書名": document_name,
             "作成件数": stat["count"],
             "入力トークン": stat["input_tokens"],
             "出力トークン": stat["output_tokens"],

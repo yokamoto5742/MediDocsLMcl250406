@@ -4,6 +4,7 @@ import streamlit as st
 
 from external_service.claude_api import generate_discharge_summary as claude_generate_discharge_summary
 from external_service.gemini_api import generate_discharge_summary as gemini_generate_discharge_summary
+from utils.constants import APP_TYPE, DOCUMENT_NAME
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
 from utils.text_processor import format_discharge_summary, parse_discharge_summary
@@ -67,7 +68,8 @@ def process_discharge_summary(input_text):
             usage_collection = get_usage_collection()
             usage_data = {
                 "date": datetime.datetime.now(),
-                "app_type": "退院時サマリ",
+                "app_type": APP_TYPE,
+                "document_name": DOCUMENT_NAME,
                 "model_detail": model_detail,
                 "department": st.session_state.selected_department,
                 "input_tokens": input_tokens,
