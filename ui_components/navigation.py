@@ -1,7 +1,7 @@
 import streamlit as st
 from utils.auth import get_current_user, logout, password_change_ui, can_edit_prompts
 from utils.prompt_manager import get_all_departments
-from utils.config import GEMINI_MODEL, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, SELECTED_AI_MODEL
+from utils.config import GEMINI_MODEL, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, OPENAI_API_KEY, OPENAI_MODEL, SELECTED_AI_MODEL
 
 def toggle_password_change():
     st.session_state.show_password_change = not st.session_state.show_password_change
@@ -47,6 +47,8 @@ def render_sidebar():
         st.session_state.available_models.append("Gemini_Flash")
     if CLAUDE_API_KEY:
         st.session_state.available_models.append("Claude")
+    if OPENAI_API_KEY:
+        st.session_state.available_models.append("GPT4.1")
 
     if len(st.session_state.available_models) > 1:
         if "selected_model" not in st.session_state:

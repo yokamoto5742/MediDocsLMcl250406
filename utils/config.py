@@ -31,6 +31,9 @@ GEMINI_FLASH_MODEL = os.environ.get("GEMINI_FLASH_MODEL")
 CLAUDE_API_KEY = os.environ.get("CLAUDE_API_KEY")
 CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL")
 
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL")
+
 SELECTED_AI_MODEL = os.environ.get("SELECTED_AI_MODEL", "gemini")
 
 REQUIRE_LOGIN = os.environ.get("REQUIRE_LOGIN", "True").lower() in ("true", "1", "yes")

@@ -7,12 +7,13 @@ import streamlit as st
 
 from external_service.claude_api import claude_generate_discharge_summary
 from external_service.gemini_api import gemini_generate_discharge_summary
+from external_service.openai_api import openai_generate_discharge_summary
 from utils.constants import APP_TYPE, DOCUMENT_NAME, MESSAGES
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
 from utils.text_processor import format_discharge_summary, parse_discharge_summary
 from utils.db import get_usage_collection
-from utils.config import GEMINI_CREDENTIALS, CLAUDE_API_KEY, GEMINI_MODEL, GEMINI_FLASH_MODEL, MAX_INPUT_TOKENS, MIN_INPUT_TOKENS
+from utils.config import GEMINI_CREDENTIALS, CLAUDE_API_KEY, OPENAI_API_KEY, GEMINI_MODEL, GEMINI_FLASH_MODEL, OPENAI_MODEL, MAX_INPUT_TOKENS, MIN_INPUT_TOKENS
 
 
 def generate_summary_task(input_text, selected_department, selected_model, result_queue):
@@ -37,6 +38,12 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
                 GEMINI_FLASH_MODEL,
             )
             model_detail = GEMINI_FLASH_MODEL
+        elif selected_model == "GPT4.1" and OPENAI_API_KEY:
+            discharge_summary, input_tokens, output_tokens = openai_generate_discharge_summary(
+                input_text,
+                selected_department,
+            )
+            model_detail = selected_model
         else:
             raise APIError(MESSAGES["NO_API_CREDENTIALS"])
 
