@@ -28,6 +28,8 @@ GEMINI_CREDENTIALS = os.environ.get("GEMINI_CREDENTIALS")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL")
 GEMINI_FLASH_MODEL = os.environ.get("GEMINI_FLASH_MODEL")
 
+GEMINI_THINKING_BUDGET = int(os.environ.get("GEMINI_THINKING_BUDGET", "0")) if os.environ.get("GEMINI_THINKING_BUDGET") else None
+
 CLAUDE_API_KEY = os.environ.get("CLAUDE_API_KEY")
 CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL")
 
@@ -41,7 +43,7 @@ REQUIRE_LOGIN = os.environ.get("REQUIRE_LOGIN", "True").lower() in ("true", "1",
 IP_WHITELIST = os.environ.get("IP_WHITELIST", "")
 IP_CHECK_ENABLED = os.environ.get("IP_CHECK_ENABLED", "False").lower() in ("true", "1", "yes")
 
-MAX_INPUT_TOKENS = int(os.environ.get("MAX_INPUT_TOKENS", "100000"))
+MAX_INPUT_TOKENS = int(os.environ.get("MAX_INPUT_TOKENS", "200000"))
 MIN_INPUT_TOKENS = int(os.environ.get("MIN_INPUT_TOKENS", "100"))
 
 

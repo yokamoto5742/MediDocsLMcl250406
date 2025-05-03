@@ -2,6 +2,7 @@ import datetime
 import threading
 import time
 import queue
+import pytz
 
 import streamlit as st
 
@@ -15,18 +16,22 @@ from utils.text_processor import format_discharge_summary, parse_discharge_summa
 from utils.db import get_usage_collection
 from utils.config import GEMINI_CREDENTIALS, CLAUDE_API_KEY, OPENAI_API_KEY, GEMINI_MODEL, GEMINI_FLASH_MODEL, OPENAI_MODEL, MAX_INPUT_TOKENS, MIN_INPUT_TOKENS
 
+JST = pytz.timezone('Asia/Tokyo')
 
-def generate_summary_task(input_text, selected_department, selected_model, result_queue):
+
+def generate_summary_task(input_text, selected_department, selected_model, result_queue, additional_info=""):
     try:
         if selected_model == "Claude" and CLAUDE_API_KEY:
             discharge_summary, input_tokens, output_tokens = claude_generate_discharge_summary(
                 input_text,
+                additional_info,
                 selected_department,
             )
             model_detail = selected_model
         elif selected_model == "Gemini_Pro" and GEMINI_MODEL and GEMINI_CREDENTIALS:
             discharge_summary, input_tokens, output_tokens = gemini_generate_discharge_summary(
                 input_text,
+                additional_info,
                 selected_department,
                 GEMINI_MODEL,
             )
@@ -34,6 +39,7 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
         elif selected_model == "Gemini_Flash" and GEMINI_FLASH_MODEL and GEMINI_CREDENTIALS:
             discharge_summary, input_tokens, output_tokens = gemini_generate_discharge_summary(
                 input_text,
+                additional_info,
                 selected_department,
                 GEMINI_FLASH_MODEL,
             )
@@ -42,16 +48,15 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
             try:
                 discharge_summary, input_tokens, output_tokens = openai_generate_discharge_summary(
                     input_text,
+                    additional_info,
                     selected_department,
                 )
                 model_detail = selected_model
             except Exception as e:
-                # OpenAIのクォータエラーをチェック
                 error_str = str(e)
                 if "insufficient_quota" in error_str or "exceeded your current quota" in error_str:
                     raise APIError("OpenAI APIのクォータを超過しています。請求情報を確認するか、管理者に連絡してください。")
                 else:
-                    # その他のエラーはそのまま再スロー
                     raise e
         else:
             raise APIError(MESSAGES["NO_API_CREDENTIALS"])
@@ -73,7 +78,7 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
 
 
 @handle_error
-def process_discharge_summary(input_text):
+def process_discharge_summary(input_text, additional_info=""):
     if not GEMINI_CREDENTIALS and not CLAUDE_API_KEY:
         raise APIError(MESSAGES["NO_API_CREDENTIALS"])
 
@@ -102,7 +107,7 @@ def process_discharge_summary(input_text):
 
         summary_thread = threading.Thread(
             target=generate_summary_task,
-            args=(input_text, selected_department, selected_model, result_queue)
+            args=(input_text, selected_department, selected_model, result_queue, additional_info)
         )
         summary_thread.start()
         elapsed_time = 0
@@ -131,8 +136,9 @@ def process_discharge_summary(input_text):
 
             try:
                 usage_collection = get_usage_collection()
+                now_jst = datetime.datetime.now().astimezone(JST)
                 usage_data = {
-                    "date": datetime.datetime.now(),
+                    "date": now_jst,
                     "app_type": APP_TYPE,
                     "document_name": DOCUMENT_NAME,
                     "model_detail": model_detail,

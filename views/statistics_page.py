@@ -1,4 +1,5 @@
 import datetime
+import pytz
 
 import pandas as pd
 import streamlit as st
@@ -8,11 +9,13 @@ from utils.error_handlers import handle_error
 from utils.db import get_usage_collection
 from ui_components.navigation import change_page
 
+JST = pytz.timezone('Asia/Tokyo')
+
 MODEL_MAPPING = {
     "Gemini_Pro": {"pattern": "gemini", "exclude": "flash"},
     "Gemini_Flash": {"pattern": "flash", "exclude": None},
     "Claude": {"pattern": "claude", "exclude": None},
-    "GPT4o": {"pattern": "gpt4.1", "exclude": None},
+    "GPT4.1": {"pattern": "gpt4.1", "exclude": None},
 }
 
 
@@ -100,11 +103,11 @@ def usage_statistics_ui():
         query,
         {
             "date": 1,
-            "model_detail": 1,
             "document_name": 1,
+            "model_detail": 1,
+            "department": 1,
             "input_tokens": 1,
             "output_tokens": 1,
-            "total_tokens": 1,
             "processing_time": 1,
             "_id": 0
         }
@@ -141,13 +144,16 @@ def usage_statistics_ui():
                 model_info = model_name
                 break
 
+        jst_date = record["date"].astimezone(JST) if record["date"].tzinfo else JST.localize(record["date"])
+
         detail_data.append({
-            "作成日": record["date"].strftime("%Y-%m-%d"),
+            "作成日": jst_date.strftime("%Y/%m/%d"),
+            "診療科": "全科共通" if record.get("department") == "default" else record.get("department"),
             "文書名": record.get("document_name", "不明"),
             "AIモデル": model_info,
             "入力トークン": record["input_tokens"],
             "出力トークン": record["output_tokens"],
-            "合計トークン": record["total_tokens"],
+
             "処理時間(秒)": round(record["processing_time"]),
         })
 
