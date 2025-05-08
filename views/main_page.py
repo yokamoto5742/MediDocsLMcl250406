@@ -1,8 +1,10 @@
 import streamlit as st
+
+from services.summary_service import process_summary
 from utils.error_handlers import handle_error
-from services.summary_service import process_discharge_summary
 from utils.text_processor import parse_discharge_summary
 from ui_components.navigation import render_sidebar
+
 
 def clear_inputs():
     st.session_state.input_text = ""
@@ -15,6 +17,7 @@ def clear_inputs():
     for key in list(st.session_state.keys()):
         if key.startswith("input_text"):
             st.session_state[key] = ""
+
 
 def render_input_section():
     if "clear_input" not in st.session_state:
@@ -40,7 +43,7 @@ def render_input_section():
 
     with col1:
         if st.button("サマリ作成", type="primary"):
-            process_discharge_summary(input_text)
+            process_summary(input_text, additional_info)
 
     with col2:
         if st.button("テキストをクリア", on_click=clear_inputs):

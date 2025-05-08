@@ -3,9 +3,9 @@ import os
 
 from pymongo import MongoClient
 
+from database.db import DatabaseManager
 from utils.config import get_config, MONGODB_URI
 from utils.constants import DEFAULT_DEPARTMENTS, MESSAGES
-from utils.db import DatabaseManager
 from utils.env_loader import load_environment_variables
 from utils.exceptions import DatabaseError, AppError
 
@@ -75,7 +75,7 @@ def get_all_departments():
         raise DatabaseError(f"診療科の取得に失敗しました: {str(e)}")
 
 
-def create_department(name):
+def create_department(name, default_model=None):
     try:
         if not name:
             return False
@@ -90,8 +90,7 @@ def create_department(name):
         max_order_doc = department_collection.find_one(sort=[("order", -1)])
         max_order = max_order_doc["order"] if max_order_doc and "order" in max_order_doc else -1
         next_order = max_order + 1
-
-        insert_document(department_collection, {"name": name, "order": next_order})
+        insert_document(department_collection, {"name": name, "order": next_order, "default_model": default_model})
 
         default_prompt = prompt_collection.find_one({"department": "default", "is_default": True})
         if not default_prompt:
@@ -166,6 +165,29 @@ def update_department_order(name, new_order):
         raise AppError(f"診療科の順序更新中にエラーが発生しました: {str(e)}")
 
 
+def get_department_by_name(name):
+    try:
+        department_collection = get_department_collection()
+        return department_collection.find_one({"name": name})
+    except Exception as e:
+        raise DatabaseError(f"診療科の取得に失敗しました: {str(e)}")
+
+
+def update_department(name, default_model):
+    try:
+        department_collection = get_department_collection()
+        update_document(
+            department_collection,
+            {"name": name},
+            {"default_model": default_model}
+        )
+        return True, "診療科を更新しました"
+    except DatabaseError as e:
+        return False, str(e)
+    except Exception as e:
+        raise AppError(f"診療科の更新中にエラーが発生しました: {str(e)}")
+
+
 def initialize_default_prompt():
     try:
         prompt_collection = get_prompt_collection()
@@ -187,7 +209,6 @@ def initialize_default_prompt():
 
 
 def get_prompt_by_department(department="default"):
-    """指定された診療科のプロンプトを取得"""
     try:
         prompt_collection = get_prompt_collection()
         prompt = prompt_collection.find_one({"department": department})

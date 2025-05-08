@@ -4,9 +4,9 @@ import pytz
 import pandas as pd
 import streamlit as st
 
+from database.db import get_usage_collection
 from utils.constants import DOCUMENT_NAME_OPTIONS
 from utils.error_handlers import handle_error
-from utils.db import get_usage_collection
 from ui_components.navigation import change_page
 
 JST = pytz.timezone('Asia/Tokyo')
@@ -153,7 +153,6 @@ def usage_statistics_ui():
             "AIモデル": model_info,
             "入力トークン": record["input_tokens"],
             "出力トークン": record["output_tokens"],
-
             "処理時間(秒)": round(record["processing_time"]),
         })
 

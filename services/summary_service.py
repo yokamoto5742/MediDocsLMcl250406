@@ -1,65 +1,71 @@
 import datetime
+import queue
 import threading
 import time
-import queue
-import pytz
 
+import pytz
 import streamlit as st
 
-from external_service.claude_api import claude_generate_discharge_summary
-from external_service.gemini_api import gemini_generate_discharge_summary
-from external_service.openai_api import openai_generate_discharge_summary
+from database.db import get_usage_collection
+from external_service.claude_api import claude_generate_summary
+from external_service.gemini_api import gemini_generate_summary
+from external_service.openai_api import openai_generate_summary
+from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, OPENAI_API_KEY, OPENAI_MODEL
 from utils.constants import APP_TYPE, DOCUMENT_NAME, MESSAGES
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
 from utils.text_processor import format_discharge_summary, parse_discharge_summary
-from utils.db import get_usage_collection
-from utils.config import GEMINI_CREDENTIALS, CLAUDE_API_KEY, OPENAI_API_KEY, GEMINI_MODEL, GEMINI_FLASH_MODEL, OPENAI_MODEL, MAX_INPUT_TOKENS, MIN_INPUT_TOKENS
 
 JST = pytz.timezone('Asia/Tokyo')
 
 
 def generate_summary_task(input_text, selected_department, selected_model, result_queue, additional_info=""):
     try:
-        if selected_model == "Claude" and CLAUDE_API_KEY:
-            discharge_summary, input_tokens, output_tokens = claude_generate_discharge_summary(
-                input_text,
-                additional_info,
-                selected_department,
-            )
-            model_detail = selected_model
-        elif selected_model == "Gemini_Pro" and GEMINI_MODEL and GEMINI_CREDENTIALS:
-            discharge_summary, input_tokens, output_tokens = gemini_generate_discharge_summary(
-                input_text,
-                additional_info,
-                selected_department,
-                GEMINI_MODEL,
-            )
-            model_detail = GEMINI_MODEL
-        elif selected_model == "Gemini_Flash" and GEMINI_FLASH_MODEL and GEMINI_CREDENTIALS:
-            discharge_summary, input_tokens, output_tokens = gemini_generate_discharge_summary(
-                input_text,
-                additional_info,
-                selected_department,
-                GEMINI_FLASH_MODEL,
-            )
-            model_detail = GEMINI_FLASH_MODEL
-        elif selected_model == "GPT4.1" and OPENAI_API_KEY:
-            try:
-                discharge_summary, input_tokens, output_tokens = openai_generate_discharge_summary(
+        match selected_model:
+            case "Claude" if CLAUDE_API_KEY:
+                discharge_summary, input_tokens, output_tokens = claude_generate_summary(
                     input_text,
                     additional_info,
                     selected_department,
                 )
                 model_detail = selected_model
-            except Exception as e:
-                error_str = str(e)
-                if "insufficient_quota" in error_str or "exceeded your current quota" in error_str:
-                    raise APIError("OpenAI APIのクォータを超過しています。請求情報を確認するか、管理者に連絡してください。")
-                else:
-                    raise e
-        else:
-            raise APIError(MESSAGES["NO_API_CREDENTIALS"])
+
+            case "Gemini_Pro" if GEMINI_MODEL and GEMINI_CREDENTIALS:
+                discharge_summary, input_tokens, output_tokens = gemini_generate_summary(
+                    input_text,
+                    additional_info,
+                    selected_department,
+                    GEMINI_MODEL,
+                )
+                model_detail = GEMINI_MODEL
+
+            case "Gemini_Flash" if GEMINI_FLASH_MODEL and GEMINI_CREDENTIALS:
+                discharge_summary, input_tokens, output_tokens = gemini_generate_summary(
+                    input_text,
+                    additional_info,
+                    selected_department,
+                    GEMINI_FLASH_MODEL,
+                )
+                model_detail = GEMINI_FLASH_MODEL
+
+            case "GPT4.1" if OPENAI_API_KEY:
+                try:
+                    discharge_summary, input_tokens, output_tokens = openai_generate_summary(
+                        input_text,
+                        additional_info,
+                        selected_department,
+                    )
+                    model_detail = selected_model
+                except Exception as e:
+                    error_str = str(e)
+                    if "insufficient_quota" in error_str or "exceeded your current quota" in error_str:
+                        raise APIError(
+                            "OpenAI APIのクォータを超過しています。請求情報を確認するか、管理者に連絡してください。")
+                    else:
+                        raise e
+
+            case _:
+                raise APIError(MESSAGES["NO_API_CREDENTIALS"])
 
         discharge_summary = format_discharge_summary(discharge_summary)
         parsed_summary = parse_discharge_summary(discharge_summary)
@@ -78,8 +84,8 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
 
 
 @handle_error
-def process_discharge_summary(input_text, additional_info=""):
-    if not GEMINI_CREDENTIALS and not CLAUDE_API_KEY:
+def process_summary(input_text, additional_info=""):
+    if not GEMINI_CREDENTIALS and not CLAUDE_API_KEY and not OPENAI_API_KEY:
         raise APIError(MESSAGES["NO_API_CREDENTIALS"])
 
     if not input_text:
@@ -107,12 +113,18 @@ def process_discharge_summary(input_text, additional_info=""):
 
         summary_thread = threading.Thread(
             target=generate_summary_task,
-            args=(input_text, selected_department, selected_model, result_queue, additional_info)
+            args=(
+                input_text,
+                selected_department,
+                selected_model,
+                result_queue,
+                additional_info
+            ),
         )
         summary_thread.start()
         elapsed_time = 0
 
-        with st.spinner("退院時サマリを作成中..."):
+        with st.spinner("サマリ作成中..."):
             status_placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
             while summary_thread.is_alive():
                 time.sleep(1)
