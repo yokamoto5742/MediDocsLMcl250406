@@ -1,3 +1,5 @@
+# utils/config.py の修正箇所
+
 import configparser
 import os
 from pathlib import Path
@@ -16,12 +18,39 @@ def get_config():
 
 load_dotenv()
 
-# PostgreSQL設定
-POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
-POSTGRES_PORT = os.environ.get("POSTGRES_PORT", "5432")
-POSTGRES_USER = os.environ.get("POSTGRES_USER", "postgres")
-POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
-POSTGRES_DB = os.environ.get("POSTGRES_DB", "discharge_summary_app")
+# HerokuのDATABASE_URLから個別の設定を取得する関数
+def parse_database_url():
+    database_url = os.environ.get("DATABASE_URL")
+    if database_url:
+        from urllib.parse import urlparse
+        parsed = urlparse(database_url)
+        return {
+            "host": parsed.hostname,
+            "port": parsed.port,
+            "user": parsed.username,
+            "password": parsed.password,
+            "database": parsed.path[1:]  # 最初の/を除去
+        }
+    return None
+
+# DATABASE_URLがある場合は優先して使用
+db_config = parse_database_url()
+
+if db_config:
+    POSTGRES_HOST = db_config["host"]
+    POSTGRES_PORT = db_config["port"]
+    POSTGRES_USER = db_config["user"]
+    POSTGRES_PASSWORD = db_config["password"]
+    POSTGRES_DB = db_config["database"]
+    POSTGRES_SSL = "require"  # Herokuでは必須
+else:
+    # 従来の個別環境変数からの取得
+    POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
+    POSTGRES_PORT = os.environ.get("POSTGRES_PORT", "5432")
+    POSTGRES_USER = os.environ.get("POSTGRES_USER", "postgres")
+    POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
+    POSTGRES_DB = os.environ.get("POSTGRES_DB", "discharge_summary_app")
+    POSTGRES_SSL = os.environ.get("POSTGRES_SSL", None)
 
 # API設定
 GEMINI_CREDENTIALS = os.environ.get("GEMINI_CREDENTIALS")

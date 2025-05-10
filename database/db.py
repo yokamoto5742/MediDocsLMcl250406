@@ -1,11 +1,12 @@
 import os
+from urllib.parse import urlparse
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 
 from utils.config import (
     POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER,
-    POSTGRES_PASSWORD, POSTGRES_DB
+    POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_SSL  # POSTGRES_SSL を追加
 )
 from utils.exceptions import DatabaseError
 
@@ -25,13 +26,39 @@ class DatabaseManager:
         if DatabaseManager._engine is not None:
             return
 
-        if not all([POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB]):
-            raise DatabaseError("PostgreSQL接続情報が設定されていません。環境変数または設定ファイルを確認してください。")
+        # HerokuのDATABASE_URLが設定されている場合はそれを使用
+        database_url = os.environ.get("DATABASE_URL")
 
-        try:
-            # PostgreSQL接続文字列の作成
+        if database_url:
+            # HerokuのDATABASE_URLからの接続設定
+            try:
+                # Herokuの修正: postgres:// → postgresql://
+                if database_url.startswith("postgres://"):
+                    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+                # SSL設定を追加
+                if "?" in database_url:
+                    database_url += "&sslmode=require"
+                else:
+                    database_url += "?sslmode=require"
+
+                connection_string = database_url
+
+            except Exception as e:
+                raise DatabaseError(f"DATABASE_URLの解析に失敗しました: {str(e)}")
+        else:
+            # 個別の環境変数からの接続設定
+            if not all([POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB]):
+                raise DatabaseError(
+                    "PostgreSQL接続情報が設定されていません。環境変数または設定ファイルを確認してください。")
+
             connection_string = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
+            # SSL設定があれば追加
+            if POSTGRES_SSL:
+                connection_string += f"?sslmode={POSTGRES_SSL}"
+
+        try:
             # SQLAlchemyエンジンの作成
             DatabaseManager._engine = create_engine(
                 connection_string,
