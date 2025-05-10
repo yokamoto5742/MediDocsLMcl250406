@@ -2,7 +2,7 @@ import datetime
 
 import streamlit as st
 
-from database.db import get_settings_collection
+from database.db import DatabaseManager
 from utils.config import GEMINI_MODEL, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, OPENAI_API_KEY, \
     OPENAI_MODEL
 from utils.prompt_manager import get_all_departments, get_department_by_name
@@ -107,7 +107,8 @@ def render_sidebar():
 def save_user_settings(department, model):
     """ユーザー設定をデータベースに保存"""
     try:
-        db_manager = get_settings_collection()
+        # DatabaseManagerインスタンスを正しく取得
+        db_manager = DatabaseManager.get_instance()
 
         # 以前の設定を確認
         check_query = "SELECT * FROM app_settings WHERE setting_id = 'user_preferences'"
@@ -141,7 +142,8 @@ def save_user_settings(department, model):
 def load_user_settings():
     """ユーザー設定をデータベースから読み込み"""
     try:
-        db_manager = get_settings_collection()
+        # DatabaseManagerインスタンスを正しく取得
+        db_manager = DatabaseManager.get_instance()
         query = "SELECT selected_department, selected_model FROM app_settings WHERE setting_id = 'user_preferences'"
         settings = db_manager.execute_query(query)
 

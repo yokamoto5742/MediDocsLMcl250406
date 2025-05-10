@@ -8,7 +8,6 @@ def load_environment_variables():
     mongodb_uri = os.environ.get("MONGODB_URI")
 
     if mongodb_uri:
-        print("システム環境変数が検出されました。")
         return
 
     base_dir = Path(__file__).parent.parent

@@ -4,7 +4,7 @@ import pytz
 import pandas as pd
 import streamlit as st
 
-from database.db import get_usage_collection
+from database.db import DatabaseManager
 from utils.constants import DOCUMENT_NAME_OPTIONS
 from utils.error_handlers import handle_error
 from ui_components.navigation import change_page
@@ -25,7 +25,8 @@ def usage_statistics_ui():
         change_page("main")
         st.rerun()
 
-    db_manager = get_usage_collection()
+    # DatabaseManagerインスタンスを正しく取得
+    db_manager = DatabaseManager.get_instance()
 
     col1, col2 = st.columns(2)
 

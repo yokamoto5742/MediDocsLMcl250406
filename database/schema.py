@@ -107,7 +107,6 @@ def initialize_database():
     while retry_count < max_retries:
         try:
             create_tables()
-            print("データベーステーブルの初期化が完了しました")
             return True
         except Exception as e:
             last_error = e

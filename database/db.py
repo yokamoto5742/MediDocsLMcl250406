@@ -80,7 +80,15 @@ class DatabaseManager:
         try:
             result = session.execute(text(query), params or {})
             if fetch:
-                data = [dict(row) for row in result]
+                # SQLAlchemy Rowオブジェクトを正しく辞書に変換
+                data = []
+                for row in result:
+                    # _mapping属性を使用して辞書に変換
+                    if hasattr(row, '_mapping'):
+                        data.append(dict(row._mapping))
+                    else:
+                        # 古いバージョンのSQLAlchemy用のフォールバック
+                        data.append(dict(zip(row.keys(), row)))
                 session.commit()
                 return data
             session.commit()

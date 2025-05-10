@@ -6,7 +6,7 @@ import time
 import pytz
 import streamlit as st
 
-from database.db import get_usage_collection
+from database.db import DatabaseManager
 from external_service.claude_api import claude_generate_summary
 from external_service.gemini_api import gemini_generate_summary
 from external_service.openai_api import openai_generate_summary
@@ -148,7 +148,8 @@ def process_summary(input_text, additional_info=""):
             st.session_state.summary_generation_time = processing_time
 
             try:
-                usage_db = get_usage_collection()
+                # DatabaseManagerインスタンスを正しく取得
+                db_manager = DatabaseManager.get_instance()
                 now_jst = datetime.datetime.now().astimezone(JST)
 
                 # PostgreSQL用に変更
@@ -172,7 +173,7 @@ def process_summary(input_text, additional_info=""):
                                 :output_tokens, :total_tokens, :processing_time) \
                         """
 
-                usage_db.execute_query(query, usage_data, fetch=False)
+                db_manager.execute_query(query, usage_data, fetch=False)
 
             except Exception as db_error:
                 st.warning(f"利用状況のDB保存中にエラーが発生しました: {str(db_error)}")
