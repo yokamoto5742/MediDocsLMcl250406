@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from pymongo import MongoClient
 
 
 def get_config():
@@ -17,12 +16,14 @@ def get_config():
 
 load_dotenv()
 
-MONGODB_URI = os.environ.get("MONGODB_URI")
-MONGODB_DB_NAME = os.environ.get("MONGODB_DB_NAME")
-MONGODB_USERS_COLLECTION = os.environ.get("MONGODB_USERS_COLLECTION")
-MONGODB_PROMPTS_COLLECTION = os.environ.get("MONGODB_PROMPTS_COLLECTION", "prompts")
-MONGODB_DEPARTMENTS_COLLECTION = os.environ.get("MONGODB_DEPARTMENTS_COLLECTION", "departments")
+# PostgreSQL設定
+POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
+POSTGRES_PORT = os.environ.get("POSTGRES_PORT", "5432")
+POSTGRES_USER = os.environ.get("POSTGRES_USER", "postgres")
+POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
+POSTGRES_DB = os.environ.get("POSTGRES_DB", "discharge_summary_app")
 
+# API設定
 GEMINI_CREDENTIALS = os.environ.get("GEMINI_CREDENTIALS")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL")
 GEMINI_FLASH_MODEL = os.environ.get("GEMINI_FLASH_MODEL")

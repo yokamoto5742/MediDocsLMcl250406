@@ -1,29 +1,28 @@
 import datetime
 import os
-
-from pymongo import MongoClient
+from sqlalchemy import text
 
 from database.db import DatabaseManager
-from utils.config import get_config, MONGODB_URI
+from utils.config import get_config
 from utils.constants import DEFAULT_DEPARTMENTS, MESSAGES
 from utils.env_loader import load_environment_variables
 from utils.exceptions import DatabaseError, AppError
 
 
 def get_prompt_collection():
+    """プロンプトデータを取得するためのメソッド"""
     try:
         db_manager = DatabaseManager.get_instance()
-        collection_name = os.environ.get("MONGODB_PROMPTS_COLLECTION", "prompts")
-        return db_manager.get_collection(collection_name)
+        return db_manager
     except Exception as e:
         raise DatabaseError(f"プロンプトコレクションの取得に失敗しました: {str(e)}")
 
 
 def get_department_collection():
+    """診療科データを取得するためのメソッド"""
     try:
         db_manager = DatabaseManager.get_instance()
-        collection_name = os.environ.get("MONGODB_DEPARTMENTS_COLLECTION", "departments")
-        return db_manager.get_collection(collection_name)
+        return db_manager
     except Exception as e:
         raise DatabaseError(f"診療科コレクションの取得に失敗しました: {str(e)}")
 
@@ -33,72 +32,189 @@ def get_current_datetime():
 
 
 def insert_document(collection, document):
+    """
+    ドキュメントをテーブルに挿入する
+
+    Args:
+        collection: DatabaseManagerのインスタンス
+        document: 挿入するデータを含む辞書
+    """
     try:
         now = get_current_datetime()
         document.update({
             "created_at": now,
             "updated_at": now
         })
-        return collection.insert_one(document)
+
+        # テーブル名を推測し、適切なSQLを生成
+        if "name" in document and "order_index" in document:
+            # departmentsテーブルへの挿入
+            query = """
+                    INSERT INTO departments (name, order_index, default_model, created_at, updated_at)
+                    VALUES (:name, :order_index, :default_model, :created_at, :updated_at) RETURNING id; \
+                    """
+            params = {
+                "name": document["name"],
+                "order_index": document["order_index"],
+                "default_model": document.get("default_model"),
+                "created_at": document["created_at"],
+                "updated_at": document["updated_at"]
+            }
+        elif "department" in document:
+            # promptsテーブルへの挿入
+            query = """
+                    INSERT INTO prompts (department, name, content, is_default, created_at, updated_at)
+                    VALUES (:department, :name, :content, :is_default, :created_at, :updated_at) RETURNING id; \
+                    """
+            params = {
+                "department": document["department"],
+                "name": document["name"],
+                "content": document["content"],
+                "is_default": document.get("is_default", False),
+                "created_at": document["created_at"],
+                "updated_at": document["updated_at"]
+            }
+        else:
+            raise ValueError("不明なドキュメント形式です")
+
+        result = collection.execute_query(query, params)
+        return result[0]["id"] if result else None
+
     except Exception as e:
         raise DatabaseError(f"ドキュメントの挿入に失敗しました: {str(e)}")
 
 
-def update_document(collection, query, update_data):
+def update_document(collection, query_dict, update_data):
+    """
+    ドキュメントを更新する
+
+    Args:
+        collection: DatabaseManagerのインスタンス
+        query_dict: 更新対象を特定するための条件辞書
+        update_data: 更新するデータを含む辞書
+    """
     try:
         now = get_current_datetime()
         update_data.update({"updated_at": now})
-        return collection.update_one(
-            query,
-            {"$set": update_data}
-        )
+
+        # query_dictがdepartmentを含む場合はpromptsテーブル
+        if "department" in query_dict:
+            query = """
+                    UPDATE prompts
+                    SET name       = :name, \
+                        content    = :content, \
+                        updated_at = :updated_at
+                    WHERE department = :department \
+                    """
+            params = {
+                "name": update_data.get("name"),
+                "content": update_data.get("content"),
+                "updated_at": update_data["updated_at"],
+                "department": query_dict["department"]
+            }
+        # query_dictがnameを含む場合はdepartmentsテーブル
+        elif "name" in query_dict:
+            # 更新対象のフィールドだけを含めるように調整
+            set_clauses = []
+            params = {"name": query_dict["name"], "updated_at": update_data["updated_at"]}
+
+            if "default_model" in update_data:
+                set_clauses.append("default_model = :default_model")
+                params["default_model"] = update_data["default_model"]
+
+            if "order_index" in update_data:
+                set_clauses.append("order_index = :order_index")
+                params["order_index"] = update_data["order_index"]
+
+            query = f"""
+            UPDATE departments
+            SET {', '.join(set_clauses)}, updated_at = :updated_at
+            WHERE name = :name
+            """
+        else:
+            raise ValueError("不明な更新条件です")
+
+        collection.execute_query(query, params, fetch=False)
+        return True
+
     except Exception as e:
         raise DatabaseError(f"ドキュメントの更新に失敗しました: {str(e)}")
 
 
 def initialize_departments():
+    """初期診療科データをデータベースに作成"""
     try:
         department_collection = get_department_collection()
-        existing_count = department_collection.count_documents({})
+
+        # 診療科の数を確認
+        query = "SELECT COUNT(*) as count FROM departments"
+        result = department_collection.execute_query(query)
+        existing_count = result[0]["count"] if result else 0
+
         if existing_count == 0:
             for idx, dept in enumerate(DEFAULT_DEPARTMENTS):
-                insert_document(department_collection, {"name": dept, "order": idx})
+                insert_document(department_collection, {
+                    "name": dept,
+                    "order_index": idx,
+                    "default_model": None
+                })
+
     except Exception as e:
         raise DatabaseError(f"診療科の初期化に失敗しました: {str(e)}")
 
 
 def get_all_departments():
+    """すべての診療科名のリストを取得"""
     try:
         department_collection = get_department_collection()
-        return [dept["name"] for dept in department_collection.find().sort("order")]
+        query = "SELECT name FROM departments ORDER BY order_index"
+        result = department_collection.execute_query(query)
+        return [dept["name"] for dept in result]
     except Exception as e:
         raise DatabaseError(f"診療科の取得に失敗しました: {str(e)}")
 
 
 def create_department(name, default_model=None):
+    """新しい診療科を作成"""
     try:
         if not name:
-            return False
+            return False, "診療科名を入力してください"
 
         department_collection = get_department_collection()
-        prompt_collection = get_prompt_collection()  # 追加
+        prompt_collection = get_prompt_collection()
 
-        existing = department_collection.find_one({"name": name})
+        # 既存の診療科を確認
+        check_query = "SELECT name FROM departments WHERE name = :name"
+        existing = department_collection.execute_query(check_query, {"name": name})
+
         if existing:
             return False, MESSAGES["DEPARTMENT_EXISTS"]
 
-        max_order_doc = department_collection.find_one(sort=[("order", -1)])
-        max_order = max_order_doc["order"] if max_order_doc and "order" in max_order_doc else -1
+        # 最大の順序を確認
+        max_order_query = "SELECT MAX(order_index) as max_order FROM departments"
+        max_order_result = department_collection.execute_query(max_order_query)
+        max_order = max_order_result[0]["max_order"] if max_order_result and max_order_result[0][
+            "max_order"] is not None else -1
         next_order = max_order + 1
-        insert_document(department_collection, {"name": name, "order": next_order, "default_model": default_model})
 
-        default_prompt = prompt_collection.find_one({"department": "default", "is_default": True})
-        if not default_prompt:
+        # 新しい診療科を挿入
+        insert_document(department_collection, {
+            "name": name,
+            "order_index": next_order,
+            "default_model": default_model
+        })
+
+        # デフォルトプロンプトを取得
+        default_prompt_query = "SELECT content FROM prompts WHERE department = 'default' AND is_default = true"
+        default_prompt_result = prompt_collection.execute_query(default_prompt_query)
+
+        if not default_prompt_result:
             config = get_config()
             default_prompt_content = config['PROMPTS']['discharge_summary']
         else:
-            default_prompt_content = default_prompt.get("content", "")
+            default_prompt_content = default_prompt_result[0]["content"]
 
+        # 新しいプロンプトを作成
         insert_document(prompt_collection, {
             "department": name,
             "name": "退院時サマリ",
@@ -114,17 +230,35 @@ def create_department(name, default_model=None):
 
 
 def delete_department(name):
+    """診療科を削除"""
     try:
         department_collection = get_department_collection()
         prompt_collection = get_prompt_collection()
-        result = department_collection.delete_one({"name": name})
 
-        if result.deleted_count == 0:
-            return False, "診療科が見つかりません"
+        # トランザクション開始
+        session = department_collection.get_session()
+        try:
+            # 診療科を削除
+            dept_query = "DELETE FROM departments WHERE name = :name"
+            result = session.execute(text(dept_query), {"name": name})
+            deleted_count = result.rowcount
 
-        prompt_collection.delete_many({"department": name})
+            if deleted_count == 0:
+                session.rollback()
+                return False, "診療科が見つかりません"
 
-        return True, "診療科を削除しました"
+            # 関連するプロンプトを削除
+            prompt_query = "DELETE FROM prompts WHERE department = :department"
+            session.execute(text(prompt_query), {"department": name})
+
+            session.commit()
+            return True, "診療科を削除しました"
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
     except DatabaseError as e:
         return False, str(e)
     except Exception as e:
@@ -132,33 +266,70 @@ def delete_department(name):
 
 
 def update_department_order(name, new_order):
+    """診療科の表示順序を更新"""
     try:
         department_collection = get_department_collection()
-        current = department_collection.find_one({"name": name})
 
-        if not current:
+        # 現在の順序を取得
+        current_query = "SELECT order_index FROM departments WHERE name = :name"
+        current_result = department_collection.execute_query(current_query, {"name": name})
+
+        if not current_result:
             return False, "診療科が見つかりません"
 
-        current_order = current.get("order", 0)
+        current_order = current_result[0]["order_index"]
 
-        if new_order > current_order:
-            department_collection.update_many(
-                {"order": {"$gt": current_order, "$lte": new_order}},
-                {"$inc": {"order": -1}}
-            )
-        else:
-            department_collection.update_many(
-                {"order": {"$gte": new_order, "$lt": current_order}},
-                {"$inc": {"order": 1}}
-            )
+        # トランザクション開始
+        session = department_collection.get_session()
+        try:
+            # 他の診療科の順序を調整
+            if new_order > current_order:
+                # 順序を下げる場合（他の項目を上に移動）
+                shift_query = """
+                              UPDATE departments
+                              SET order_index = order_index - 1, \
+                                  updated_at  = CURRENT_TIMESTAMP
+                              WHERE order_index > :current_order \
+                                AND order_index <= :new_order \
+                              """
+                session.execute(text(shift_query), {
+                    "current_order": current_order,
+                    "new_order": new_order
+                })
+            else:
+                # 順序を上げる場合（他の項目を下に移動）
+                shift_query = """
+                              UPDATE departments
+                              SET order_index = order_index + 1, \
+                                  updated_at  = CURRENT_TIMESTAMP
+                              WHERE order_index >= :new_order \
+                                AND order_index < :current_order \
+                              """
+                session.execute(text(shift_query), {
+                    "current_order": current_order,
+                    "new_order": new_order
+                })
 
-        update_document(
-            department_collection,
-            {"name": name},
-            {"order": new_order}
-        )
+            # 対象の診療科を更新
+            update_query = """
+                           UPDATE departments
+                           SET order_index = :new_order, \
+                               updated_at  = CURRENT_TIMESTAMP
+                           WHERE name = :name \
+                           """
+            session.execute(text(update_query), {
+                "name": name,
+                "new_order": new_order
+            })
 
-        return True, "診療科の順序を更新しました"
+            session.commit()
+            return True, "診療科の順序を更新しました"
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
     except DatabaseError as e:
         return False, str(e)
     except Exception as e:
@@ -166,21 +337,30 @@ def update_department_order(name, new_order):
 
 
 def get_department_by_name(name):
+    """診療科名から診療科情報を取得"""
     try:
         department_collection = get_department_collection()
-        return department_collection.find_one({"name": name})
+        query = "SELECT * FROM departments WHERE name = :name"
+        result = department_collection.execute_query(query, {"name": name})
+        return result[0] if result else None
     except Exception as e:
         raise DatabaseError(f"診療科の取得に失敗しました: {str(e)}")
 
 
 def update_department(name, default_model):
+    """診療科の設定を更新"""
     try:
         department_collection = get_department_collection()
-        update_document(
-            department_collection,
-            {"name": name},
-            {"default_model": default_model}
-        )
+        query = """
+                UPDATE departments
+                SET default_model = :default_model, \
+                    updated_at    = CURRENT_TIMESTAMP
+                WHERE name = :name \
+                """
+        department_collection.execute_query(query, {
+            "name": name,
+            "default_model": default_model
+        }, fetch=False)
         return True, "診療科を更新しました"
     except DatabaseError as e:
         return False, str(e)
@@ -189,15 +369,19 @@ def update_department(name, default_model):
 
 
 def initialize_default_prompt():
+    """デフォルトプロンプトの初期化"""
     try:
         prompt_collection = get_prompt_collection()
 
-        default_prompt = prompt_collection.find_one({"department": "default", "is_default": True})
+        # デフォルトプロンプトの確認
+        query = "SELECT * FROM prompts WHERE department = 'default' AND is_default = true"
+        default_prompt = prompt_collection.execute_query(query)
 
         if not default_prompt:
             config = get_config()
             default_prompt_content = config['PROMPTS']['discharge_summary']
 
+            # デフォルトプロンプトを作成
             insert_document(prompt_collection, {
                 "department": "default",
                 "name": "退院時サマリ",
@@ -209,44 +393,60 @@ def initialize_default_prompt():
 
 
 def get_prompt_by_department(department="default"):
+    """診療科からプロンプト情報を取得"""
     try:
         prompt_collection = get_prompt_collection()
-        prompt = prompt_collection.find_one({"department": department})
+
+        # 指定された診療科のプロンプトを検索
+        query = "SELECT * FROM prompts WHERE department = :department"
+        prompt = prompt_collection.execute_query(query, {"department": department})
 
         if not prompt:
-            prompt = prompt_collection.find_one({"department": "default", "is_default": True})
+            # デフォルトプロンプトを返す
+            default_query = "SELECT * FROM prompts WHERE department = 'default' AND is_default = true"
+            prompt = prompt_collection.execute_query(default_query)
 
-        return prompt
+        return prompt[0] if prompt else None
     except Exception as e:
         raise DatabaseError(f"プロンプトの取得に失敗しました: {str(e)}")
 
 
 def get_all_prompts():
+    """すべてのプロンプト情報を取得"""
     try:
         prompt_collection = get_prompt_collection()
-        return list(prompt_collection.find().sort("department"))
+        query = "SELECT * FROM prompts ORDER BY department"
+        return prompt_collection.execute_query(query)
     except Exception as e:
         raise DatabaseError(f"プロンプト一覧の取得に失敗しました: {str(e)}")
 
 
 def create_or_update_prompt(department, name, content):
+    """プロンプトを作成または更新"""
     try:
         if not department or not name or not content:
             return False, "すべての項目を入力してください"
 
         prompt_collection = get_prompt_collection()
-        existing = prompt_collection.find_one({"department": department})
+
+        # 既存のプロンプトを確認
+        query = "SELECT * FROM prompts WHERE department = :department"
+        existing = prompt_collection.execute_query(query, {"department": department})
 
         if existing:
             # 更新
-            update_document(
-                prompt_collection,
-                {"department": department},
-                {
-                    "name": name,
-                    "content": content
-                }
-            )
+            update_query = """
+                           UPDATE prompts
+                           SET name       = :name, \
+                               content    = :content, \
+                               updated_at = CURRENT_TIMESTAMP
+                           WHERE department = :department \
+                           """
+            prompt_collection.execute_query(update_query, {
+                "department": department,
+                "name": name,
+                "content": content
+            }, fetch=False)
             return True, "プロンプトを更新しました"
         else:
             # 新規作成
@@ -264,6 +464,7 @@ def create_or_update_prompt(department, name, content):
 
 
 def delete_prompt(department):
+    """プロンプトを削除"""
     try:
         if department == "default":
             return False, "デフォルトプロンプトは削除できません"
@@ -271,14 +472,30 @@ def delete_prompt(department):
         prompt_collection = get_prompt_collection()
         department_collection = get_department_collection()
 
-        result = prompt_collection.delete_one({"department": department})
+        # トランザクション開始
+        session = prompt_collection.get_session()
+        try:
+            # プロンプトを削除
+            prompt_query = "DELETE FROM prompts WHERE department = :department"
+            result = session.execute(text(prompt_query), {"department": department})
+            deleted_count = result.rowcount
 
-        if result.deleted_count == 0:
-            return False, "プロンプトが見つかりません"
+            if deleted_count == 0:
+                session.rollback()
+                return False, "プロンプトが見つかりません"
 
-        department_collection.delete_one({"name": department})
+            # 関連する診療科を削除
+            dept_query = "DELETE FROM departments WHERE name = :name"
+            session.execute(text(dept_query), {"name": department})
 
-        return True, "プロンプトと関連する診療科を削除しました"
+            session.commit()
+            return True, "プロンプトと関連する診療科を削除しました"
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
     except DatabaseError as e:
         return False, str(e)
     except Exception as e:
@@ -286,22 +503,41 @@ def delete_prompt(department):
 
 
 def initialize_database():
+    """データベースの初期化を行う"""
     try:
+        # データベーススキーマ作成を実行
+        from database.schema import initialize_database as init_schema
+        init_schema()
+
+        # 初期データの設定
         initialize_default_prompt()
         initialize_departments()
 
+        # 順序が設定されていない診療科の処理
         department_collection = get_department_collection()
-        departments_without_order = list(department_collection.find({"order": {"$exists": False}}))
+        query = "SELECT * FROM departments WHERE order_index IS NULL"
+        departments_without_order = department_collection.execute_query(query)
 
         if departments_without_order:
-            max_order_doc = department_collection.find_one({"order": {"$exists": True}}, sort=[("order", -1)])
-            next_order = max_order_doc["order"] + 1 if max_order_doc and "order" in max_order_doc else 0
+            # 最大の順序を確認
+            max_order_query = "SELECT MAX(order_index) as max_order FROM departments WHERE order_index IS NOT NULL"
+            max_order_result = department_collection.execute_query(max_order_query)
+            next_order = max_order_result[0]["max_order"] + 1 if max_order_result and max_order_result[0][
+                "max_order"] is not None else 0
 
+            # 順序を設定
             for dept in departments_without_order:
-                department_collection.update_one(
-                    {"_id": dept["_id"]},
-                    {"$set": {"order": next_order, "updated_at": get_current_datetime()}}
-                )
+                update_query = """
+                               UPDATE departments
+                               SET order_index = :order_index, \
+                                   updated_at  = CURRENT_TIMESTAMP
+                               WHERE id = :id \
+                               """
+                department_collection.execute_query(update_query, {
+                    "id": dept["id"],
+                    "order_index": next_order
+                }, fetch=False)
                 next_order += 1
+
     except Exception as e:
         raise DatabaseError(f"データベースの初期化に失敗しました: {str(e)}")

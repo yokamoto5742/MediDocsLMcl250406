@@ -10,7 +10,8 @@ from database.db import get_usage_collection
 from external_service.claude_api import claude_generate_summary
 from external_service.gemini_api import gemini_generate_summary
 from external_service.openai_api import openai_generate_summary
-from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, OPENAI_API_KEY, OPENAI_MODEL
+from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, MAX_INPUT_TOKENS, \
+    MIN_INPUT_TOKENS, OPENAI_API_KEY, OPENAI_MODEL
 from utils.constants import APP_TYPE, DOCUMENT_NAME, MESSAGES
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
@@ -147,8 +148,10 @@ def process_summary(input_text, additional_info=""):
             st.session_state.summary_generation_time = processing_time
 
             try:
-                usage_collection = get_usage_collection()
+                usage_db = get_usage_collection()
                 now_jst = datetime.datetime.now().astimezone(JST)
+
+                # PostgreSQL用に変更
                 usage_data = {
                     "date": now_jst,
                     "app_type": APP_TYPE,
@@ -160,7 +163,17 @@ def process_summary(input_text, additional_info=""):
                     "total_tokens": input_tokens + output_tokens,
                     "processing_time": round(processing_time)
                 }
-                usage_collection.insert_one(usage_data)
+
+                query = """
+                        INSERT INTO summary_usage
+                        (date, app_type, document_name, model_detail, department, input_tokens, output_tokens, \
+                         total_tokens, processing_time)
+                        VALUES (:date, :app_type, :document_name, :model_detail, :department, :input_tokens, \
+                                :output_tokens, :total_tokens, :processing_time) \
+                        """
+
+                usage_db.execute_query(query, usage_data, fetch=False)
+
             except Exception as db_error:
                 st.warning(f"利用状況のDB保存中にエラーが発生しました: {str(db_error)}")
 

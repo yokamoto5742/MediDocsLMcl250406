@@ -3,8 +3,10 @@ import datetime
 import streamlit as st
 
 from database.db import get_settings_collection
-from utils.config import GEMINI_MODEL, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, OPENAI_API_KEY, OPENAI_MODEL, SELECTED_AI_MODEL
+from utils.config import GEMINI_MODEL, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, OPENAI_API_KEY, \
+    OPENAI_MODEL
 from utils.prompt_manager import get_all_departments, get_department_by_name
+
 
 def change_page(page):
     st.session_state.current_page = page
@@ -103,26 +105,48 @@ def render_sidebar():
 
 
 def save_user_settings(department, model):
+    """ユーザー設定をデータベースに保存"""
     try:
-        settings_collection = get_settings_collection()
-        settings_collection.update_one(
-            {"setting_id": "user_preferences"},
-            {"$set": {
-                "selected_department": department,
-                "selected_model": model,
-                "updated_at": datetime.datetime.now()
-            }},
-            upsert=True
-        )
+        db_manager = get_settings_collection()
+
+        # 以前の設定を確認
+        check_query = "SELECT * FROM app_settings WHERE setting_id = 'user_preferences'"
+        existing = db_manager.execute_query(check_query)
+
+        if existing:
+            # 更新
+            query = """
+                    UPDATE app_settings
+                    SET selected_department = :department, \
+                        selected_model      = :model, \
+                        updated_at          = CURRENT_TIMESTAMP
+                    WHERE setting_id = 'user_preferences' \
+                    """
+        else:
+            # 新規作成
+            query = """
+                    INSERT INTO app_settings (setting_id, selected_department, selected_model, updated_at)
+                    VALUES ('user_preferences', :department, :model, CURRENT_TIMESTAMP) \
+                    """
+
+        db_manager.execute_query(query, {
+            "department": department,
+            "model": model
+        }, fetch=False)
+
     except Exception as e:
         print(f"設定の保存に失敗しました: {str(e)}")
 
+
 def load_user_settings():
+    """ユーザー設定をデータベースから読み込み"""
     try:
-        settings_collection = get_settings_collection()
-        settings = settings_collection.find_one({"setting_id": "user_preferences"})
+        db_manager = get_settings_collection()
+        query = "SELECT selected_department, selected_model FROM app_settings WHERE setting_id = 'user_preferences'"
+        settings = db_manager.execute_query(query)
+
         if settings:
-            return settings.get("selected_department"), settings.get("selected_model")
+            return settings[0]["selected_department"], settings[0]["selected_model"]
         return None, None
     except Exception as e:
         print(f"設定の読み込みに失敗しました: {str(e)}")

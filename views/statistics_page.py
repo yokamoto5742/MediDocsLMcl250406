@@ -25,7 +25,7 @@ def usage_statistics_ui():
         change_page("main")
         st.rerun()
 
-    usage_collection = get_usage_collection()
+    db_manager = get_usage_collection()
 
     col1, col2 = st.columns(2)
 
@@ -48,75 +48,92 @@ def usage_statistics_ui():
     start_datetime = datetime.datetime.combine(start_date, datetime.time.min)
     end_datetime = datetime.datetime.combine(end_date, datetime.time.max)
 
-    query = {
-        "date": {
-            "$gte": start_datetime,
-            "$lte": end_datetime
-        }
+    # PostgreSQL用のクエリ条件を構築
+    query_conditions = []
+    query_params = {
+        "start_date": start_datetime,
+        "end_date": end_datetime
     }
+
+    query_conditions.append("date >= :start_date AND date <= :end_date")
 
     if selected_model != "すべて":
         model_config = MODEL_MAPPING.get(selected_model)
         if model_config:
-            query["model_detail"] = {"$regex": model_config["pattern"], "$options": "i"}
+            query_conditions.append("model_detail ILIKE :model_pattern")
+            query_params["model_pattern"] = f"%{model_config['pattern']}%"
+
             if model_config["exclude"]:
-                query["model_detail"]["$not"] = {"$regex": model_config["exclude"], "$options": "i"}
+                query_conditions.append("model_detail NOT ILIKE :model_exclude")
+                query_params["model_exclude"] = f"%{model_config['exclude']}%"
 
     if selected_document_name != "すべて":
         if selected_document_name == "不明":
-            query["document_name"] = {"$exists": False}
+            query_conditions.append("document_name IS NULL")
         else:
-            query["document_name"] = selected_document_name
+            query_conditions.append("document_name = :doc_name")
+            query_params["doc_name"] = selected_document_name
 
-    total_summary = usage_collection.aggregate([
-        {"$match": query},
-        {"$group": {
-            "_id": None,
-            "count": {"$sum": 1},
-            "total_input_tokens": {"$sum": "$input_tokens"},
-            "total_output_tokens": {"$sum": "$output_tokens"},
-            "total_tokens": {"$sum": "$total_tokens"}
-        }}
-    ])
+    # 条件をANDで結合
+    where_clause = " AND ".join(query_conditions)
 
-    total_summary = list(total_summary)
+    # 合計統計の取得
+    total_query = f"""
+    SELECT
+        COUNT(*) as count,
+        SUM(input_tokens) as total_input_tokens,
+        SUM(output_tokens) as total_output_tokens,
+        SUM(total_tokens) as total_tokens
+    FROM summary_usage
+    WHERE {where_clause}
+    """
 
-    if not total_summary:
+    total_summary = db_manager.execute_query(total_query, query_params)
+
+    if not total_summary or total_summary[0]["count"] == 0:
         st.info("指定した期間のデータがありません")
         return
 
-    dept_summary = usage_collection.aggregate([
-        {"$match": query},
-        {"$group": {
-            "_id": {"department": "$department", "document_name": "$document_name"},
-            "count": {"$sum": 1},
-            "input_tokens": {"$sum": "$input_tokens"},
-            "output_tokens": {"$sum": "$output_tokens"},
-            "total_tokens": {"$sum": "$total_tokens"},
-            "processing_time": {"$sum": "$processing_time"}
-        }},
-        {"$sort": {"count": -1}}
-    ])
-    dept_summary = list(dept_summary)
+    # 診療科ごとの統計
+    dept_query = f"""
+    SELECT
+        COALESCE(department, 'default') as department,
+        document_name,
+        COUNT(*) as count,
+        SUM(input_tokens) as input_tokens,
+        SUM(output_tokens) as output_tokens,
+        SUM(total_tokens) as total_tokens,
+        SUM(processing_time) as processing_time
+    FROM summary_usage
+    WHERE {where_clause}
+    GROUP BY department, document_name
+    ORDER BY count DESC
+    """
 
-    records = usage_collection.find(
-        query,
-        {
-            "date": 1,
-            "document_name": 1,
-            "model_detail": 1,
-            "department": 1,
-            "input_tokens": 1,
-            "output_tokens": 1,
-            "processing_time": 1,
-            "_id": 0
-        }
-    ).sort("date", -1)
+    dept_summary = db_manager.execute_query(dept_query, query_params)
 
+    # 詳細レコードの取得
+    records_query = f"""
+    SELECT
+        date,
+        document_name,
+        model_detail,
+        department,
+        input_tokens,
+        output_tokens,
+        processing_time
+    FROM summary_usage
+    WHERE {where_clause}
+    ORDER BY date DESC
+    """
+
+    records = db_manager.execute_query(records_query, query_params)
+
+    # 診療科ごとのデータを整形
     data = []
     for stat in dept_summary:
-        dept_name = "全科共通" if stat["_id"]["department"] == "default" else stat["_id"]["department"]
-        document_name = stat["_id"].get("document_name", "不明")
+        dept_name = "全科共通" if stat["department"] == "default" else stat["department"]
+        document_name = stat["document_name"] or "不明"
         data.append({
             "診療科": dept_name,
             "文書名": document_name,
@@ -129,6 +146,7 @@ def usage_statistics_ui():
     df = pd.DataFrame(data)
     st.dataframe(df, hide_index=True)
 
+    # 詳細データを整形
     detail_data = []
     for record in records:
         model_detail = str(record.get("model_detail", "")).lower()
@@ -149,7 +167,7 @@ def usage_statistics_ui():
         detail_data.append({
             "作成日": jst_date.strftime("%Y/%m/%d"),
             "診療科": "全科共通" if record.get("department") == "default" else record.get("department"),
-            "文書名": record.get("document_name", "不明"),
+            "文書名": record.get("document_name") or "不明",
             "AIモデル": model_info,
             "入力トークン": record["input_tokens"],
             "出力トークン": record["output_tokens"],
