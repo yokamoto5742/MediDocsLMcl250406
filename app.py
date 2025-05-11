@@ -3,14 +3,14 @@ import streamlit as st
 from ui_components.navigation import load_user_settings
 from utils.env_loader import load_environment_variables
 from utils.error_handlers import handle_error
-from database.schema import initialize_database  # PostgreSQL用のスキーマ初期化
+from database.schema import initialize_database
 from views.department_management_page import department_management_ui
 from views.main_page import main_page_app
 from views.statistics_page import usage_statistics_ui
 from views.prompt_management_page import prompt_management_ui
 
 load_environment_variables()
-initialize_database()  # PostgreSQLのテーブルを初期化
+initialize_database()
 
 st.set_page_config(
     page_title="退院時サマリ作成アプリ",

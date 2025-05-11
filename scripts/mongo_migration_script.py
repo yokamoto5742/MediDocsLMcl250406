@@ -12,6 +12,7 @@ import os
 import datetime
 import logging
 import time
+from urllib.parse import urlparse
 
 from pymongo import MongoClient
 import psycopg2
@@ -33,15 +34,30 @@ logger = logging.getLogger("migration")
 load_dotenv(encoding='utf-8')
 
 # MongoDB設定
-MONGODB_URI = os.environ.get("MONGODB_URI")
+MONGODB_URI = os.environ.get("MONGODB_URI", "mongodb://localhost:27017")
 MONGODB_DB = os.environ.get("MONGODB_DB_NAME", "discharge_summary_app")
 
-# PostgreSQL設定
-POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
-POSTGRES_PORT = os.environ.get("POSTGRES_PORT", "5432")
-POSTGRES_USER = os.environ.get("POSTGRES_USER", "postgres")
-POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
-POSTGRES_DB = os.environ.get("POSTGRES_DB", "discharge_summary_app")
+# DATABASE_URLまたは個別の設定からPostgreSQL接続情報を取得
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    # HerokuのDATABASE_URLから接続情報を解析
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+    parsed = urlparse(DATABASE_URL)
+    POSTGRES_HOST = parsed.hostname
+    POSTGRES_PORT = parsed.port
+    POSTGRES_USER = parsed.username
+    POSTGRES_PASSWORD = parsed.password
+    POSTGRES_DB = parsed.path[1:]
+else:
+    # 個別の環境変数から取得
+    POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
+    POSTGRES_PORT = os.environ.get("POSTGRES_PORT", "5432")
+    POSTGRES_USER = os.environ.get("POSTGRES_USER", "postgres")
+    POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
+    POSTGRES_DB = os.environ.get("POSTGRES_DB", "discharge_summary_app")
 
 # Windows環境での文字エンコーディング問題に対処
 import sys
@@ -51,19 +67,12 @@ if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
     sys.stderr.reconfigure(encoding='utf-8')
 
-    # 環境変数のエンコーディング修正
-    try:
-        if POSTGRES_PASSWORD:
-            POSTGRES_PASSWORD = POSTGRES_PASSWORD.encode('latin-1').decode('utf-8')
-    except (UnicodeDecodeError, UnicodeEncodeError):
-        # エラーが発生した場合は、そのまま使用
-        pass
-
 def connect_mongodb():
     """MongoDBに接続する"""
     if not MONGODB_URI:
         raise ValueError("MongoDB接続URIが設定されていません")
-    
+
+    logger.info(f"MongoDBに接続中: {MONGODB_URI}")
     client = MongoClient(MONGODB_URI)
     db = client[MONGODB_DB]
     logger.info(f"MongoDBデータベース {MONGODB_DB} に接続しました")
@@ -73,13 +82,16 @@ def connect_mongodb():
 def connect_postgres():
     """PostgreSQLに接続する"""
     try:
-        # 環境変数から読み込んだパスワードのエンコーディングを確認
-        password = POSTGRES_PASSWORD
-        if isinstance(password, bytes):
-            password = password.decode('utf-8', errors='replace')
+        # 接続情報のログ（パスワードは一部マスク）
+        logger.info(f"PostgreSQLに接続中 - Host: {POSTGRES_HOST}, Port: {POSTGRES_PORT}, DB: {POSTGRES_DB}")
 
-        # 接続文字列を作成（エンコーディングを明示的に指定）
-        conn_string = f"host={POSTGRES_HOST} port={POSTGRES_PORT} dbname={POSTGRES_DB} user={POSTGRES_USER} password={password} client_encoding=utf8"
+        # 接続文字列を作成（SSL対応）
+        if DATABASE_URL:
+            conn_string = DATABASE_URL
+            if "sslmode" not in conn_string:
+                conn_string += "?sslmode=require" if "?" not in conn_string else "&sslmode=require"
+        else:
+            conn_string = f"host={POSTGRES_HOST} port={POSTGRES_PORT} dbname={POSTGRES_DB} user={POSTGRES_USER} password={POSTGRES_PASSWORD} sslmode=require"
 
         conn = psycopg2.connect(conn_string)
         conn.set_client_encoding('UTF8')
@@ -88,17 +100,15 @@ def connect_postgres():
         return conn, cursor
     except Exception as e:
         logger.error(f"PostgreSQL接続エラー: {str(e)}")
-        # デバッグ情報を追加
-        logger.debug(
-            f"接続情報 - Host: {POSTGRES_HOST}, Port: {POSTGRES_PORT}, DB: {POSTGRES_DB}, User: {POSTGRES_USER}")
+        logger.debug(f"接続情報 - Host: {POSTGRES_HOST}, Port: {POSTGRES_PORT}, DB: {POSTGRES_DB}, User: {POSTGRES_USER}")
         raise
 
-
+# 残りの関数は同じ...
 def migrate_departments(mongo_db, pg_cursor):
     """診療科データを移行する"""
     departments = mongo_db.departments.find().sort("order", 1)
     count = 0
-    
+
     for dept in departments:
         try:
             # MongoDBのデータをPostgreSQL形式に変換
@@ -107,7 +117,7 @@ def migrate_departments(mongo_db, pg_cursor):
             default_model = dept.get("default_model")
             created_at = dept.get("created_at", datetime.datetime.now())
             updated_at = dept.get("updated_at", datetime.datetime.now())
-            
+
             # PostgreSQLにデータを挿入
             insert_query = """
             INSERT INTO departments (name, order_index, default_model, created_at, updated_at)
@@ -119,10 +129,10 @@ def migrate_departments(mongo_db, pg_cursor):
             """
             pg_cursor.execute(insert_query, (name, order_index, default_model, created_at, updated_at))
             count += 1
-            
+
         except Exception as e:
             logger.error(f"診療科 '{dept.get('name', 'unknown')}' の移行中にエラー: {str(e)}")
-    
+
     logger.info(f"{count}件の診療科データを移行しました")
     return count
 
@@ -131,7 +141,7 @@ def migrate_prompts(mongo_db, pg_cursor):
     """プロンプトデータを移行する"""
     prompts = mongo_db.prompts.find()
     count = 0
-    
+
     for prompt in prompts:
         try:
             # MongoDBのデータをPostgreSQL形式に変換
@@ -141,7 +151,7 @@ def migrate_prompts(mongo_db, pg_cursor):
             is_default = prompt.get("is_default", False)
             created_at = prompt.get("created_at", datetime.datetime.now())
             updated_at = prompt.get("updated_at", datetime.datetime.now())
-            
+
             # PostgreSQLにデータを挿入
             insert_query = """
             INSERT INTO prompts (department, name, content, is_default, created_at, updated_at)
@@ -153,10 +163,10 @@ def migrate_prompts(mongo_db, pg_cursor):
             """
             pg_cursor.execute(insert_query, (department, name, content, is_default, created_at, updated_at))
             count += 1
-            
+
         except Exception as e:
             logger.error(f"プロンプト '{prompt.get('name', 'unknown')}' の移行中にエラー: {str(e)}")
-    
+
     logger.info(f"{count}件のプロンプトデータを移行しました")
     return count
 
@@ -165,7 +175,7 @@ def migrate_users(mongo_db, pg_cursor):
     """ユーザーデータを移行する"""
     users = mongo_db.users.find()
     count = 0
-    
+
     for user in users:
         try:
             # MongoDBのデータをPostgreSQL形式に変換
@@ -174,7 +184,7 @@ def migrate_users(mongo_db, pg_cursor):
             is_admin = user.get("is_admin", False)
             created_at = user.get("created_at", datetime.datetime.now())
             updated_at = user.get("updated_at", datetime.datetime.now())
-            
+
             # PostgreSQLにデータを挿入
             insert_query = """
             INSERT INTO users (username, password, is_admin, created_at, updated_at)
@@ -186,10 +196,10 @@ def migrate_users(mongo_db, pg_cursor):
             """
             pg_cursor.execute(insert_query, (username, password, is_admin, created_at, updated_at))
             count += 1
-            
+
         except Exception as e:
             logger.error(f"ユーザー '{user.get('username', 'unknown')}' の移行中にエラー: {str(e)}")
-    
+
     logger.info(f"{count}件のユーザーデータを移行しました")
     return count
 
@@ -198,7 +208,7 @@ def migrate_usage_stats(mongo_db, pg_cursor):
     """使用統計データを移行する"""
     usage_stats = mongo_db.summary_usage.find()
     count = 0
-    
+
     for stat in usage_stats:
         try:
             # MongoDBのデータをPostgreSQL形式に変換
@@ -211,7 +221,7 @@ def migrate_usage_stats(mongo_db, pg_cursor):
             output_tokens = stat.get("output_tokens", 0)
             total_tokens = stat.get("total_tokens", input_tokens + output_tokens)
             processing_time = stat.get("processing_time", 0)
-            
+
             # PostgreSQLにデータを挿入
             insert_query = """
             INSERT INTO summary_usage 
@@ -224,15 +234,15 @@ def migrate_usage_stats(mongo_db, pg_cursor):
                 input_tokens, output_tokens, total_tokens, processing_time
             ))
             count += 1
-            
+
             # 大量のデータを処理する場合、適宜コミットする
             if count % 1000 == 0:
                 pg_cursor.connection.commit()
                 logger.info(f"{count}件の使用統計を処理中...")
-                
+
         except Exception as e:
             logger.error(f"使用統計ID '{stat.get('_id', 'unknown')}' の移行中にエラー: {str(e)}")
-    
+
     logger.info(f"{count}件の使用統計データを移行しました")
     return count
 
@@ -241,7 +251,7 @@ def migrate_settings(mongo_db, pg_cursor):
     """アプリ設定データを移行する"""
     settings = mongo_db.app_settings.find()
     count = 0
-    
+
     for setting in settings:
         try:
             # MongoDBのデータをPostgreSQL形式に変換
@@ -249,7 +259,7 @@ def migrate_settings(mongo_db, pg_cursor):
             selected_department = setting.get("selected_department")
             selected_model = setting.get("selected_model")
             updated_at = setting.get("updated_at", datetime.datetime.now())
-            
+
             # PostgreSQLにデータを挿入
             insert_query = """
             INSERT INTO app_settings (setting_id, selected_department, selected_model, updated_at)
@@ -261,10 +271,10 @@ def migrate_settings(mongo_db, pg_cursor):
             """
             pg_cursor.execute(insert_query, (setting_id, selected_department, selected_model, updated_at))
             count += 1
-            
+
         except Exception as e:
             logger.error(f"設定 '{setting.get('setting_id', 'unknown')}' の移行中にエラー: {str(e)}")
-    
+
     logger.info(f"{count}件の設定データを移行しました")
     return count
 
@@ -273,25 +283,31 @@ def main():
     """メイン処理"""
     start_time = time.time()
     logger.info("MongoDBからPostgreSQLへのデータ移行を開始します")
-    
+
     try:
         # MongoDB接続
         mongo_client, mongo_db = connect_mongodb()
-        
+
         # PostgreSQL接続
         pg_conn, pg_cursor = connect_postgres()
-        
+
         try:
+            # 先にPostgreSQLのテーブルが存在することを確認
+            logger.info("PostgreSQLのテーブル構造を確認中...")
+            pg_cursor.execute("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+            tables = pg_cursor.fetchall()
+            logger.info(f"既存のテーブル: {[t[0] for t in tables]}")
+
             # 移行処理を実行
             dept_count = migrate_departments(mongo_db, pg_cursor)
             prompt_count = migrate_prompts(mongo_db, pg_cursor)
             user_count = migrate_users(mongo_db, pg_cursor)
             stats_count = migrate_usage_stats(mongo_db, pg_cursor)
             settings_count = migrate_settings(mongo_db, pg_cursor)
-            
+
             # 変更をコミット
             pg_conn.commit()
-            
+
             # 移行結果の表示
             logger.info("-" * 50)
             logger.info("データ移行が完了しました")
@@ -302,7 +318,7 @@ def main():
             logger.info(f"設定データ: {settings_count}件")
             logger.info(f"処理時間: {time.time() - start_time:.2f}秒")
             logger.info("-" * 50)
-            
+
         except Exception as e:
             pg_conn.rollback()
             logger.error(f"移行処理中にエラーが発生しました: {str(e)}")
@@ -311,12 +327,12 @@ def main():
             pg_cursor.close()
             pg_conn.close()
             mongo_client.close()
-            
+
     except Exception as e:
         logger.error(f"移行処理に失敗しました: {str(e)}")
         logger.error("データ移行は中断されました")
         return 1
-        
+
     return 0
 
 
