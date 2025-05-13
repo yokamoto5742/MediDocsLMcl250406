@@ -1,9 +1,5 @@
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 import time
-from utils.config import (
-    POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, 
-    POSTGRES_PASSWORD, POSTGRES_DB
-)
 from utils.exceptions import DatabaseError
 from database.db import DatabaseManager
 
@@ -36,16 +32,18 @@ def create_tables():
 
     prompts_table = """
     CREATE TABLE IF NOT EXISTS prompts (
-        id SERIAL PRIMARY KEY,
-        department VARCHAR(100) NOT NULL,
-        name VARCHAR(100) NOT NULL,
-        content TEXT NOT NULL,
-        is_default BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT unique_department_prompt UNIQUE (department, name)
-    );
-    """
+    id SERIAL PRIMARY KEY,
+    department VARCHAR(100) NOT NULL,
+    document_type VARCHAR(100) NOT NULL,
+    doctor VARCHAR(100) NOT NULL, 
+    name VARCHAR(100) NOT NULL,
+    content TEXT NOT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_prompt UNIQUE (department, document_type, doctor, name)
+);
+"""
 
     summary_usage_table = """
     CREATE TABLE IF NOT EXISTS summary_usage (
@@ -73,21 +71,13 @@ def create_tables():
     """
 
     document_types_table = """
-                           CREATE TABLE IF NOT EXISTS document_types \
-                           ( \
-                               id \
-                               SERIAL \
-                               PRIMARY \
-                               KEY, \
-                               name \
-                               VARCHAR \
-                           ( \
-                               100 \
-                           ) UNIQUE NOT NULL,
-                               order_index INTEGER NOT NULL,
-                               created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                               updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-                                                        ); \
+    CREATE TABLE IF NOT EXISTS document_types (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL,
+    order_index INTEGER NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
                            """
 
     try:
