@@ -19,8 +19,8 @@ def initialize_claude():
         raise APIError(f"Claude API初期化エラー: {str(e)}")
 
 
-def create_summary_prompt(medical_text, additional_info="", department="default"):
-    prompt_data = get_prompt_by_department(department)
+def create_summary_prompt(medical_text, additional_info="", department="default", document_type="退院時サマリ", doctor="default"):
+    prompt_data = get_prompt_by_department(department, document_type, doctor)
 
     if not prompt_data:
         config = get_config()
@@ -32,13 +32,13 @@ def create_summary_prompt(medical_text, additional_info="", department="default"
     return prompt
 
 
-def claude_generate_summary(medical_text, additional_info="", department="default"):
+def claude_generate_summary(medical_text, additional_info="", department="default", document_type="退院時サマリ", doctor="default"):
     try:
         initialize_claude()
         model_name = CLAUDE_MODEL
         client = Anthropic(api_key=CLAUDE_API_KEY)
 
-        prompt = create_summary_prompt(medical_text, additional_info, department)
+        prompt = create_summary_prompt(medical_text, additional_info, department, document_type, doctor)
 
         response = client.messages.create(
             model=model_name,

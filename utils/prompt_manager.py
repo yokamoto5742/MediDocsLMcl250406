@@ -375,17 +375,17 @@ def initialize_default_prompt():
     try:
         prompt_collection = get_prompt_collection()
 
-        # デフォルトプロンプトの確認
-        query = "SELECT * FROM prompts WHERE department = 'default' AND is_default = true"
+        query = "SELECT * FROM prompts WHERE department = 'default' AND document_type = '退院時サマリ' AND doctor = 'default' AND is_default = true"
         default_prompt = prompt_collection.execute_query(query)
 
         if not default_prompt:
             config = get_config()
             default_prompt_content = config['PROMPTS']['discharge_summary']
 
-            # デフォルトプロンプトを作成
             insert_document(prompt_collection, {
                 "department": "default",
+                "document_type": "退院時サマリ",
+                "doctor": "default",
                 "name": "退院時サマリ",
                 "content": default_prompt_content,
                 "is_default": True
@@ -394,18 +394,18 @@ def initialize_default_prompt():
         raise DatabaseError(f"デフォルトプロンプトの初期化に失敗しました: {str(e)}")
 
 
-def get_prompt_by_department(department="default"):
-    """診療科からプロンプト情報を取得"""
+def get_prompt_by_department(department="default", document_type="退院時サマリ", doctor="default"):
     try:
         prompt_collection = get_prompt_collection()
-
-        # 指定された診療科のプロンプトを検索
-        query = "SELECT * FROM prompts WHERE department = :department"
-        prompt = prompt_collection.execute_query(query, {"department": department})
+        query = "SELECT * FROM prompts WHERE department = :department AND document_type = :document_type AND doctor = :doctor"
+        prompt = prompt_collection.execute_query(query, {
+            "department": department,
+            "document_type": document_type,
+            "doctor": doctor
+        })
 
         if not prompt:
-            # デフォルトプロンプトを返す
-            default_query = "SELECT * FROM prompts WHERE department = 'default' AND is_default = true"
+            default_query = "SELECT * FROM prompts WHERE department = 'default' AND document_type = '退院時サマリ' AND doctor = 'default' AND is_default = true"
             prompt = prompt_collection.execute_query(default_query)
 
         return prompt[0] if prompt else None
@@ -423,37 +423,43 @@ def get_all_prompts():
         raise DatabaseError(f"プロンプト一覧の取得に失敗しました: {str(e)}")
 
 
-def create_or_update_prompt(department, name, content):
+def create_or_update_prompt(department, document_type, doctor, name, content):
     """プロンプトを作成または更新"""
     try:
-        if not department or not name or not content:
+        if not department or not document_type or not doctor or not name or not content:
             return False, "すべての項目を入力してください"
 
         prompt_collection = get_prompt_collection()
 
-        # 既存のプロンプトを確認
-        query = "SELECT * FROM prompts WHERE department = :department"
-        existing = prompt_collection.execute_query(query, {"department": department})
+        query = "SELECT * FROM prompts WHERE department = :department AND document_type = :document_type AND doctor = :doctor"
+        existing = prompt_collection.execute_query(query, {
+            "department": department,
+            "document_type": document_type,
+            "doctor": doctor
+        })
 
         if existing:
-            # 更新
             update_query = """
                            UPDATE prompts
                            SET name       = :name, \
                                content    = :content, \
                                updated_at = CURRENT_TIMESTAMP
-                           WHERE department = :department \
+                           WHERE department = :department AND document_type = :document_type AND doctor = :doctor \
                            """
+
             prompt_collection.execute_query(update_query, {
                 "department": department,
+                "document_type": document_type,
+                "doctor": doctor,
                 "name": name,
                 "content": content
             }, fetch=False)
             return True, "プロンプトを更新しました"
         else:
-            # 新規作成
             insert_document(prompt_collection, {
                 "department": department,
+                "document_type": document_type,
+                "doctor": doctor,
                 "name": name,
                 "content": content,
                 "is_default": False
@@ -465,33 +471,32 @@ def create_or_update_prompt(department, name, content):
         raise AppError(f"プロンプトの作成/更新中にエラーが発生しました: {str(e)}")
 
 
-def delete_prompt(department):
+def delete_prompt(department, document_type, doctor):
     """プロンプトを削除"""
     try:
-        if department == "default":
+        if department == "default" and document_type == "退院時サマリ" and doctor == "default":
             return False, "デフォルトプロンプトは削除できません"
 
         prompt_collection = get_prompt_collection()
-        department_collection = get_department_collection()
 
         # トランザクション開始
         session = prompt_collection.get_session()
         try:
             # プロンプトを削除
-            prompt_query = "DELETE FROM prompts WHERE department = :department"
-            result = session.execute(text(prompt_query), {"department": department})
+            prompt_query = "DELETE FROM prompts WHERE department = :department AND document_type = :document_type AND doctor = :doctor"
+            result = session.execute(text(prompt_query), {
+                "department": department,
+                "document_type": document_type,
+                "doctor": doctor
+            })
             deleted_count = result.rowcount
 
             if deleted_count == 0:
                 session.rollback()
                 return False, "プロンプトが見つかりません"
 
-            # 関連する診療科を削除
-            dept_query = "DELETE FROM departments WHERE name = :name"
-            session.execute(text(dept_query), {"name": department})
-
             session.commit()
-            return True, "プロンプトと関連する診療科を削除しました"
+            return True, "プロンプトを削除しました"
         except Exception as e:
             session.rollback()
             raise e

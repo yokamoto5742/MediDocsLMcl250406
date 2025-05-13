@@ -22,8 +22,8 @@ def initialize_gemini():
         raise APIError(f"Gemini API初期化エラー: {str(e)}")
 
 
-def create_summary_prompt(medical_text, additional_info="", department="default"):
-    prompt_data = get_prompt_by_department(department)
+def create_summary_prompt(medical_text, additional_info="", department="default", document_type="退院時サマリ", doctor="default"):
+    prompt_data = get_prompt_by_department(department, document_type, doctor)
 
     if not prompt_data:
         config = get_config()
@@ -35,13 +35,13 @@ def create_summary_prompt(medical_text, additional_info="", department="default"
     return prompt
 
 
-def gemini_generate_summary(medical_text, additional_info="", department="default", model_name=None):
+def gemini_generate_summary(medical_text, additional_info="", department="default", document_type="退院時サマリ", doctor="default", model_name=None):
     try:
         client = initialize_gemini()
         if not model_name:
             model_name = GEMINI_MODEL
 
-        prompt = create_summary_prompt(medical_text, additional_info, department)
+        prompt = create_summary_prompt(medical_text, additional_info, department, document_type, doctor)
 
         if GEMINI_THINKING_BUDGET:
             response = client.models.generate_content(

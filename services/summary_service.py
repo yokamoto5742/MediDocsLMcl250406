@@ -20,7 +20,8 @@ from utils.text_processor import format_discharge_summary, parse_discharge_summa
 JST = pytz.timezone('Asia/Tokyo')
 
 
-def generate_summary_task(input_text, selected_department, selected_model, result_queue, additional_info=""):
+def generate_summary_task(input_text, selected_department, selected_model, result_queue, additional_info="", selected_document_type="退院時サマリ", selected_doctor="default"):
+
     try:
         match selected_model:
             case "Claude" if CLAUDE_API_KEY:

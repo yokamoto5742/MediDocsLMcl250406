@@ -1,5 +1,6 @@
 import streamlit as st
 
+from utils.document_type_manager import get_all_document_types
 from utils.error_handlers import handle_error
 from utils.exceptions import AppError
 from utils.prompt_manager import get_all_departments, get_prompt_by_department, create_or_update_prompt, delete_prompt
@@ -19,6 +20,12 @@ def prompt_management_ui():
     if "selected_dept_for_prompt" not in st.session_state:
         st.session_state.selected_dept_for_prompt = "default"
 
+    if "selected_doc_type_for_prompt" not in st.session_state:
+        st.session_state.selected_doc_type_for_prompt = "退院時サマリ"
+
+    if "selected_doctor_for_prompt" not in st.session_state:
+        st.session_state.selected_doctor_for_prompt = "default"
+
     departments = ["default"] + get_all_departments()
     selected_dept = st.selectbox(
         "診療科を選択",
@@ -29,38 +36,69 @@ def prompt_management_ui():
         key="prompt_department_selector"
     )
 
+    # 文書種類の選択
+    document_types = get_all_document_types()
+    if not document_types:
+        document_types = ["退院時サマリ"]
+
+    selected_doc_type = st.selectbox(
+        "文書種類を選択",
+        document_types,
+        index=document_types.index(
+            st.session_state.selected_doc_type_for_prompt) if st.session_state.selected_doc_type_for_prompt in document_types else 0,
+        key="prompt_document_type_selector"
+    )
+
+    # 医師の選択（実際の実装では医師リストをデータベースから取得するなどの実装が必要）
+    doctors = ["default", "鈴木医師", "田中医師", "佐藤医師"]
+
+    selected_doctor = st.selectbox(
+        "医師を選択",
+        doctors,
+        index=doctors.index(
+            st.session_state.selected_doctor_for_prompt) if st.session_state.selected_doctor_for_prompt in doctors else 0,
+        format_func=lambda x: "全医師共通" if x == "default" else x,
+        key="prompt_doctor_selector"
+    )
+
     st.session_state.selected_dept_for_prompt = selected_dept
+    st.session_state.selected_doc_type_for_prompt = selected_doc_type
+    st.session_state.selected_doctor_for_prompt = selected_doctor
 
-    prompt_data = get_prompt_by_department(selected_dept)
+    prompt_data = get_prompt_by_department(selected_dept, selected_doc_type, selected_doctor)
 
-    with st.form(key=f"edit_prompt_form_{selected_dept}"):
+    with st.form(key=f"edit_prompt_form_{selected_dept}_{selected_doc_type}_{selected_doctor}"):
         prompt_name = st.text_input(
             "プロンプト名",
-            value=prompt_data.get("name", "") if prompt_data else "退院時サマリ",
-            key=f"prompt_name_{selected_dept}"
+            value=prompt_data.get("name", "") if prompt_data else selected_doc_type,
+            key=f"prompt_name_{selected_dept}_{selected_doc_type}_{selected_doctor}"
         )
         prompt_content = st.text_area(
             "内容",
             value=prompt_data.get("content", "") if prompt_data else "",
             height=200,
-            key=f"prompt_content_{selected_dept}"
+            key=f"prompt_content_{selected_dept}_{selected_doc_type}_{selected_doctor}"
         )
 
         submit = st.form_submit_button("プロンプトを保存")
 
         if submit:
-            success, message = create_or_update_prompt(selected_dept, prompt_name, prompt_content)
+            success, message = create_or_update_prompt(selected_dept, selected_doc_type, selected_doctor, prompt_name,
+                                                       prompt_content)
             if success:
                 st.success(message)
             else:
                 raise AppError(message)
 
-    if selected_dept != "default":
-        if st.button("プロンプトを削除", key=f"delete_prompt_{selected_dept}", type="primary"):
-            success, message = delete_prompt(selected_dept)
+    if selected_dept != "default" or selected_doc_type != "退院時サマリ" or selected_doctor != "default":
+        if st.button("プロンプトを削除", key=f"delete_prompt_{selected_dept}_{selected_doc_type}_{selected_doctor}",
+                     type="primary"):
+            success, message = delete_prompt(selected_dept, selected_doc_type, selected_doctor)
             if success:
                 st.session_state.success_message = message
                 st.session_state.selected_dept_for_prompt = "default"
+                st.session_state.selected_doc_type_for_prompt = "退院時サマリ"
+                st.session_state.selected_doctor_for_prompt = "default"
                 st.rerun()
             else:
                 raise AppError(message)
