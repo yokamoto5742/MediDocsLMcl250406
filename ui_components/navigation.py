@@ -94,6 +94,9 @@ def render_sidebar():
     if st.sidebar.button("診療科管理", key="sidebar_department_management"):
         change_page("department_edit")
         st.rerun()
+    if st.sidebar.button("文書種類管理", key="sidebar_document_type_management"):
+        change_page("document_type_edit")
+        st.rerun()
 
     if st.sidebar.button("プロンプト管理", key="sidebar_prompt_management"):
         change_page("prompt_edit")

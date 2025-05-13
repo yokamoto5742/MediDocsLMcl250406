@@ -4,6 +4,7 @@ from services.summary_service import process_summary
 from utils.error_handlers import handle_error
 from utils.text_processor import parse_discharge_summary
 from ui_components.navigation import render_sidebar
+from utils.document_type_manager import get_all_document_types
 
 
 def clear_inputs():
@@ -25,6 +26,24 @@ def render_input_section():
 
     if "additional_info" not in st.session_state:
         st.session_state.additional_info = "退院時処方\n(ここに貼り付け)"
+
+    # 文書種類選択を追加
+    document_types = get_all_document_types()
+
+    if not document_types:
+        document_types = ["退院時サマリ"]
+
+    if "selected_document_type" not in st.session_state:
+        st.session_state.selected_document_type = document_types[0] if document_types else "退院時サマリ"
+
+    selected_document_type = st.selectbox(
+        "文書種類",
+        document_types,
+        index=document_types.index(
+            st.session_state.selected_document_type) if st.session_state.selected_document_type in document_types else 0
+    )
+
+    st.session_state.selected_document_type = selected_document_type
 
     input_text = st.text_area(
         "カルテ記載入力",

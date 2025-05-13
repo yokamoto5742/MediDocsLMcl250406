@@ -5,6 +5,7 @@ from utils.env_loader import load_environment_variables
 from utils.error_handlers import handle_error
 from database.schema import initialize_database
 from views.department_management_page import department_management_ui
+from views.document_type_management_page import document_type_management_ui
 from views.main_page import main_page_app
 from views.statistics_page import usage_statistics_ui
 from views.prompt_management_page import prompt_management_ui
@@ -47,6 +48,8 @@ def main_app():
         return
     elif st.session_state.current_page == "statistics":
         usage_statistics_ui()
+    elif st.session_state.current_page == "document_type_edit":  # 追加
+        document_type_management_ui()
         return
 
     main_page_app()
