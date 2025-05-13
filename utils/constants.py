@@ -21,5 +21,6 @@ DEFAULT_DEPARTMENTS = ["内科", "消化器内科", "整形外科", "眼科"]
 DEFAULT_SECTION_NAMES = ["入院期間", "現病歴", "入院時検査", "入院中の治療経過", "退院申し送り", "備考"]
 
 APP_TYPE = "discharge_summary"
-DOCUMENT_NAME = "退院時サマリ"
-DOCUMENT_NAME_OPTIONS = [DOCUMENT_NAME, "不明", "すべて"]
+DEFAULT_DOCUMENT_NAME = "退院時サマリ"
+DEFAULT_DOCUMENT_TYPES = ["退院時サマリ", "現病歴", "主治医意見書", "訪問看護指示書"]
+DOCUMENT_NAME_OPTIONS_FOR_FILTER = ["すべて", "不明"]

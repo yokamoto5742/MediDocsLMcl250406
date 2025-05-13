@@ -1,6 +1,3 @@
-"""
-PostgreSQLのデータベーススキーマを定義するモジュール
-"""
 from sqlalchemy import create_engine, text
 import time
 from utils.config import (
@@ -12,11 +9,9 @@ from database.db import DatabaseManager
 
 
 def create_tables():
-    """データベーステーブルを作成する"""
     db_manager = DatabaseManager.get_instance()
     engine = db_manager.get_engine()
-    
-    # ユーザーテーブル
+
     users_table = """
     CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -27,8 +22,7 @@ def create_tables():
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
     """
-    
-    # 診療科テーブル
+
     departments_table = """
     CREATE TABLE IF NOT EXISTS departments (
         id SERIAL PRIMARY KEY,
@@ -39,8 +33,7 @@ def create_tables():
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
     """
-    
-    # プロンプトテーブル
+
     prompts_table = """
     CREATE TABLE IF NOT EXISTS prompts (
         id SERIAL PRIMARY KEY,
@@ -53,8 +46,7 @@ def create_tables():
         CONSTRAINT unique_department_prompt UNIQUE (department, name)
     );
     """
-    
-    # 使用状況テーブル
+
     summary_usage_table = """
     CREATE TABLE IF NOT EXISTS summary_usage (
         id SERIAL PRIMARY KEY,
@@ -69,8 +61,7 @@ def create_tables():
         processing_time INTEGER
     );
     """
-    
-    # アプリ設定テーブル
+
     app_settings_table = """
     CREATE TABLE IF NOT EXISTS app_settings (
         id SERIAL PRIMARY KEY,
@@ -80,8 +71,25 @@ def create_tables():
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
     """
-    
-    # テーブル作成を試行
+
+    document_types_table = """
+                           CREATE TABLE IF NOT EXISTS document_types \
+                           ( \
+                               id \
+                               SERIAL \
+                               PRIMARY \
+                               KEY, \
+                               name \
+                               VARCHAR \
+                           ( \
+                               100 \
+                           ) UNIQUE NOT NULL,
+                               order_index INTEGER NOT NULL,
+                               created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                               updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                                                        ); \
+                           """
+
     try:
         with engine.begin() as conn:
             conn.execute(text(users_table))
@@ -89,17 +97,13 @@ def create_tables():
             conn.execute(text(prompts_table))
             conn.execute(text(summary_usage_table))
             conn.execute(text(app_settings_table))
+            conn.execute(text(document_types_table))
         return True
     except Exception as e:
         raise DatabaseError(f"テーブル作成中にエラーが発生しました: {str(e)}")
 
 
 def initialize_database():
-    """
-    データベースの初期化とテーブル作成を行う
-    アプリケーション起動時に呼び出される
-    """
-    # 接続が安定するまで最大5回リトライ
     max_retries = 5
     retry_count = 0
     last_error = None
