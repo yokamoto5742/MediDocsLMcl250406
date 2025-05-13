@@ -7,6 +7,8 @@ from utils.config import get_config
 from utils.constants import DEFAULT_DEPARTMENTS, MESSAGES
 from utils.env_loader import load_environment_variables
 from utils.exceptions import DatabaseError, AppError
+from database.schema import initialize_database as init_schema
+from utils.document_type_manager import initialize_document_types
 
 
 def get_prompt_collection():
@@ -505,13 +507,11 @@ def delete_prompt(department):
 def initialize_database():
     """データベースの初期化を行う"""
     try:
-        # データベーススキーマ作成を実行
-        from database.schema import initialize_database as init_schema
         init_schema()
 
-        # 初期データの設定
         initialize_default_prompt()
         initialize_departments()
+        initialize_document_types()
 
         # 順序が設定されていない診療科の処理
         department_collection = get_department_collection()
