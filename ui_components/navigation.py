@@ -6,6 +6,7 @@ from database.db import DatabaseManager
 from utils.config import GEMINI_MODEL, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, OPENAI_API_KEY, \
     OPENAI_MODEL
 from utils.prompt_manager import get_all_departments, get_department_by_name
+from utils.document_type_manager import get_all_document_types
 
 
 def change_page(page):
@@ -58,6 +59,23 @@ def render_sidebar():
 
         save_user_settings(selected_dept, st.session_state.selected_model)
         st.rerun()
+
+    document_types = get_all_document_types()
+
+    if not document_types:
+        document_types = ["退院時サマリ"]
+
+    if "selected_document_type" not in st.session_state:
+        st.session_state.selected_document_type = document_types[0] if document_types else "退院時サマリ"
+
+    selected_document_type = st.sidebar.selectbox(
+        "文書種類",
+        document_types,
+        index=document_types.index(
+            st.session_state.selected_document_type) if st.session_state.selected_document_type in document_types else 0
+    )
+
+    st.session_state.selected_document_type = selected_document_type
 
     if len(st.session_state.available_models) > 1:
         if "selected_model" not in st.session_state:
