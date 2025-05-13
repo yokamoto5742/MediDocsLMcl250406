@@ -12,7 +12,7 @@ from external_service.gemini_api import gemini_generate_summary
 from external_service.openai_api import openai_generate_summary
 from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, MAX_INPUT_TOKENS, \
     MIN_INPUT_TOKENS, OPENAI_API_KEY, OPENAI_MODEL
-from utils.constants import APP_TYPE, DOCUMENT_NAME, MESSAGES
+from utils.constants import APP_TYPE, DEFAULT_DOCUMENT_NAME, MESSAGES
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
 from utils.text_processor import format_discharge_summary, parse_discharge_summary
@@ -156,7 +156,7 @@ def process_summary(input_text, additional_info=""):
                 usage_data = {
                     "date": now_jst,
                     "app_type": APP_TYPE,
-                    "document_name": DOCUMENT_NAME,
+                    "document_name": DEFAULT_DOCUMENT_NAME,
                     "model_detail": model_detail,
                     "department": selected_department,
                     "input_tokens": input_tokens,

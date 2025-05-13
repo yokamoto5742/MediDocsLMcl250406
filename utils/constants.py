@@ -23,4 +23,4 @@ DEFAULT_SECTION_NAMES = ["入院期間", "現病歴", "入院時検査", "入院
 APP_TYPE = "discharge_summary"
 DEFAULT_DOCUMENT_NAME = "退院時サマリ"
 DEFAULT_DOCUMENT_TYPES = ["退院時サマリ", "現病歴", "主治医意見書", "訪問看護指示書"]
-DOCUMENT_NAME_OPTIONS_FOR_FILTER = ["すべて", "不明"]
+DOCUMENT_NAME_OPTIONS = ["すべて", "不明"]
