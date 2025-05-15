@@ -24,3 +24,13 @@ APP_TYPE = "discharge_summary"
 DEFAULT_DOCUMENT_NAME = "退院時サマリ"
 DEFAULT_DOCUMENT_TYPES = ["退院時サマリ", "現病歴", "主治医意見書", "訪問看護指示書"]
 DOCUMENT_NAME_OPTIONS = ["すべて", "不明"]
+
+DEFAULT_DOCTORS = ["default", "田中医師", "佐々木医師", "鈴木医師", "高田医師", "山田医師"]
+
+DEPARTMENT_DOCTORS_MAPPING = {
+    "default": ["医師共通"],  # 全科共通には default のみを関連付け
+    "内科": ["医師共通", "田中医師", "佐々木医師"],
+    "消化器内科": ["医師共通", "山田医師"],
+    "整形外科": ["医師共通", "鈴木医師", "高田医師"],
+    "眼科": ["医師共通", "高田医師"]
+}

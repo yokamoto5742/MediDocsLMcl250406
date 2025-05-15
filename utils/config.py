@@ -1,5 +1,3 @@
-# utils/config.py の修正箇所
-
 import configparser
 import os
 from pathlib import Path

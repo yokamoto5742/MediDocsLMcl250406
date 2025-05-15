@@ -5,6 +5,7 @@ from utils.error_handlers import handle_error
 from utils.exceptions import AppError
 from utils.prompt_manager import get_all_departments, get_prompt_by_department, create_or_update_prompt, delete_prompt
 from ui_components.navigation import change_page
+from utils.constants import DEPARTMENT_DOCTORS_MAPPING
 
 
 @handle_error
@@ -49,14 +50,18 @@ def prompt_management_ui():
         key="prompt_document_type_selector"
     )
 
-    # 医師の選択（実際の実装では医師リストをデータベースから取得するなどの実装が必要）
-    doctors = ["default", "鈴木医師", "田中医師", "佐藤医師"]
+    # 選択された診療科に応じて医師リストを取得
+    available_doctors = DEPARTMENT_DOCTORS_MAPPING.get(selected_dept, ["default"])
 
+    # 前回の選択が現在の診療科の医師リストに含まれているか確認
+    if st.session_state.selected_doctor_for_prompt not in available_doctors:
+        st.session_state.selected_doctor_for_prompt = available_doctors[0]
+
+    # 医師の選択
     selected_doctor = st.selectbox(
         "医師を選択",
-        doctors,
-        index=doctors.index(
-            st.session_state.selected_doctor_for_prompt) if st.session_state.selected_doctor_for_prompt in doctors else 0,
+        available_doctors,
+        index=available_doctors.index(st.session_state.selected_doctor_for_prompt),
         format_func=lambda x: "全医師共通" if x == "default" else x,
         key="prompt_doctor_selector"
     )

@@ -1,14 +1,12 @@
 import datetime
-import os
 from sqlalchemy import text
 
 from database.db import DatabaseManager
 from utils.config import get_config
-from utils.constants import DEFAULT_DEPARTMENTS, MESSAGES
-from utils.env_loader import load_environment_variables
+from utils.constants import DEFAULT_DEPARTMENTS, MESSAGES, DEPARTMENT_DOCTORS_MAPPING
 from utils.exceptions import DatabaseError, AppError
 from database.schema import initialize_database as init_schema
-from utils.document_type_manager import initialize_document_types
+from utils.document_type_manager import initialize_document_types, get_all_document_types
 
 
 def get_prompt_collection():
@@ -207,7 +205,7 @@ def create_department(name, default_model=None):
         })
 
         # デフォルトプロンプトを取得
-        default_prompt_query = "SELECT content FROM prompts WHERE department = 'default' AND is_default = true"
+        default_prompt_query = "SELECT content FROM prompts WHERE department = 'default' AND document_type = '退院時サマリ' AND doctor = 'default' AND is_default = true"
         default_prompt_result = prompt_collection.execute_query(default_prompt_query)
 
         if not default_prompt_result:
@@ -216,13 +214,23 @@ def create_department(name, default_model=None):
         else:
             default_prompt_content = default_prompt_result[0]["content"]
 
-        # 新しいプロンプトを作成
-        insert_document(prompt_collection, {
-            "department": name,
-            "name": "退院時サマリ",
-            "content": default_prompt_content,
-            "is_default": False
-        })
+        # 関連する医師のリスト
+        doctors = DEPARTMENT_DOCTORS_MAPPING.get(name, ["default"])
+        document_types = get_all_document_types()
+        if not document_types:
+            document_types = ["退院時サマリ"]
+
+        # 各医師と文書種類の組み合わせでプロンプトを作成
+        for doctor in doctors:
+            for doc_type in document_types:
+                insert_document(prompt_collection, {
+                    "department": name,
+                    "document_type": doc_type,
+                    "doctor": doctor,
+                    "name": doc_type,
+                    "content": default_prompt_content,
+                    "is_default": False
+                })
 
         return True, MESSAGES["DEPARTMENT_CREATED"]
     except DatabaseError as e:
@@ -393,7 +401,6 @@ def initialize_default_prompt():
     except Exception as e:
         raise DatabaseError(f"デフォルトプロンプトの初期化に失敗しました: {str(e)}")
 
-
 def get_prompt_by_department(department="default", document_type="退院時サマリ", doctor="default"):
     try:
         prompt_collection = get_prompt_collection()
@@ -509,6 +516,8 @@ def delete_prompt(department, document_type, doctor):
         raise AppError(f"プロンプトの削除中にエラーが発生しました: {str(e)}")
 
 
+# utils/prompt_manager.py の initialize_database 関数の一部を修正
+
 def initialize_database():
     """データベースの初期化を行う"""
     try:
@@ -517,6 +526,43 @@ def initialize_database():
         initialize_default_prompt()
         initialize_departments()
         initialize_document_types()
+
+        # 各診療科と医師の組み合わせでデフォルトプロンプトを初期化
+        prompt_collection = get_prompt_collection()
+        config = get_config()
+        default_prompt_content = config['PROMPTS']['discharge_summary']
+
+        departments = get_all_departments()
+        document_types = get_all_document_types()
+
+        for dept in departments:
+            doctors = DEPARTMENT_DOCTORS_MAPPING.get(dept, ["default"])
+            for doctor in doctors:
+                for doc_type in document_types:
+                    # プロンプトが存在するか確認
+                    check_query = """
+                                  SELECT * \
+                                  FROM prompts
+                                  WHERE department = :department
+                                    AND document_type = :document_type
+                                    AND doctor = :doctor \
+                                  """
+                    existing = prompt_collection.execute_query(check_query, {
+                        "department": dept,
+                        "document_type": doc_type,
+                        "doctor": doctor
+                    })
+
+                    if not existing:
+                        # プロンプトが存在しなければ作成
+                        insert_document(prompt_collection, {
+                            "department": dept,
+                            "document_type": doc_type,
+                            "doctor": doctor,
+                            "name": doc_type,
+                            "content": default_prompt_content,
+                            "is_default": False
+                        })
 
         # 順序が設定されていない診療科の処理
         department_collection = get_department_collection()
