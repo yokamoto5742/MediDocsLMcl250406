@@ -213,7 +213,7 @@ def create_tables():
 
 
 def check_document_type_column():
-    """promptsテーブルにdocument_typeカラムが存在するか確認し、なければ追加する"""
+    """promptsテーブルにdocument_typeとdoctorカラムが存在するか確認し、なければ追加する"""
     try:
         db_manager = DatabaseManager.get_instance()
         engine = db_manager.get_engine()
@@ -222,41 +222,52 @@ def check_document_type_column():
         check_column_query = """
                              SELECT column_name
                              FROM information_schema.columns
-                             WHERE table_name = 'prompts' \
-                               AND column_name = 'document_type'; \
+                             WHERE table_name = 'prompts';
                              """
 
         with engine.connect() as conn:
             result = conn.execute(text(check_column_query))
-            column_exists = result.fetchone() is not None
+            columns = [row[0] for row in result]
+            need_constraint_update = False
 
-            if not column_exists:
+            if 'document_type' not in columns:
                 # document_typeカラムを追加
                 add_column_query = """
                                    ALTER TABLE prompts
-                                       ADD COLUMN document_type VARCHAR(100) DEFAULT '退院時サマリ' NOT NULL; \
+                                       ADD COLUMN document_type VARCHAR(100) DEFAULT '退院時サマリ' NOT NULL;
                                    """
+                conn.execute(text(add_column_query))
+                need_constraint_update = True
+                print("promptsテーブルにdocument_typeカラムを追加しました。")
 
+            if 'doctor' not in columns:
+                # doctorカラムを追加
+                add_column_query = """
+                                   ALTER TABLE prompts
+                                       ADD COLUMN doctor VARCHAR(100) DEFAULT 'default' NOT NULL;
+                                   """
+                conn.execute(text(add_column_query))
+                need_constraint_update = True
+                print("promptsテーブルにdoctorカラムを追加しました。")
+
+            if need_constraint_update:
                 # 既存のユニーク制約を削除して再作成
                 drop_constraint_query = """
-                                        ALTER TABLE prompts DROP CONSTRAINT IF EXISTS unique_prompt; \
+                                        ALTER TABLE prompts DROP CONSTRAINT IF EXISTS unique_prompt;
                                         """
 
                 create_constraint_query = """
                                           ALTER TABLE prompts
                                               ADD CONSTRAINT unique_prompt
-                                                  UNIQUE (department, document_type, doctor, name); \
+                                                  UNIQUE (department, document_type, doctor, name);
                                           """
 
-                conn.execute(text(add_column_query))
                 conn.execute(text(drop_constraint_query))
                 conn.execute(text(create_constraint_query))
 
-                print("promptsテーブルにdocument_typeカラムを追加しました。")
-
         return True
     except Exception as e:
-        raise DatabaseError(f"document_typeカラムの追加中にエラーが発生しました: {str(e)}")
+        raise DatabaseError(f"document_typeカラムまたはdoctorカラムの追加中にエラーが発生しました: {str(e)}")
 
 
 def initialize_database():

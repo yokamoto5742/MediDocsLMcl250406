@@ -85,11 +85,8 @@ def run_migrations_online() -> None:
     """
     # 環境変数からDB接続情報を取得
     config_section = config.get_section(config.config_ini_section)
-    config_section['POSTGRES_HOST'] = POSTGRES_HOST
-    config_section['POSTGRES_PORT'] = POSTGRES_PORT
-    config_section['POSTGRES_USER'] = POSTGRES_USER
-    config_section['POSTGRES_PASSWORD'] = POSTGRES_PASSWORD
-    config_section['POSTGRES_DB'] = POSTGRES_DB
+    # 直接SQLAlchemy URLを設定する
+    config_section['sqlalchemy.url'] = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
     # Herokuの場合はDATABASE_URLを優先
     if os.environ.get("DATABASE_URL"):
@@ -100,17 +97,3 @@ def run_migrations_online() -> None:
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
-
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
-
-        with context.begin_transaction():
-            context.run_migrations()
-
-
-if context.is_offline_mode():
-    run_migrations_offline()
-else:
-    run_migrations_online()
