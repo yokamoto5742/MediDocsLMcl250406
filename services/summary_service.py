@@ -29,6 +29,8 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
                     input_text,
                     additional_info,
                     selected_department,
+                    selected_document_type,
+                    selected_doctor
                 )
                 model_detail = selected_model
 
@@ -37,6 +39,8 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
                     input_text,
                     additional_info,
                     selected_department,
+                    selected_document_type,
+                    selected_doctor,
                     GEMINI_MODEL,
                 )
                 model_detail = GEMINI_MODEL
@@ -46,6 +50,8 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
                     input_text,
                     additional_info,
                     selected_department,
+                    selected_document_type,
+                    selected_doctor,
                     GEMINI_FLASH_MODEL,
                 )
                 model_detail = GEMINI_FLASH_MODEL
@@ -56,6 +62,8 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
                         input_text,
                         additional_info,
                         selected_department,
+                        selected_document_type,
+                        selected_doctor,
                     )
                     model_detail = selected_model
                 except Exception as e:
@@ -112,6 +120,8 @@ def process_summary(input_text, additional_info=""):
         selected_model = getattr(st.session_state, "selected_model",
                                  available_models[0] if available_models else None)
         selected_department = getattr(st.session_state, "selected_department", "default")
+        selected_document_type = getattr(st.session_state, "selected_document_type", "退院時サマリ")
+        selected_doctor = getattr(st.session_state, "selected_doctor", "default")
 
         summary_thread = threading.Thread(
             target=generate_summary_task,
@@ -120,7 +130,9 @@ def process_summary(input_text, additional_info=""):
                 selected_department,
                 selected_model,
                 result_queue,
-                additional_info
+                additional_info,
+                selected_document_type,
+                selected_doctor
             ),
         )
         summary_thread.start()
@@ -157,7 +169,7 @@ def process_summary(input_text, additional_info=""):
                 usage_data = {
                     "date": now_jst,
                     "app_type": APP_TYPE,
-                    "document_name": DEFAULT_DOCUMENT_NAME,
+                    "document_name": selected_document_type,  # DEFAULT_DOCUMENT_NAMEの代わりに選択された文書種類を使用
                     "model_detail": model_detail,
                     "department": selected_department,
                     "input_tokens": input_tokens,

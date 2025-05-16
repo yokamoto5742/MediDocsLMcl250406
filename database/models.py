@@ -1,0 +1,71 @@
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
+
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = 'users'
+    
+    id = Column(Integer, primary_key=True)
+    username = Column(String(100), unique=True, nullable=False)
+    password = Column(String, nullable=False)  # 実際はBYTEAだがSQLAlchemyでは表現が難しいのでStringで代用
+    is_admin = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
+class Department(Base):
+    __tablename__ = 'departments'
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), unique=True, nullable=False)
+    order_index = Column(Integer, nullable=False)
+    default_model = Column(String(50))
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
+class Prompt(Base):
+    __tablename__ = 'prompts'
+    
+    id = Column(Integer, primary_key=True)
+    department = Column(String(100), nullable=False)
+    # ここにdocument_typeカラムを追加する必要がある
+    document_type = Column(String(100), nullable=False)
+    doctor = Column(String(100), nullable=False)
+    name = Column(String(100), nullable=False)
+    content = Column(Text, nullable=False)
+    is_default = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
+class SummaryUsage(Base):
+    __tablename__ = 'summary_usage'
+    
+    id = Column(Integer, primary_key=True)
+    date = Column(DateTime(timezone=True), default=func.now())
+    app_type = Column(String(50))
+    document_name = Column(String(100))
+    model_detail = Column(String(100))
+    department = Column(String(100))
+    input_tokens = Column(Integer)
+    output_tokens = Column(Integer)
+    total_tokens = Column(Integer)
+    processing_time = Column(Integer)
+
+class AppSetting(Base):
+    __tablename__ = 'app_settings'
+    
+    id = Column(Integer, primary_key=True)
+    setting_id = Column(String(100), unique=True, nullable=False)
+    selected_department = Column(String(100))
+    selected_model = Column(String(50))
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
+class DocumentType(Base):
+    __tablename__ = 'document_types'
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), unique=True, nullable=False)
+    order_index = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())

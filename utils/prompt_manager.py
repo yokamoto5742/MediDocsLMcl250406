@@ -31,59 +31,6 @@ def get_current_datetime():
     return datetime.datetime.now()
 
 
-def insert_document(collection, document):
-    """
-    ドキュメントをテーブルに挿入する
-
-    Args:
-        collection: DatabaseManagerのインスタンス
-        document: 挿入するデータを含む辞書
-    """
-    try:
-        now = get_current_datetime()
-        document.update({
-            "created_at": now,
-            "updated_at": now
-        })
-
-        # テーブル名を推測し、適切なSQLを生成
-        if "name" in document and "order_index" in document:
-            # departmentsテーブルへの挿入
-            query = """
-                    INSERT INTO departments (name, order_index, default_model, created_at, updated_at)
-                    VALUES (:name, :order_index, :default_model, :created_at, :updated_at) RETURNING id; \
-                    """
-            params = {
-                "name": document["name"],
-                "order_index": document["order_index"],
-                "default_model": document.get("default_model"),
-                "created_at": document["created_at"],
-                "updated_at": document["updated_at"]
-            }
-        elif "department" in document:
-            # promptsテーブルへの挿入
-            query = """
-                    INSERT INTO prompts (department, name, content, is_default, created_at, updated_at)
-                    VALUES (:department, :name, :content, :is_default, :created_at, :updated_at) RETURNING id; \
-                    """
-            params = {
-                "department": document["department"],
-                "name": document["name"],
-                "content": document["content"],
-                "is_default": document.get("is_default", False),
-                "created_at": document["created_at"],
-                "updated_at": document["updated_at"]
-            }
-        else:
-            raise ValueError("不明なドキュメント形式です")
-
-        result = collection.execute_query(query, params)
-        return result[0]["id"] if result else None
-
-    except Exception as e:
-        raise DatabaseError(f"ドキュメントの挿入に失敗しました: {str(e)}")
-
-
 def update_document(collection, query_dict, update_data):
     """
     ドキュメントを更新する
@@ -378,48 +325,6 @@ def update_department(name, default_model):
         raise AppError(f"診療科の更新中にエラーが発生しました: {str(e)}")
 
 
-def initialize_default_prompt():
-    """デフォルトプロンプトの初期化"""
-    try:
-        prompt_collection = get_prompt_collection()
-
-        query = "SELECT * FROM prompts WHERE department = 'default' AND document_type = '退院時サマリ' AND doctor = 'default' AND is_default = true"
-        default_prompt = prompt_collection.execute_query(query)
-
-        if not default_prompt:
-            config = get_config()
-            default_prompt_content = config['PROMPTS']['discharge_summary']
-
-            insert_document(prompt_collection, {
-                "department": "default",
-                "document_type": "退院時サマリ",
-                "doctor": "default",
-                "name": "退院時サマリ",
-                "content": default_prompt_content,
-                "is_default": True
-            })
-    except Exception as e:
-        raise DatabaseError(f"デフォルトプロンプトの初期化に失敗しました: {str(e)}")
-
-def get_prompt_by_department(department="default", document_type="退院時サマリ", doctor="default"):
-    try:
-        prompt_collection = get_prompt_collection()
-        query = "SELECT * FROM prompts WHERE department = :department AND document_type = :document_type AND doctor = :doctor"
-        prompt = prompt_collection.execute_query(query, {
-            "department": department,
-            "document_type": document_type,
-            "doctor": doctor
-        })
-
-        if not prompt:
-            default_query = "SELECT * FROM prompts WHERE department = 'default' AND document_type = '退院時サマリ' AND doctor = 'default' AND is_default = true"
-            prompt = prompt_collection.execute_query(default_query)
-
-        return prompt[0] if prompt else None
-    except Exception as e:
-        raise DatabaseError(f"プロンプトの取得に失敗しました: {str(e)}")
-
-
 def get_all_prompts():
     """すべてのプロンプト情報を取得"""
     try:
@@ -429,6 +334,8 @@ def get_all_prompts():
     except Exception as e:
         raise DatabaseError(f"プロンプト一覧の取得に失敗しました: {str(e)}")
 
+
+# utils/prompt_manager.pyの一部を修正
 
 def create_or_update_prompt(department, document_type, doctor, name, content):
     """プロンプトを作成または更新"""
@@ -516,7 +423,104 @@ def delete_prompt(department, document_type, doctor):
         raise AppError(f"プロンプトの削除中にエラーが発生しました: {str(e)}")
 
 
-# utils/prompt_manager.py の initialize_database 関数の一部を修正
+def insert_document(collection, document):
+    """
+    ドキュメントをテーブルに挿入する
+
+    Args:
+        collection: DatabaseManagerのインスタンス
+        document: 挿入するデータを含む辞書
+    """
+    try:
+        now = get_current_datetime()
+        document.update({
+            "created_at": now,
+            "updated_at": now
+        })
+
+        # テーブル名を推測し、適切なSQLを生成
+        if "name" in document and "order_index" in document:
+            # departmentsテーブルへの挿入
+            query = """
+                    INSERT INTO departments (name, order_index, default_model, created_at, updated_at)
+                    VALUES (:name, :order_index, :default_model, :created_at, :updated_at) RETURNING id; \
+                    """
+            params = {
+                "name": document["name"],
+                "order_index": document["order_index"],
+                "default_model": document.get("default_model"),
+                "created_at": document["created_at"],
+                "updated_at": document["updated_at"]
+            }
+        elif "department" in document:
+            # promptsテーブルへの挿入
+            query = """
+                    INSERT INTO prompts (department, document_type, doctor, name, content, is_default, created_at, updated_at)
+                    VALUES (:department, :document_type, :doctor, :name, :content, :is_default, :created_at, :updated_at) RETURNING id; \
+                    """
+            params = {
+                "department": document["department"],
+                "document_type": document.get("document_type", "退院時サマリ"),  # デフォルト値を設定
+                "doctor": document["doctor"],
+                "name": document["name"],
+                "content": document["content"],
+                "is_default": document.get("is_default", False),
+                "created_at": document["created_at"],
+                "updated_at": document["updated_at"]
+            }
+        else:
+            raise ValueError("不明なドキュメント形式です")
+
+        result = collection.execute_query(query, params)
+        return result[0]["id"] if result else None
+
+    except Exception as e:
+        raise DatabaseError(f"ドキュメントの挿入に失敗しました: {str(e)}")
+
+
+def initialize_default_prompt():
+    """デフォルトプロンプトの初期化"""
+    try:
+        prompt_collection = get_prompt_collection()
+
+        query = "SELECT * FROM prompts WHERE department = 'default' AND document_type = '退院時サマリ' AND doctor = 'default' AND is_default = true"
+        default_prompt = prompt_collection.execute_query(query)
+
+        if not default_prompt:
+            config = get_config()
+            default_prompt_content = config['PROMPTS']['discharge_summary']
+
+            insert_document(prompt_collection, {
+                "department": "default",
+                "document_type": "退院時サマリ",
+                "doctor": "default",
+                "name": "退院時サマリ",
+                "content": default_prompt_content,
+                "is_default": True
+            })
+    except Exception as e:
+        raise DatabaseError(f"デフォルトプロンプトの初期化に失敗しました: {str(e)}")
+
+
+def get_prompt_by_department(department="default", document_type="退院時サマリ", doctor="default"):
+    try:
+        prompt_collection = get_prompt_collection()
+        query = "SELECT * FROM prompts WHERE department = :department AND document_type = :document_type AND doctor = :doctor"
+        prompt = prompt_collection.execute_query(query, {
+            "department": department,
+            "document_type": document_type,
+            "doctor": doctor
+        })
+
+        if not prompt:
+            # リクエストされた組み合わせが存在しない場合はデフォルトを取得
+            default_query = "SELECT * FROM prompts WHERE department = 'default' AND document_type = '退院時サマリ' AND doctor = 'default' AND is_default = true"
+            prompt = prompt_collection.execute_query(default_query)
+
+        return prompt[0] if prompt else None
+    except Exception as e:
+        raise DatabaseError(f"プロンプトの取得に失敗しました: {str(e)}")
+
 
 def initialize_database():
     """データベースの初期化を行う"""
