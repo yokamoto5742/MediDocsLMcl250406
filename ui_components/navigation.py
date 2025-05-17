@@ -18,6 +18,7 @@ def render_sidebar():
 
     previous_dept = st.session_state.selected_department
     previous_model = getattr(st.session_state, "selected_model", None)
+    previous_doctor = getattr(st.session_state, "selected_doctor", None)  # 追加：前回選択された医師
 
     try:
         index = departments.index(st.session_state.selected_department)
@@ -45,19 +46,30 @@ def render_sidebar():
 
     st.session_state.selected_department = selected_dept
 
+    # 選択された診療科に基づいて利用可能な医師を取得
+    from utils.constants import DEPARTMENT_DOCTORS_MAPPING
+    available_doctors = DEPARTMENT_DOCTORS_MAPPING.get(selected_dept, ["default"])
+
+    # 前回の医師が現在の診療科に存在しない場合、リセット
+    if "selected_doctor" not in st.session_state or st.session_state.selected_doctor not in available_doctors:
+        st.session_state.selected_doctor = available_doctors[0]
+
     if selected_dept != previous_dept:
         if selected_dept == "default":
             if "Gemini_Pro" in st.session_state.available_models:
                 st.session_state.selected_model = "Gemini_Pro"
             elif st.session_state.available_models:
                 st.session_state.selected_model = st.session_state.available_models[0]
+            st.session_state.selected_doctor = "default"  # 全科共通の場合は "default" に設定
         else:
             dept_data = get_department_by_name(selected_dept)
             if dept_data and "default_model" in dept_data and dept_data["default_model"]:
                 if dept_data["default_model"] in st.session_state.available_models:
                     st.session_state.selected_model = dept_data["default_model"]
+            # 診療科が変更されたら、その診療科のデフォルト医師を設定
+            st.session_state.selected_doctor = available_doctors[0]
 
-        save_user_settings(selected_dept, st.session_state.selected_model)
+        save_user_settings(selected_dept, st.session_state.selected_model, st.session_state.selected_doctor)
         st.rerun()
 
     document_types = get_all_document_types()
@@ -76,6 +88,20 @@ def render_sidebar():
     )
 
     st.session_state.selected_document_type = selected_document_type
+
+    # 医師選択を追加
+    selected_doctor = st.sidebar.selectbox(
+        "医師",
+        available_doctors,
+        index=available_doctors.index(st.session_state.selected_doctor),
+        format_func=lambda x: "医師共通" if x == "default" else x,
+        key="doctor_selector"
+    )
+
+    # 医師が変更された場合
+    if selected_doctor != previous_doctor:
+        st.session_state.selected_doctor = selected_doctor
+        save_user_settings(st.session_state.selected_department, st.session_state.selected_model, selected_doctor)
 
     if len(st.session_state.available_models) > 1:
         if "selected_model" not in st.session_state:
@@ -101,7 +127,7 @@ def render_sidebar():
 
         if selected_model != previous_model:
             st.session_state.selected_model = selected_model
-            save_user_settings(st.session_state.selected_department, st.session_state.selected_model)
+            save_user_settings(st.session_state.selected_department, st.session_state.selected_model, st.session_state.selected_doctor)
 
     elif len(st.session_state.available_models) == 1:
         st.session_state.selected_model = st.session_state.available_models[0]
@@ -125,7 +151,7 @@ def render_sidebar():
         st.rerun()
 
 
-def save_user_settings(department, model):
+def save_user_settings(department, model, doctor="default"):
     """ユーザー設定をデータベースに保存"""
     try:
         # DatabaseManagerインスタンスを正しく取得
@@ -141,19 +167,21 @@ def save_user_settings(department, model):
                     UPDATE app_settings
                     SET selected_department = :department, \
                         selected_model      = :model, \
+                        selected_doctor     = :doctor, \
                         updated_at          = CURRENT_TIMESTAMP
                     WHERE setting_id = 'user_preferences' \
                     """
         else:
             # 新規作成
             query = """
-                    INSERT INTO app_settings (setting_id, selected_department, selected_model, updated_at)
-                    VALUES ('user_preferences', :department, :model, CURRENT_TIMESTAMP) \
+                    INSERT INTO app_settings (setting_id, selected_department, selected_model, selected_doctor, updated_at)
+                    VALUES ('user_preferences', :department, :model, :doctor, CURRENT_TIMESTAMP) \
                     """
 
         db_manager.execute_query(query, {
             "department": department,
-            "model": model
+            "model": model,
+            "doctor": doctor
         }, fetch=False)
 
     except Exception as e:
@@ -163,14 +191,13 @@ def save_user_settings(department, model):
 def load_user_settings():
     """ユーザー設定をデータベースから読み込み"""
     try:
-        # DatabaseManagerインスタンスを正しく取得
         db_manager = DatabaseManager.get_instance()
-        query = "SELECT selected_department, selected_model FROM app_settings WHERE setting_id = 'user_preferences'"
+        query = "SELECT selected_department, selected_model, selected_doctor FROM app_settings WHERE setting_id = 'user_preferences'"
         settings = db_manager.execute_query(query)
 
         if settings:
-            return settings[0]["selected_department"], settings[0]["selected_model"]
-        return None, None
+            return settings[0]["selected_department"], settings[0]["selected_model"], settings[0].get("selected_doctor", "default")
+        return None, None, None
     except Exception as e:
         print(f"設定の読み込みに失敗しました: {str(e)}")
-        return None, None
+        return None, None, None

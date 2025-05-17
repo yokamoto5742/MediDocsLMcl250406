@@ -171,6 +171,10 @@ def create_tables():
                          ( \
                              50 \
                          ),
+                             selected_doctor VARCHAR \
+                         ( \
+                             100 \
+                         ),
                              updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                                                       ); \
                          """
