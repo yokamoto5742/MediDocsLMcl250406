@@ -62,7 +62,7 @@ def prompt_management_ui():
         "医師を選択",
         available_doctors,
         index=available_doctors.index(st.session_state.selected_doctor_for_prompt),
-        format_func=lambda x: "全医師共通" if x == "default" else x,
+        format_func=lambda x: "医師共通" if x == "default" else x,
         key="prompt_doctor_selector"
     )
 
