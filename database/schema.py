@@ -1,7 +1,6 @@
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 import time
 import os
-import importlib
 from subprocess import run, PIPE
 from utils.exceptions import DatabaseError
 from database.db import DatabaseManager
@@ -10,11 +9,6 @@ from database.db import DatabaseManager
 def run_alembic_migrations():
     """Alembicマイグレーションを実行する関数"""
     try:
-        # alembicがインストールされているか確認
-        if importlib.util.find_spec("alembic") is None:
-            print("警告: alembicがインストールされていません。マイグレーションはスキップされます。")
-            return False
-
         # アプリケーションのルートディレクトリを取得
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -277,15 +271,7 @@ def initialize_database():
 
     while retry_count < max_retries:
         try:
-            # まずAlembicマイグレーションを試みる
-            migration_success = run_alembic_migrations()
-
-            if not migration_success:
-                # マイグレーションが失敗した場合は従来の方法を使用
-                create_tables()
-
-            check_document_type_column()
-
+            create_tables()
             return True
         except Exception as e:
             last_error = e
