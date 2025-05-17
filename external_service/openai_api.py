@@ -31,10 +31,14 @@ def create_summary_prompt(medical_text, additional_info="", department="default"
     return prompt
 
 
-def openai_generate_summary(medical_text, additional_info="", department="default", document_type="退院時サマリ", doctor="default"):
+def openai_generate_summary(medical_text, additional_info="", department="default", document_type="退院時サマリ",
+                            doctor="default"):
     try:
         initialize_openai()
-        model_name = OPENAI_MODEL
+        prompt_data = get_prompt_by_department(department, document_type, doctor)
+        model_name = prompt_data.get("selected_model") if prompt_data and prompt_data.get(
+            "selected_model") else OPENAI_MODEL
+
         client = OpenAI(api_key=OPENAI_API_KEY)
 
         prompt = create_summary_prompt(medical_text, additional_info, department, document_type, doctor)
@@ -45,7 +49,7 @@ def openai_generate_summary(medical_text, additional_info="", department="defaul
                 {"role": "system", "content": "あなたは経験豊富な医療文書作成の専門家です。"},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=30000,
+            max_tokens=20000,
         )
 
         if response.choices and response.choices[0].message.content:

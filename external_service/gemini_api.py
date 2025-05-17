@@ -35,11 +35,15 @@ def create_summary_prompt(medical_text, additional_info="", department="default"
     return prompt
 
 
-def gemini_generate_summary(medical_text, additional_info="", department="default", document_type="退院時サマリ", doctor="default", model_name=None):
+def gemini_generate_summary(medical_text, additional_info="", department="default", document_type="退院時サマリ",
+                            doctor="default", model_name=None):
     try:
         client = initialize_gemini()
+
         if not model_name:
-            model_name = GEMINI_MODEL
+            prompt_data = get_prompt_by_department(department, document_type, doctor)
+            model_name = prompt_data.get("selected_model") if prompt_data and prompt_data.get(
+                "selected_model") else GEMINI_MODEL
 
         prompt = create_summary_prompt(medical_text, additional_info, department, document_type, doctor)
 

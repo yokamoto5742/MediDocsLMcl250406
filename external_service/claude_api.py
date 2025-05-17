@@ -32,10 +32,14 @@ def create_summary_prompt(medical_text, additional_info="", department="default"
     return prompt
 
 
-def claude_generate_summary(medical_text, additional_info="", department="default", document_type="退院時サマリ", doctor="default"):
+def claude_generate_summary(medical_text, additional_info="", department="default", document_type="退院時サマリ",
+                            doctor="default"):
     try:
         initialize_claude()
-        model_name = CLAUDE_MODEL
+        prompt_data = get_prompt_by_department(department, document_type, doctor)
+        model_name = prompt_data.get("selected_model") if prompt_data and prompt_data.get(
+            "selected_model") else CLAUDE_MODEL
+
         client = Anthropic(api_key=CLAUDE_API_KEY)
 
         prompt = create_summary_prompt(medical_text, additional_info, department, document_type, doctor)

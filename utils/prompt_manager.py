@@ -335,12 +335,10 @@ def get_all_prompts():
         raise DatabaseError(f"プロンプト一覧の取得に失敗しました: {str(e)}")
 
 
-# utils/prompt_manager.pyの一部を修正
-
-def create_or_update_prompt(department, document_type, doctor, name, content):
+def create_or_update_prompt(department, document_type, doctor, content, selected_model=None):
     """プロンプトを作成または更新"""
     try:
-        if not department or not document_type or not doctor or not name or not content:
+        if not department or not document_type or not doctor or not content:
             return False, "すべての項目を入力してください"
 
         prompt_collection = get_prompt_collection()
@@ -355,8 +353,8 @@ def create_or_update_prompt(department, document_type, doctor, name, content):
         if existing:
             update_query = """
                            UPDATE prompts
-                           SET name       = :name, \
-                               content    = :content, \
+                           SET content       = :content, \
+                               selected_model = :selected_model, \
                                updated_at = CURRENT_TIMESTAMP
                            WHERE department = :department AND document_type = :document_type AND doctor = :doctor \
                            """
@@ -365,8 +363,8 @@ def create_or_update_prompt(department, document_type, doctor, name, content):
                 "department": department,
                 "document_type": document_type,
                 "doctor": doctor,
-                "name": name,
-                "content": content
+                "content": content,
+                "selected_model": selected_model
             }, fetch=False)
             return True, "プロンプトを更新しました"
         else:
@@ -374,8 +372,8 @@ def create_or_update_prompt(department, document_type, doctor, name, content):
                 "department": department,
                 "document_type": document_type,
                 "doctor": doctor,
-                "name": name,
                 "content": content,
+                "selected_model": selected_model,
                 "is_default": False
             })
             return True, "プロンプトを新規作成しました"
@@ -424,13 +422,6 @@ def delete_prompt(department, document_type, doctor):
 
 
 def insert_document(collection, document):
-    """
-    ドキュメントをテーブルに挿入する
-
-    Args:
-        collection: DatabaseManagerのインスタンス
-        document: 挿入するデータを含む辞書
-    """
     try:
         now = get_current_datetime()
         document.update({
@@ -438,9 +429,7 @@ def insert_document(collection, document):
             "updated_at": now
         })
 
-        # テーブル名を推測し、適切なSQLを生成
         if "name" in document and "order_index" in document:
-            # departmentsテーブルへの挿入
             query = """
                     INSERT INTO departments (name, order_index, default_model, created_at, updated_at)
                     VALUES (:name, :order_index, :default_model, :created_at, :updated_at) RETURNING id; \
@@ -455,15 +444,15 @@ def insert_document(collection, document):
         elif "department" in document:
             # promptsテーブルへの挿入
             query = """
-                    INSERT INTO prompts (department, document_type, doctor, name, content, is_default, created_at, updated_at)
-                    VALUES (:department, :document_type, :doctor, :name, :content, :is_default, :created_at, :updated_at) RETURNING id; \
+                    INSERT INTO prompts (department, document_type, doctor, content, selected_model, is_default, created_at, updated_at)
+                    VALUES (:department, :document_type, :doctor, :content, :selected_model, :is_default, :created_at, :updated_at) RETURNING id; \
                     """
             params = {
                 "department": document["department"],
-                "document_type": document.get("document_type", "退院時サマリ"),  # デフォルト値を設定
+                "document_type": document.get("document_type", "退院時サマリ"),
                 "doctor": document["doctor"],
-                "name": document["name"],
                 "content": document["content"],
+                "selected_model": document.get("selected_model"),
                 "is_default": document.get("is_default", False),
                 "created_at": document["created_at"],
                 "updated_at": document["updated_at"]
@@ -494,7 +483,6 @@ def initialize_default_prompt():
                 "department": "default",
                 "document_type": "退院時サマリ",
                 "doctor": "default",
-                "name": "退院時サマリ",
                 "content": default_prompt_content,
                 "is_default": True
             })
@@ -531,7 +519,6 @@ def initialize_database():
         initialize_departments()
         initialize_document_types()
 
-        # 各診療科と医師の組み合わせでデフォルトプロンプトを初期化
         prompt_collection = get_prompt_collection()
         config = get_config()
         default_prompt_content = config['PROMPTS']['discharge_summary']
@@ -563,7 +550,6 @@ def initialize_database():
                             "department": dept,
                             "document_type": doc_type,
                             "doctor": doctor,
-                            "name": doc_type,
                             "content": default_prompt_content,
                             "is_default": False
                         })

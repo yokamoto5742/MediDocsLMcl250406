@@ -24,16 +24,16 @@ class Department(Base):
     created_at = Column(DateTime(timezone=True), default=func.now())
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
 
+
 class Prompt(Base):
     __tablename__ = 'prompts'
-    
+
     id = Column(Integer, primary_key=True)
     department = Column(String(100), nullable=False)
-    # ここにdocument_typeカラムを追加する必要がある
     document_type = Column(String(100), nullable=False)
     doctor = Column(String(100), nullable=False)
-    name = Column(String(100), nullable=False)
     content = Column(Text, nullable=False)
+    selected_model = Column(String(50))
     is_default = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), default=func.now())
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())

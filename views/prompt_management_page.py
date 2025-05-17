@@ -73,11 +73,28 @@ def prompt_management_ui():
     prompt_data = get_prompt_by_department(selected_dept, selected_doc_type, selected_doctor)
 
     with st.form(key=f"edit_prompt_form_{selected_dept}_{selected_doc_type}_{selected_doctor}"):
-        prompt_name = st.text_input(
-            "プロンプト名",
-            value=prompt_data.get("name", "") if prompt_data else selected_doc_type,
-            key=f"prompt_name_{selected_dept}_{selected_doc_type}_{selected_doctor}"
+        available_models = []
+        if "available_models" in st.session_state:
+            available_models = st.session_state.available_models
+
+        model_options = ["未指定"] + available_models
+        selected_model = prompt_data.get("selected_model") if prompt_data and prompt_data.get(
+            "selected_model") else "未指定"
+
+        model_index = 0
+        if selected_model in model_options:
+            model_index = model_options.index(selected_model)
+
+        prompt_model = st.selectbox(
+            "AIモデル",
+            model_options,
+            index=model_index,
+            key=f"prompt_model_{selected_dept}_{selected_doc_type}_{selected_doctor}"
         )
+
+        if prompt_model == "未指定":
+            prompt_model = None
+
         prompt_content = st.text_area(
             "内容",
             value=prompt_data.get("content", "") if prompt_data else "",
@@ -88,10 +105,23 @@ def prompt_management_ui():
         submit = st.form_submit_button("プロンプトを保存")
 
         if submit:
-            success, message = create_or_update_prompt(selected_dept, selected_doc_type, selected_doctor, prompt_name,
-                                                       prompt_content)
+            success, message = create_or_update_prompt(selected_dept, selected_doc_type, selected_doctor,
+                                                       prompt_content, prompt_model)
             if success:
                 st.success(message)
+            else:
+                raise AppError(message)
+
+    if selected_dept != "default" or selected_doc_type != "退院時サマリ" or selected_doctor != "default":
+        if st.button("プロンプトを削除", key=f"delete_prompt_{selected_dept}_{selected_doc_type}_{selected_doctor}",
+                     type="primary"):
+            success, message = delete_prompt(selected_dept, selected_doc_type, selected_doctor)
+            if success:
+                st.session_state.success_message = message
+                st.session_state.selected_dept_for_prompt = "default"
+                st.session_state.selected_doc_type_for_prompt = "退院時サマリ"
+                st.session_state.selected_doctor_for_prompt = "default"
+                st.rerun()
             else:
                 raise AppError(message)
 
