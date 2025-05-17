@@ -283,7 +283,8 @@ def initialize_database():
             if not migration_success:
                 # マイグレーションが失敗した場合は従来の方法を使用
                 create_tables()
-                check_document_type_column()
+
+            check_document_type_column()
 
             return True
         except Exception as e:

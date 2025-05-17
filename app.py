@@ -48,6 +48,7 @@ def main_app():
         return
     elif st.session_state.current_page == "statistics":
         usage_statistics_ui()
+        return
     elif st.session_state.current_page == "document_type_edit":  # 追加
         document_type_management_ui()
         return
