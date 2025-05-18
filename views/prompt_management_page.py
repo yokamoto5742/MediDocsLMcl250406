@@ -120,16 +120,3 @@ def prompt_management_ui():
                 st.rerun()
             else:
                 raise AppError(message)
-
-    if selected_dept != "default" or selected_doc_type != "退院時サマリ" or selected_doctor != "default":
-        if st.button("プロンプトを削除", key=f"delete_prompt_{selected_dept}_{selected_doc_type}_{selected_doctor}",
-                     type="primary"):
-            success, message = delete_prompt(selected_dept, selected_doc_type, selected_doctor)
-            if success:
-                st.session_state.success_message = message
-                st.session_state.selected_dept_for_prompt = "default"
-                st.session_state.selected_doc_type_for_prompt = "退院時サマリ"
-                st.session_state.selected_doctor_for_prompt = "default"
-                st.rerun()
-            else:
-                raise AppError(message)
