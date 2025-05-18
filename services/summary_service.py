@@ -173,13 +173,13 @@ def process_summary(input_text, additional_info=""):
                 db_manager = DatabaseManager.get_instance()
                 now_jst = datetime.datetime.now().astimezone(JST)
 
-                # PostgreSQL用に変更
                 usage_data = {
                     "date": now_jst,
                     "app_type": APP_TYPE,
-                    "document_name": selected_document_type,  # DEFAULT_DOCUMENT_NAMEの代わりに選択された文書種類を使用
+                    "document_name": selected_document_type,
                     "model_detail": model_detail,
                     "department": selected_department,
+                    "doctor": selected_doctor,
                     "input_tokens": input_tokens,
                     "output_tokens": output_tokens,
                     "total_tokens": input_tokens + output_tokens,
@@ -188,9 +188,9 @@ def process_summary(input_text, additional_info=""):
 
                 query = """
                         INSERT INTO summary_usage
-                        (date, app_type, document_name, model_detail, department, input_tokens, output_tokens, \
+                        (date, app_type, document_name, model_detail, department, doctor, input_tokens, output_tokens, \
                          total_tokens, processing_time)
-                        VALUES (:date, :app_type, :document_name, :model_detail, :department, :input_tokens, \
+                        VALUES (:date, :app_type, :document_name, :model_detail, :department, :doctor, :input_tokens, \
                                 :output_tokens, :total_tokens, :processing_time) \
                         """
 

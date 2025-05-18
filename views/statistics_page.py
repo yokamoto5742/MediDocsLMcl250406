@@ -95,10 +95,10 @@ def usage_statistics_ui():
         st.info("指定した期間のデータがありません")
         return
 
-    # 診療科ごとの統計
     dept_query = f"""
     SELECT
         COALESCE(department, 'default') as department,
+        COALESCE(doctor, 'default') as doctor,
         document_name,
         COUNT(*) as count,
         SUM(input_tokens) as input_tokens,
@@ -107,7 +107,7 @@ def usage_statistics_ui():
         SUM(processing_time) as processing_time
     FROM summary_usage
     WHERE {where_clause}
-    GROUP BY department, document_name
+    GROUP BY department, doctor, document_name
     ORDER BY count DESC
     """
 
@@ -120,6 +120,7 @@ def usage_statistics_ui():
         document_name,
         model_detail,
         department,
+        doctor,
         input_tokens,
         output_tokens,
         processing_time
@@ -134,10 +135,12 @@ def usage_statistics_ui():
     data = []
     for stat in dept_summary:
         dept_name = "全科共通" if stat["department"] == "default" else stat["department"]
+        doctor_name = "医師共通" if stat["doctor"] == "default" else stat["doctor"]
         document_name = stat["document_name"] or "不明"
         data.append({
-            "診療科": dept_name,
             "文書名": document_name,
+            "診療科": dept_name,
+            "医師名": doctor_name,
             "作成件数": stat["count"],
             "入力トークン": stat["input_tokens"],
             "出力トークン": stat["output_tokens"],

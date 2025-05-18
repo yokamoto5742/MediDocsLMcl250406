@@ -144,6 +144,10 @@ def create_tables():
                           ( \
                               100 \
                           ),
+                              doctor VARCHAR \
+                          ( \
+                              100 \
+                          ),
                               input_tokens INTEGER,
                               output_tokens INTEGER,
                               total_tokens INTEGER,
