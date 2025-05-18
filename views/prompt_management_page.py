@@ -27,40 +27,43 @@ def prompt_management_ui():
         st.session_state.selected_doctor_for_prompt = "default"
 
     departments = ["default"] + get_all_departments()
-    selected_dept = st.selectbox(
-        "診療科を選択",
-        departments,
-        index=departments.index(
-            st.session_state.selected_dept_for_prompt) if st.session_state.selected_dept_for_prompt in departments else 0,
-        format_func=lambda x: "全科共通" if x == "default" else x,
-        key="prompt_department_selector"
-    )
-
     document_types = DEFAULT_DOCUMENT_TYPES
     if not document_types:
         document_types = ["退院時サマリ"]
 
-    selected_doc_type = st.selectbox(
-        "文書種類を選択",
-        document_types,
-        index=document_types.index(
-            st.session_state.selected_doc_type_for_prompt) if st.session_state.selected_doc_type_for_prompt in document_types else 0,
-        key="prompt_document_type_selector"
-    )
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_dept = st.selectbox(
+            "診療科",
+            departments,
+            index=departments.index(
+                st.session_state.selected_dept_for_prompt) if st.session_state.selected_dept_for_prompt in departments else 0,
+            format_func=lambda x: "全科共通" if x == "default" else x,
+            key="prompt_department_selector"
+        )
 
     available_doctors = DEPARTMENT_DOCTORS_MAPPING.get(selected_dept, ["default"])
-
     if st.session_state.selected_doctor_for_prompt not in available_doctors:
         st.session_state.selected_doctor_for_prompt = available_doctors[0]
 
-    # 医師の選択
-    selected_doctor = st.selectbox(
-        "医師を選択",
-        available_doctors,
-        index=available_doctors.index(st.session_state.selected_doctor_for_prompt),
-        format_func=lambda x: "医師共通" if x == "default" else x,
-        key="prompt_doctor_selector"
-    )
+    with col2:
+        selected_doctor = st.selectbox(
+            "医師名",
+            available_doctors,
+            index=available_doctors.index(st.session_state.selected_doctor_for_prompt),
+            format_func=lambda x: "医師共通" if x == "default" else x,
+            key="prompt_doctor_selector"
+        )
+
+    col3, col4 = st.columns(2)
+    with col3:
+        selected_doc_type = st.selectbox(
+            "文書名",
+            document_types,
+            index=document_types.index(
+                st.session_state.selected_doc_type_for_prompt) if st.session_state.selected_doc_type_for_prompt in document_types else 0,
+            key="prompt_document_type_selector"
+        )
 
     st.session_state.selected_dept_for_prompt = selected_dept
     st.session_state.selected_doc_type_for_prompt = selected_doc_type
@@ -68,19 +71,19 @@ def prompt_management_ui():
 
     prompt_data = get_prompt_by_department(selected_dept, selected_doc_type, selected_doctor)
 
-    with st.form(key=f"edit_prompt_form_{selected_dept}_{selected_doc_type}_{selected_doctor}"):
-        available_models = []
-        if "available_models" in st.session_state:
-            available_models = st.session_state.available_models
+    available_models = []
+    if "available_models" in st.session_state:
+        available_models = st.session_state.available_models
 
-        model_options = ["未指定"] + available_models
-        selected_model = prompt_data.get("selected_model") if prompt_data and prompt_data.get(
-            "selected_model") else "未指定"
+    model_options = ["未指定"] + available_models
+    selected_model = prompt_data.get("selected_model") if prompt_data and prompt_data.get(
+        "selected_model") else "未指定"
 
-        model_index = 0
-        if selected_model in model_options:
-            model_index = model_options.index(selected_model)
+    model_index = 0
+    if selected_model in model_options:
+        model_index = model_options.index(selected_model)
 
+    with col4:
         prompt_model = st.selectbox(
             "AIモデル",
             model_options,
@@ -88,11 +91,12 @@ def prompt_management_ui():
             key=f"prompt_model_{selected_dept}_{selected_doc_type}_{selected_doctor}"
         )
 
-        if prompt_model == "未指定":
-            prompt_model = None
+    if prompt_model == "未指定":
+        prompt_model = None
 
+    with st.form(key=f"edit_prompt_form_{selected_dept}_{selected_doc_type}_{selected_doctor}"):
         prompt_content = st.text_area(
-            "内容",
+            "プロンプト内容",
             value=prompt_data.get("content", "") if prompt_data else "",
             height=200,
             key=f"prompt_content_{selected_dept}_{selected_doc_type}_{selected_doctor}"
@@ -102,7 +106,7 @@ def prompt_management_ui():
 
         if submit:
             success, message = create_or_update_prompt(selected_dept, selected_doc_type, selected_doctor,
-                                                       prompt_content, prompt_model)
+                                                      prompt_content, prompt_model)
             if success:
                 st.success(message)
             else:
