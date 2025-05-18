@@ -70,9 +70,9 @@ def usage_statistics_ui():
 
     if selected_document_type != "すべて":
         if selected_document_type == "不明":
-            query_conditions.append("document_name IS NULL")
+            query_conditions.append("document_types IS NULL")
         else:
-            query_conditions.append("document_name = :doc_type")
+            query_conditions.append("document_types = :doc_type")
             query_params["doc_type"] = selected_document_type
 
     # 条件をANDで結合
@@ -99,7 +99,7 @@ def usage_statistics_ui():
     SELECT
         COALESCE(department, 'default') as department,
         COALESCE(doctor, 'default') as doctor,
-        document_name,
+        document_types,
         COUNT(*) as count,
         SUM(input_tokens) as input_tokens,
         SUM(output_tokens) as output_tokens,
@@ -107,17 +107,16 @@ def usage_statistics_ui():
         SUM(processing_time) as processing_time
     FROM summary_usage
     WHERE {where_clause}
-    GROUP BY department, doctor, document_name
+    GROUP BY department, doctor, document_types
     ORDER BY count DESC
     """
 
     dept_summary = db_manager.execute_query(dept_query, query_params)
 
-    # 詳細レコードの取得
     records_query = f"""
     SELECT
         date,
-        document_name,
+        document_types,
         model_detail,
         department,
         doctor,
@@ -136,9 +135,9 @@ def usage_statistics_ui():
     for stat in dept_summary:
         dept_name = "全科共通" if stat["department"] == "default" else stat["department"]
         doctor_name = "医師共通" if stat["doctor"] == "default" else stat["doctor"]
-        document_name = stat["document_name"] or "不明"
+        document_types = stat["document_types"] or "不明"
         data.append({
-            "文書名": document_name,
+            "文書名": document_types,
             "診療科": dept_name,
             "医師名": doctor_name,
             "作成件数": stat["count"],
@@ -170,7 +169,7 @@ def usage_statistics_ui():
 
         detail_data.append({
             "作成日": jst_date.strftime("%Y/%m/%d"),
-            "文書名": record.get("document_name") or "不明",
+            "文書名": record.get("document_types") or "不明",
             "診療科": "全科共通" if record.get("department") == "default" else record.get("department"),
             "医師名": "医師共通" if record.get("doctor") == "default" else record.get("doctor"),
             "AIモデル": model_info,

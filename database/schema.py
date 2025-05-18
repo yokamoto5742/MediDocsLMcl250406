@@ -88,7 +88,7 @@ def create_tables():
                           ( \
                               50 \
                           ),
-                              document_name VARCHAR \
+                              document_types VARCHAR \
                           ( \
                               100 \
                           ),

@@ -35,7 +35,7 @@ class SummaryUsage(Base):
     id = Column(Integer, primary_key=True)
     date = Column(DateTime(timezone=True), default=func.now())
     app_type = Column(String(50))
-    document_name = Column(String(100))
+    document_types = Column(String(100))
     model_detail = Column(String(100))
     department = Column(String(100))
     doctor = Column(String(100))

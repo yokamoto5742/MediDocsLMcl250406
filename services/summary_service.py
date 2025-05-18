@@ -179,7 +179,7 @@ def process_summary(input_text, additional_info=""):
                 usage_data = {
                     "date": now_jst,
                     "app_type": APP_TYPE,
-                    "document_name": selected_document_type,  # アプリ内ではdocument_typeとして統一
+                    "document_types": selected_document_type,
                     "model_detail": model_detail,
                     "department": selected_department,
                     "doctor": selected_doctor,
@@ -191,9 +191,9 @@ def process_summary(input_text, additional_info=""):
 
                 query = """
                         INSERT INTO summary_usage
-                        (date, app_type, document_name, model_detail, department, doctor, input_tokens, output_tokens, \
+                        (date, app_type, document_types, model_detail, department, doctor, input_tokens, output_tokens, \
                          total_tokens, processing_time)
-                        VALUES (:date, :app_type, :document_name, :model_detail, :department, :doctor, :input_tokens, \
+                        VALUES (:date, :app_type, :document_types, :model_detail, :department, :doctor, :input_tokens, \
                                 :output_tokens, :total_tokens, :processing_time) \
                         """
 
