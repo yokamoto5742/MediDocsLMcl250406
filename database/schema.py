@@ -33,53 +33,9 @@ def run_alembic_migrations():
 
 
 def create_tables():
-    """
-    従来のテーブル作成処理。
-    Alembicマイグレーションが失敗した場合のフォールバックとして使用。
-    """
     db_manager = DatabaseManager.get_instance()
     engine = db_manager.get_engine()
 
-    users_table = """
-                  CREATE TABLE IF NOT EXISTS users \
-                  ( \
-                      id \
-                      SERIAL \
-                      PRIMARY \
-                      KEY, \
-                      username \
-                      VARCHAR \
-                  ( \
-                      100 \
-                  ) UNIQUE NOT NULL,
-                      password BYTEA NOT NULL,
-                      is_admin BOOLEAN DEFAULT FALSE,
-                      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-                                               ); \
-                  """
-
-    departments_table = """
-                        CREATE TABLE IF NOT EXISTS departments \
-                        ( \
-                            id \
-                            SERIAL \
-                            PRIMARY \
-                            KEY, \
-                            name \
-                            VARCHAR \
-                        ( \
-                            100 \
-                        ) UNIQUE NOT NULL,
-                            order_index INTEGER NOT NULL,
-                            default_model VARCHAR \
-                        ( \
-                            50 \
-                        ),
-                            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-                                                     ); \
-                        """
 
     prompts_table = """
                     CREATE TABLE IF NOT EXISTS prompts \
@@ -183,32 +139,11 @@ def create_tables():
                                                       ); \
                          """
 
-    document_types_table = """
-                           CREATE TABLE IF NOT EXISTS document_types \
-                           ( \
-                               id \
-                               SERIAL \
-                               PRIMARY \
-                               KEY, \
-                               name \
-                               VARCHAR \
-                           ( \
-                               100 \
-                           ) UNIQUE NOT NULL,
-                               order_index INTEGER NOT NULL,
-                               created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                               updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-                                                        );
-                           """
-
     try:
         with engine.begin() as conn:
-            conn.execute(text(users_table))
-            conn.execute(text(departments_table))
+            conn.execute(text(app_settings_table))
             conn.execute(text(prompts_table))
             conn.execute(text(summary_usage_table))
-            conn.execute(text(app_settings_table))
-            conn.execute(text(document_types_table))
         return True
     except Exception as e:
         raise DatabaseError(f"テーブル作成中にエラーが発生しました: {str(e)}")

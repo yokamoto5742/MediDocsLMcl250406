@@ -4,24 +4,14 @@ from sqlalchemy.sql import func
 
 Base = declarative_base()
 
-class User(Base):
-    __tablename__ = 'users'
-    
-    id = Column(Integer, primary_key=True)
-    username = Column(String(100), unique=True, nullable=False)
-    password = Column(String, nullable=False)  # 実際はBYTEAだがSQLAlchemyでは表現が難しいのでStringで代用
-    is_admin = Column(Boolean, default=False)
-    created_at = Column(DateTime(timezone=True), default=func.now())
-    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
 
-class Department(Base):
-    __tablename__ = 'departments'
-    
+class AppSetting(Base):
+    __tablename__ = 'app_settings'
+
     id = Column(Integer, primary_key=True)
-    name = Column(String(100), unique=True, nullable=False)
-    order_index = Column(Integer, nullable=False)
-    default_model = Column(String(50))
-    created_at = Column(DateTime(timezone=True), default=func.now())
+    setting_id = Column(String(100), unique=True, nullable=False)
+    selected_department = Column(String(100))
+    selected_model = Column(String(50))
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
 
 
@@ -53,21 +43,3 @@ class SummaryUsage(Base):
     output_tokens = Column(Integer)
     total_tokens = Column(Integer)
     processing_time = Column(Integer)
-
-class AppSetting(Base):
-    __tablename__ = 'app_settings'
-    
-    id = Column(Integer, primary_key=True)
-    setting_id = Column(String(100), unique=True, nullable=False)
-    selected_department = Column(String(100))
-    selected_model = Column(String(50))
-    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
-
-class DocumentType(Base):
-    __tablename__ = 'document_types'
-    
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100), unique=True, nullable=False)
-    order_index = Column(Integer, nullable=False)
-    created_at = Column(DateTime(timezone=True), default=func.now())
-    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())

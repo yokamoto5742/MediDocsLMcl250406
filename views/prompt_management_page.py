@@ -1,11 +1,10 @@
 import streamlit as st
 
-from utils.document_type_manager import get_all_document_types
 from utils.error_handlers import handle_error
 from utils.exceptions import AppError
 from utils.prompt_manager import get_all_departments, get_prompt_by_department, create_or_update_prompt, delete_prompt
 from ui_components.navigation import change_page
-from utils.constants import DEPARTMENT_DOCTORS_MAPPING
+from utils.constants import DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPES
 
 
 @handle_error
@@ -37,7 +36,7 @@ def prompt_management_ui():
         key="prompt_department_selector"
     )
 
-    document_types = get_all_document_types()
+    document_types = DEFAULT_DOCUMENT_TYPES
     if not document_types:
         document_types = ["退院時サマリ"]
 

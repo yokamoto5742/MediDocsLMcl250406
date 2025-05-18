@@ -11,8 +11,8 @@ from external_service.claude_api import claude_generate_summary
 from external_service.gemini_api import gemini_generate_summary
 from external_service.openai_api import openai_generate_summary
 from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, MAX_INPUT_TOKENS, \
-    MIN_INPUT_TOKENS, OPENAI_API_KEY, OPENAI_MODEL
-from utils.constants import APP_TYPE, DEFAULT_DOCUMENT_NAME, MESSAGES
+    MIN_INPUT_TOKENS, OPENAI_API_KEY
+from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
 from utils.prompt_manager import get_prompt_by_department
@@ -24,10 +24,14 @@ JST = pytz.timezone('Asia/Tokyo')
 def generate_summary_task(input_text, selected_department, selected_model, result_queue, additional_info="",
                           selected_document_type="退院時サマリ", selected_doctor="default"):
     try:
+        if selected_department != "default" and selected_department not in DEFAULT_DEPARTMENTS:
+            selected_department = "default"
+        if selected_document_type not in DEFAULT_DOCUMENT_TYPES:
+            selected_document_type = DEFAULT_DOCUMENT_TYPES[0]
+
         prompt_data = get_prompt_by_department(selected_department, selected_document_type, selected_doctor)
         prompt_selected_model = prompt_data.get("selected_model") if prompt_data else None
 
-        # プロンプトにモデルが設定されている場合はそれを使用
         if prompt_selected_model:
             selected_model = prompt_selected_model
 
