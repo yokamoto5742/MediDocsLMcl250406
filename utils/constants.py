@@ -25,12 +25,12 @@ DEFAULT_DOCUMENT_NAME = "退院時サマリ"
 DEFAULT_DOCUMENT_TYPES = ["退院時サマリ", "現病歴", "主治医意見書", "訪問看護指示書"]
 DOCUMENT_NAME_OPTIONS = ["すべて", "不明"]
 
-DEFAULT_DOCTORS = ["default", "田中医師", "佐々木医師", "鈴木医師", "高田医師", "山田医師"]
+DEFAULT_DOCTORS = ["default", "田中宏明", "真野鋭志", "太田悟", "橋本義弘"]
 
 DEPARTMENT_DOCTORS_MAPPING = {
-    "default": ["default"],  # 全科共通には default のみを関連付け
-    "内科": ["default", "田中医師", "佐々木医師"],
-    "消化器内科": ["default", "山田医師"],
-    "整形外科": ["default", "鈴木医師", "高田医師"],
-    "眼科": ["default", "高田医師"]
+    "default": ["default"],
+    "内科": ["default", "田中宏明"],
+    "消化器内科": ["default", "真野鋭志"],
+    "整形外科": ["default", "太田悟"],
+    "眼科": ["default", "橋本義弘"]
 }

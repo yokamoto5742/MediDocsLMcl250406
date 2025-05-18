@@ -16,7 +16,7 @@ def get_config():
 
 load_dotenv()
 
-# HerokuのDATABASE_URLから個別の設定を取得する関数
+
 def parse_database_url():
     database_url = os.environ.get("DATABASE_URL")
     if database_url:
@@ -31,7 +31,6 @@ def parse_database_url():
         }
     return None
 
-# DATABASE_URLがある場合は優先して使用
 db_config = parse_database_url()
 
 if db_config:
@@ -40,9 +39,8 @@ if db_config:
     POSTGRES_USER = db_config["user"]
     POSTGRES_PASSWORD = db_config["password"]
     POSTGRES_DB = db_config["database"]
-    POSTGRES_SSL = "require"  # Herokuでは必須
+    POSTGRES_SSL = "require"
 else:
-    # 従来の個別環境変数からの取得
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
     POSTGRES_PORT = os.environ.get("POSTGRES_PORT", "5432")
     POSTGRES_USER = os.environ.get("POSTGRES_USER", "postgres")
@@ -50,7 +48,6 @@ else:
     POSTGRES_DB = os.environ.get("POSTGRES_DB", "discharge_summary_app")
     POSTGRES_SSL = os.environ.get("POSTGRES_SSL", None)
 
-# API設定
 GEMINI_CREDENTIALS = os.environ.get("GEMINI_CREDENTIALS")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL")
 GEMINI_FLASH_MODEL = os.environ.get("GEMINI_FLASH_MODEL")

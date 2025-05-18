@@ -170,8 +170,9 @@ def usage_statistics_ui():
 
         detail_data.append({
             "作成日": jst_date.strftime("%Y/%m/%d"),
-            "診療科": "全科共通" if record.get("department") == "default" else record.get("department"),
             "文書名": record.get("document_name") or "不明",
+            "診療科": "全科共通" if record.get("department") == "default" else record.get("department"),
+            "医師名": "医師共通" if record.get("doctor") == "default" else record.get("doctor"),
             "AIモデル": model_info,
             "入力トークン": record["input_tokens"],
             "出力トークン": record["output_tokens"],
