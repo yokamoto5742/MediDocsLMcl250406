@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from database.db import DatabaseManager
-from utils.constants import DOCUMENT_NAME_OPTIONS
+from utils.constants import DOCUMENT_TYPE_OPTIONS
 from utils.error_handlers import handle_error
 from ui_components.navigation import change_page
 
@@ -44,7 +44,7 @@ def usage_statistics_ui():
         end_date = st.date_input("終了日", today)
 
     with col4:
-        selected_document_name = st.selectbox("文書名", DOCUMENT_NAME_OPTIONS, index=0)
+        selected_document_type = st.selectbox("文書名", DOCUMENT_TYPE_OPTIONS, index=0)
 
     start_datetime = datetime.datetime.combine(start_date, datetime.time.min)
     end_datetime = datetime.datetime.combine(end_date, datetime.time.max)
@@ -68,12 +68,12 @@ def usage_statistics_ui():
                 query_conditions.append("model_detail NOT ILIKE :model_exclude")
                 query_params["model_exclude"] = f"%{model_config['exclude']}%"
 
-    if selected_document_name != "すべて":
-        if selected_document_name == "不明":
+    if selected_document_type != "すべて":
+        if selected_document_type == "不明":
             query_conditions.append("document_name IS NULL")
         else:
-            query_conditions.append("document_name = :doc_name")
-            query_params["doc_name"] = selected_document_name
+            query_conditions.append("document_name = :doc_type")
+            query_params["doc_type"] = selected_document_type
 
     # 条件をANDで結合
     where_clause = " AND ".join(query_conditions)

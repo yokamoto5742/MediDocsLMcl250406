@@ -173,14 +173,13 @@ def process_summary(input_text, additional_info=""):
             st.session_state.summary_generation_time = processing_time
 
             try:
-                # DatabaseManagerインスタンスを正しく取得
                 db_manager = DatabaseManager.get_instance()
                 now_jst = datetime.datetime.now().astimezone(JST)
 
                 usage_data = {
                     "date": now_jst,
                     "app_type": APP_TYPE,
-                    "document_name": selected_document_type,
+                    "document_name": selected_document_type,  # アプリ内ではdocument_typeとして統一
                     "model_detail": model_detail,
                     "department": selected_department,
                     "doctor": selected_doctor,
