@@ -37,7 +37,6 @@ def prompt_management_ui():
         key="prompt_department_selector"
     )
 
-    # 文書種類の選択
     document_types = get_all_document_types()
     if not document_types:
         document_types = ["退院時サマリ"]
@@ -50,10 +49,8 @@ def prompt_management_ui():
         key="prompt_document_type_selector"
     )
 
-    # 選択された診療科に応じて医師リストを取得
     available_doctors = DEPARTMENT_DOCTORS_MAPPING.get(selected_dept, ["default"])
 
-    # 前回の選択が現在の診療科の医師リストに含まれているか確認
     if st.session_state.selected_doctor_for_prompt not in available_doctors:
         st.session_state.selected_doctor_for_prompt = available_doctors[0]
 

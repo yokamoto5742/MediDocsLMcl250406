@@ -1,12 +1,10 @@
-import datetime
-
 import streamlit as st
 
 from database.db import DatabaseManager
-from utils.config import GEMINI_MODEL, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, OPENAI_API_KEY, \
-    OPENAI_MODEL
+from utils.config import GEMINI_MODEL, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, OPENAI_API_KEY
 from utils.prompt_manager import get_all_departments, get_department_by_name
 from utils.document_type_manager import get_all_document_types
+from utils.constants import DEPARTMENT_DOCTORS_MAPPING
 
 
 def change_page(page):
@@ -18,13 +16,30 @@ def render_sidebar():
 
     previous_dept = st.session_state.selected_department
     previous_model = getattr(st.session_state, "selected_model", None)
-    previous_doctor = getattr(st.session_state, "selected_doctor", None)  # 追加：前回選択された医師
+    previous_doctor = getattr(st.session_state, "selected_doctor", None)
 
     try:
         index = departments.index(st.session_state.selected_department)
     except ValueError:
         index = 0
-        st.session_state.selected_department = departments[0]  # "default" に設定
+        st.session_state.selected_department = departments[0]
+
+    document_types = get_all_document_types()
+
+    if not document_types:
+        document_types = ["退院時サマリ"]
+
+    if "selected_document_type" not in st.session_state:
+        st.session_state.selected_document_type = document_types[0] if document_types else "退院時サマリ"
+
+    selected_document_type = st.sidebar.selectbox(
+        "文書名",
+        document_types,
+        index=document_types.index(
+            st.session_state.selected_document_type) if st.session_state.selected_document_type in document_types else 0
+    )
+
+    st.session_state.selected_document_type = selected_document_type
 
     selected_dept = st.sidebar.selectbox(
         "診療科",
@@ -46,11 +61,8 @@ def render_sidebar():
 
     st.session_state.selected_department = selected_dept
 
-    # 選択された診療科に基づいて利用可能な医師を取得
-    from utils.constants import DEPARTMENT_DOCTORS_MAPPING
     available_doctors = DEPARTMENT_DOCTORS_MAPPING.get(selected_dept, ["default"])
 
-    # 前回の医師が現在の診療科に存在しない場合、リセット
     if "selected_doctor" not in st.session_state or st.session_state.selected_doctor not in available_doctors:
         st.session_state.selected_doctor = available_doctors[0]
 
@@ -60,45 +72,25 @@ def render_sidebar():
                 st.session_state.selected_model = "Gemini_Pro"
             elif st.session_state.available_models:
                 st.session_state.selected_model = st.session_state.available_models[0]
-            st.session_state.selected_doctor = "default"  # 全科共通の場合は "default" に設定
+            st.session_state.selected_doctor = "default"
         else:
             dept_data = get_department_by_name(selected_dept)
             if dept_data and "default_model" in dept_data and dept_data["default_model"]:
                 if dept_data["default_model"] in st.session_state.available_models:
                     st.session_state.selected_model = dept_data["default_model"]
-            # 診療科が変更されたら、その診療科のデフォルト医師を設定
             st.session_state.selected_doctor = available_doctors[0]
 
         save_user_settings(selected_dept, st.session_state.selected_model, st.session_state.selected_doctor)
         st.rerun()
 
-    document_types = get_all_document_types()
-
-    if not document_types:
-        document_types = ["退院時サマリ"]
-
-    if "selected_document_type" not in st.session_state:
-        st.session_state.selected_document_type = document_types[0] if document_types else "退院時サマリ"
-
-    selected_document_type = st.sidebar.selectbox(
-        "文書種類",
-        document_types,
-        index=document_types.index(
-            st.session_state.selected_document_type) if st.session_state.selected_document_type in document_types else 0
-    )
-
-    st.session_state.selected_document_type = selected_document_type
-
-    # 医師選択を追加
     selected_doctor = st.sidebar.selectbox(
-        "医師",
+        "医師名",
         available_doctors,
         index=available_doctors.index(st.session_state.selected_doctor),
         format_func=lambda x: "医師共通" if x == "default" else x,
         key="doctor_selector"
     )
 
-    # 医師が変更された場合
     if selected_doctor != previous_doctor:
         st.session_state.selected_doctor = selected_doctor
         save_user_settings(st.session_state.selected_department, st.session_state.selected_model, selected_doctor)

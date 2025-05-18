@@ -7,27 +7,23 @@ from utils.exceptions import DatabaseError, AppError
 
 
 def get_document_type_collection():
-    """文書種類データを取得するためのメソッド"""
     try:
         db_manager = DatabaseManager.get_instance()
         return db_manager
     except Exception as e:
-        raise DatabaseError(f"文書種類コレクションの取得に失敗しました: {str(e)}")
+        raise DatabaseError(f"文書名コレクションの取得に失敗しました: {str(e)}")
 
 
 def initialize_document_types():
-    """初期文書種類データをデータベースに作成"""
     try:
         doc_type_collection = get_document_type_collection()
 
-        # 文書種類の数を確認
         query = "SELECT COUNT(*) as count FROM document_types"
         result = doc_type_collection.execute_query(query)
         existing_count = result[0]["count"] if result else 0
 
         if existing_count == 0:
             for idx, doc_type in enumerate(DEFAULT_DOCUMENT_TYPES):
-                # 新しい文書種類を挿入
                 query = """
                         INSERT INTO document_types (name, order_index, created_at, updated_at)
                         VALUES (:name, :order_index, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -38,25 +34,23 @@ def initialize_document_types():
                 }, fetch=False)
 
     except Exception as e:
-        raise DatabaseError(f"文書種類の初期化に失敗しました: {str(e)}")
+        raise DatabaseError(f"文書名の初期化に失敗しました: {str(e)}")
 
 
 def get_all_document_types():
-    """すべての文書種類名のリストを取得"""
     try:
         doc_type_collection = get_document_type_collection()
         query = "SELECT name FROM document_types ORDER BY order_index"
         result = doc_type_collection.execute_query(query)
         return [doc_type["name"] for doc_type in result]
     except Exception as e:
-        raise DatabaseError(f"文書種類の取得に失敗しました: {str(e)}")
+        raise DatabaseError(f"文書名の取得に失敗しました: {str(e)}")
 
 
 def create_document_type(name):
-    """新しい文書種類を作成"""
     try:
         if not name:
-            return False, "文書種類名を入力してください"
+            return False, "文書名を入力してください"
 
         doc_type_collection = get_document_type_collection()
 

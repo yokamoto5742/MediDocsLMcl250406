@@ -161,13 +161,11 @@ def create_department(name, default_model=None):
         else:
             default_prompt_content = default_prompt_result[0]["content"]
 
-        # 関連する医師のリスト
         doctors = DEPARTMENT_DOCTORS_MAPPING.get(name, ["default"])
         document_types = get_all_document_types()
         if not document_types:
             document_types = ["退院時サマリ"]
 
-        # 各医師と文書種類の組み合わせでプロンプトを作成
         for doctor in doctors:
             for doc_type in document_types:
                 insert_document(prompt_collection, {
