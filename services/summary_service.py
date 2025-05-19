@@ -11,7 +11,7 @@ from external_service.claude_api import claude_generate_summary
 from external_service.gemini_api import gemini_generate_summary
 from external_service.openai_api import openai_generate_summary
 from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, MAX_INPUT_TOKENS, \
-    MIN_INPUT_TOKENS, OPENAI_API_KEY
+    MIN_INPUT_TOKENS, OPENAI_API_KEY, MAX_TOKEN_THRESHOLD
 from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
@@ -34,6 +34,20 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
 
         if prompt_selected_model:
             selected_model = prompt_selected_model
+
+        # 入力テキストの長さを推定（文字数をおおよそのトークン数として使用）
+        estimated_tokens = len(input_text) + len(additional_info or "")
+
+        # トークン数が閾値を超えた場合、Gemini_Proに自動切り替え
+        original_model = selected_model
+        model_switched = False
+
+        if estimated_tokens > MAX_TOKEN_THRESHOLD:
+            if GEMINI_CREDENTIALS and GEMINI_MODEL:
+                selected_model = "Gemini_Pro"
+                model_switched = True
+            elif not GEMINI_CREDENTIALS:
+                raise APIError("入力テキストが長すぎます。Gemini APIの認証情報が設定されていないため処理できません。")
 
         match selected_model:
             case "Claude" if CLAUDE_API_KEY:
@@ -98,7 +112,9 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
             "parsed_summary": parsed_summary,
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
-            "model_detail": model_detail
+            "model_detail": model_detail,
+            "model_switched": model_switched,
+            "original_model": original_model if model_switched else None
         })
 
     except Exception as e:
@@ -171,6 +187,11 @@ def process_summary(input_text, additional_info=""):
             end_time = datetime.datetime.now()
             processing_time = (end_time - start_time).total_seconds()
             st.session_state.summary_generation_time = processing_time
+
+            # モデルが自動切り替えされた場合に通知
+            if result.get("model_switched"):
+                st.info(
+                    f"⚠️ 入力テキストが長いため、自動的に {result['original_model']} から Gemini_Pro に切り替えました。")
 
             try:
                 db_manager = DatabaseManager.get_instance()
