@@ -3,6 +3,7 @@ import streamlit as st
 from database.db import DatabaseManager
 from utils.config import GEMINI_MODEL, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, OPENAI_API_KEY
 from utils.constants import DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING
+from utils.prompt_manager import get_prompt_by_department
 
 
 def change_page(page):
@@ -30,14 +31,30 @@ def render_sidebar():
     if "selected_document_type" not in st.session_state:
         st.session_state.selected_document_type = document_types[0] if document_types else "退院時サマリ"
 
+    def update_document_model():
+
+        selected_dept = st.session_state.selected_department
+        selected_doctor = st.session_state.selected_doctor
+        new_doc_type = st.session_state.document_type_selector
+
+        # 文書タイプを更新
+        st.session_state.selected_document_type = new_doc_type
+
+        # プロンプトデータを取得
+        prompt_data = get_prompt_by_department(selected_dept, new_doc_type, selected_doctor)
+
+        # モデルが設定されていれば、それを選択
+        if prompt_data and prompt_data.get("selected_model") in st.session_state.available_models:
+            st.session_state.selected_model = prompt_data.get("selected_model")
+
     selected_document_type = st.sidebar.selectbox(
         "文書名",
         document_types,
         index=document_types.index(
-            st.session_state.selected_document_type) if st.session_state.selected_document_type in document_types else 0
+            st.session_state.selected_document_type) if st.session_state.selected_document_type in document_types else 0,
+        key="document_type_selector",
+        on_change=update_document_model
     )
-
-    st.session_state.selected_document_type = selected_document_type
 
     selected_dept = st.sidebar.selectbox(
         "診療科",
