@@ -31,8 +31,60 @@ def prompt_management_ui():
     if not document_types:
         document_types = ["退院時サマリ"]
 
+    # 文書タイプに紐づくAIモデルのマッピングを管理
+    if "document_model_mapping" not in st.session_state:
+        st.session_state.document_model_mapping = {}
+
+    # 最初の行: 文書名とAIモデル
     col1, col2 = st.columns(2)
     with col1:
+        previous_doc_type = st.session_state.selected_doc_type_for_prompt
+        selected_doc_type = st.selectbox(
+            "文書名",
+            document_types,
+            index=document_types.index(
+                st.session_state.selected_doc_type_for_prompt) if st.session_state.selected_doc_type_for_prompt in document_types else 0,
+            key="prompt_document_type_selector",
+            on_change=lambda: st.session_state.update({"selected_doc_type_for_prompt": selected_doc_type})
+        )
+
+    # プロンプトデータを取得
+    selected_dept = st.session_state.selected_dept_for_prompt
+    selected_doctor = st.session_state.selected_doctor_for_prompt
+    prompt_data = get_prompt_by_department(selected_dept, selected_doc_type, selected_doctor)
+
+    available_models = []
+    if "available_models" in st.session_state:
+        available_models = st.session_state.available_models
+
+    model_options = ["未指定"] + available_models
+
+    # 文書タイプにモデルが紐づいている場合はそれを使用
+    if selected_doc_type in st.session_state.document_model_mapping:
+        selected_model = st.session_state.document_model_mapping[selected_doc_type]
+    else:
+        # 保存されたプロンプトデータからモデルを取得
+        selected_model = prompt_data.get("selected_model") if prompt_data and prompt_data.get(
+            "selected_model") else "未指定"
+        # マッピングに記録
+        st.session_state.document_model_mapping[selected_doc_type] = selected_model
+
+    model_index = 0
+    if selected_model in model_options:
+        model_index = model_options.index(selected_model)
+
+    with col2:
+        prompt_model = st.selectbox(
+            "AIモデル",
+            model_options,
+            index=model_index,
+            key=f"prompt_model_{selected_doc_type}",
+            on_change=lambda: st.session_state.document_model_mapping.update({selected_doc_type: prompt_model})
+        )
+
+    # 2行目: 診療科と医師名
+    col3, col4 = st.columns(2)
+    with col3:
         selected_dept = st.selectbox(
             "診療科",
             departments,
@@ -46,7 +98,7 @@ def prompt_management_ui():
     if st.session_state.selected_doctor_for_prompt not in available_doctors:
         st.session_state.selected_doctor_for_prompt = available_doctors[0]
 
-    with col2:
+    with col4:
         selected_doctor = st.selectbox(
             "医師名",
             available_doctors,
@@ -55,45 +107,18 @@ def prompt_management_ui():
             key="prompt_doctor_selector"
         )
 
-    col3, col4 = st.columns(2)
-    with col3:
-        selected_doc_type = st.selectbox(
-            "文書名",
-            document_types,
-            index=document_types.index(
-                st.session_state.selected_doc_type_for_prompt) if st.session_state.selected_doc_type_for_prompt in document_types else 0,
-            key="prompt_document_type_selector"
-        )
-
+    # セッション状態を更新
     st.session_state.selected_dept_for_prompt = selected_dept
     st.session_state.selected_doc_type_for_prompt = selected_doc_type
     st.session_state.selected_doctor_for_prompt = selected_doctor
 
-    prompt_data = get_prompt_by_department(selected_dept, selected_doc_type, selected_doctor)
-
-    available_models = []
-    if "available_models" in st.session_state:
-        available_models = st.session_state.available_models
-
-    model_options = ["未指定"] + available_models
-    selected_model = prompt_data.get("selected_model") if prompt_data and prompt_data.get(
-        "selected_model") else "未指定"
-
-    model_index = 0
-    if selected_model in model_options:
-        model_index = model_options.index(selected_model)
-
-    with col4:
-        prompt_model = st.selectbox(
-            "AIモデル",
-            model_options,
-            index=model_index,
-            key=f"prompt_model_{selected_dept}_{selected_doc_type}_{selected_doctor}"
-        )
-
-    if prompt_model == "未指定":
+    # 選択された文書タイプにAIモデルを紐づける
+    if prompt_model != "未指定":
+        st.session_state.document_model_mapping[selected_doc_type] = prompt_model
+    else:
         prompt_model = None
 
+    # プロンプト内容
     with st.form(key=f"edit_prompt_form_{selected_dept}_{selected_doc_type}_{selected_doctor}"):
         prompt_content = st.text_area(
             "プロンプト内容",
@@ -105,8 +130,12 @@ def prompt_management_ui():
         submit = st.form_submit_button("プロンプトを保存")
 
         if submit:
+            # 文書タイプとAIモデルのマッピングを保存
+            if prompt_model:
+                st.session_state.document_model_mapping[selected_doc_type] = prompt_model
+
             success, message = create_or_update_prompt(selected_dept, selected_doc_type, selected_doctor,
-                                                      prompt_content, prompt_model)
+                                                       prompt_content, prompt_model)
             if success:
                 st.success(message)
             else:
