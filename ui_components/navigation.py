@@ -10,6 +10,19 @@ def change_page(page):
     st.session_state.current_page = page
 
 
+def update_document_model():
+    selected_dept = st.session_state.selected_department
+    selected_doctor = st.session_state.selected_doctor
+    new_doc_type = st.session_state.document_type_selector
+
+    st.session_state.selected_document_type = new_doc_type
+
+    prompt_data = get_prompt_by_department(selected_dept, new_doc_type, selected_doctor)
+
+    if prompt_data and prompt_data.get("selected_model") in st.session_state.available_models:
+        st.session_state.selected_model = prompt_data.get("selected_model")
+
+
 def render_sidebar():
     departments = ["default"] + DEFAULT_DEPARTMENTS
 
@@ -30,22 +43,6 @@ def render_sidebar():
 
     if "selected_document_type" not in st.session_state:
         st.session_state.selected_document_type = document_types[0] if document_types else "退院時サマリ"
-
-    def update_document_model():
-
-        selected_dept = st.session_state.selected_department
-        selected_doctor = st.session_state.selected_doctor
-        new_doc_type = st.session_state.document_type_selector
-
-        # 文書タイプを更新
-        st.session_state.selected_document_type = new_doc_type
-
-        # プロンプトデータを取得
-        prompt_data = get_prompt_by_department(selected_dept, new_doc_type, selected_doctor)
-
-        # モデルが設定されていれば、それを選択
-        if prompt_data and prompt_data.get("selected_model") in st.session_state.available_models:
-            st.session_state.selected_model = prompt_data.get("selected_model")
 
     selected_document_type = st.sidebar.selectbox(
         "文書名",

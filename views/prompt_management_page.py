@@ -7,6 +7,21 @@ from ui_components.navigation import change_page
 from utils.constants import DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPES
 
 
+def update_document_type():
+    prompt_data = get_prompt_by_department(
+        st.session_state.selected_dept_for_prompt,
+        st.session_state.prompt_document_type_selector,
+        st.session_state.selected_doctor_for_prompt
+    )
+
+    if prompt_data and prompt_data.get("selected_model"):
+        st.session_state.document_model_mapping[st.session_state.prompt_document_type_selector] = prompt_data.get(
+            "selected_model")
+
+    st.session_state.selected_doc_type_for_prompt = st.session_state.prompt_document_type_selector
+    st.session_state.update_ui = True
+
+
 @handle_error
 def prompt_management_ui():
     if st.session_state.success_message:
@@ -31,25 +46,10 @@ def prompt_management_ui():
     if not document_types:
         document_types = ["退院時サマリ"]
 
-    # 文書タイプに紐づくAIモデルのマッピングを管理
     if "document_model_mapping" not in st.session_state:
         st.session_state.document_model_mapping = {}
 
     col1, col2 = st.columns(2)
-
-    def update_document_type():
-        prompt_data = get_prompt_by_department(
-            st.session_state.selected_dept_for_prompt,
-            st.session_state.prompt_document_type_selector,
-            st.session_state.selected_doctor_for_prompt
-        )
-
-        if prompt_data and prompt_data.get("selected_model"):
-            st.session_state.document_model_mapping[st.session_state.prompt_document_type_selector] = prompt_data.get(
-                "selected_model")
-
-        st.session_state.selected_doc_type_for_prompt = st.session_state.prompt_document_type_selector
-        st.session_state.update_ui = True
 
     with col1:
         previous_doc_type = st.session_state.selected_doc_type_for_prompt
