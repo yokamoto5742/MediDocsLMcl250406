@@ -41,18 +41,22 @@ def render_sidebar():
         index = 0
         st.session_state.selected_department = departments[0]
 
-    # 1. 診療科を最初に表示
-    selected_dept = st.sidebar.selectbox(
-        "診療科",
-        departments,
-        index=index,
-        format_func=lambda x: "全科共通" if x == "default" else x,
-        key="department_selector"
-    )
+    # 1. 診療科を最初に表示（選択肢が複数ある場合のみ）
+    if len(departments) > 1:
+        selected_dept = st.sidebar.selectbox(
+            "診療科",
+            departments,
+            index=index,
+            format_func=lambda x: "全科共通" if x == "default" else x,
+            key="department_selector"
+        )
+        st.session_state.selected_department = selected_dept
+    else:
+        # 選択肢が1つしかない場合は自動選択
+        st.session_state.selected_department = departments[0]
+        selected_dept = departments[0]
 
-    st.session_state.selected_department = selected_dept
-
-    # 2. 医師名を次に表示
+    # 2. 医師名を次に表示（選択肢が複数ある場合のみ）
     available_doctors = DEPARTMENT_DOCTORS_MAPPING.get(selected_dept, ["default"])
 
     if "selected_doctor" not in st.session_state or st.session_state.selected_doctor not in available_doctors:
@@ -73,19 +77,23 @@ def render_sidebar():
         save_user_settings(selected_dept, st.session_state.selected_model, st.session_state.selected_doctor)
         st.rerun()
 
-    selected_doctor = st.sidebar.selectbox(
-        "医師名",
-        available_doctors,
-        index=available_doctors.index(st.session_state.selected_doctor),
-        format_func=lambda x: "医師共通" if x == "default" else x,
-        key="doctor_selector"
-    )
+    if len(available_doctors) > 1:
+        selected_doctor = st.sidebar.selectbox(
+            "医師名",
+            available_doctors,
+            index=available_doctors.index(st.session_state.selected_doctor),
+            format_func=lambda x: "医師共通" if x == "default" else x,
+            key="doctor_selector"
+        )
+        if selected_doctor != previous_doctor:
+            st.session_state.selected_doctor = selected_doctor
+            save_user_settings(st.session_state.selected_department, st.session_state.selected_model, selected_doctor)
+    else:
+        # 選択肢が1つしかない場合は自動選択
+        st.session_state.selected_doctor = available_doctors[0]
+        selected_doctor = available_doctors[0]
 
-    if selected_doctor != previous_doctor:
-        st.session_state.selected_doctor = selected_doctor
-        save_user_settings(st.session_state.selected_department, st.session_state.selected_model, selected_doctor)
-
-    # 3. 文書名を次に表示
+    # 3. 文書名を次に表示（選択肢が複数ある場合のみ）
     document_types = DEFAULT_DOCUMENT_TYPES
 
     if not document_types:
@@ -94,14 +102,19 @@ def render_sidebar():
     if "selected_document_type" not in st.session_state:
         st.session_state.selected_document_type = document_types[0] if document_types else "退院時サマリ"
 
-    selected_document_type = st.sidebar.selectbox(
-        "文書名",
-        document_types,
-        index=document_types.index(
-            st.session_state.selected_document_type) if st.session_state.selected_document_type in document_types else 0,
-        key="document_type_selector",
-        on_change=update_document_model
-    )
+    if len(document_types) > 1:
+        selected_document_type = st.sidebar.selectbox(
+            "文書名",
+            document_types,
+            index=document_types.index(
+                st.session_state.selected_document_type) if st.session_state.selected_document_type in document_types else 0,
+            key="document_type_selector",
+            on_change=update_document_model
+        )
+    else:
+        # 選択肢が1つしかない場合は自動選択
+        st.session_state.selected_document_type = document_types[0]
+        selected_document_type = document_types[0]
 
     # 4. AIモデル関連の初期化
     st.session_state.available_models = []
