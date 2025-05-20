@@ -7,7 +7,7 @@ from ui_components.navigation import render_sidebar
 
 def clear_inputs():
     st.session_state.input_text = ""
-    st.session_state.additional_info = "退院時処方\n(ここに貼り付け)"
+    st.session_state.additional_info = "【前回の記載】\n(ここに貼り付け)"
     st.session_state.discharge_summary = ""
     st.session_state.parsed_summary = {}
     st.session_state.summary_generation_time = None
@@ -23,7 +23,7 @@ def render_input_section():
         st.session_state.clear_input = False
 
     if "additional_info" not in st.session_state:
-        st.session_state.additional_info = "退院時処方\n(ここに貼り付け)"
+        st.session_state.additional_info = "【前回の記載】\n(ここに貼り付け)"
 
     input_text = st.text_area(
         "カルテ記載入力",

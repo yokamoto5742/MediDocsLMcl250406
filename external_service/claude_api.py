@@ -19,7 +19,7 @@ def initialize_claude():
         raise APIError(f"Claude API初期化エラー: {str(e)}")
 
 
-def create_summary_prompt(medical_text, additional_info="", department="default", document_type="退院時サマリ", doctor="default"):
+def create_summary_prompt(medical_text, additional_info="", department="default", document_type="主治医意見書", doctor="default"):
     prompt_data = get_prompt_by_department(department, document_type, doctor)
 
     if not prompt_data:
@@ -28,11 +28,11 @@ def create_summary_prompt(medical_text, additional_info="", department="default"
     else:
         prompt_template = prompt_data['content']
 
-    prompt = f"{prompt_template}\n\n【カルテ情報】\n{additional_info}\n{medical_text}"
+    prompt = f"{prompt_template}\n\n【カルテ情報】\n{medical_text}\n【追加情報】{additional_info}"
     return prompt
 
 
-def claude_generate_summary(medical_text, additional_info="", department="default", document_type="退院時サマリ",
+def claude_generate_summary(medical_text, additional_info="", department="default", document_type="主治医意見書",
                             doctor="default"):
     try:
         initialize_claude()
