@@ -16,16 +16,12 @@ def update_document_model():
     new_doc_type = st.session_state.document_type_selector
 
     st.session_state.selected_document_type = new_doc_type
-
-    # 文書タイプ変更時にはモデル選択をリセット
     st.session_state.model_explicitly_selected = False
 
-    # プロンプトデータからモデルを取得
     prompt_data = get_prompt_by_department(selected_dept, new_doc_type, selected_doctor)
     if prompt_data and prompt_data.get("selected_model") in st.session_state.available_models:
         st.session_state.selected_model = prompt_data.get("selected_model")
     elif "available_models" in st.session_state and st.session_state.available_models:
-        # プロンプトデータにモデルがなければデフォルトモデルを設定
         if "Gemini_Pro" in st.session_state.available_models:
             st.session_state.selected_model = "Gemini_Pro"
         else:
@@ -45,23 +41,7 @@ def render_sidebar():
         index = 0
         st.session_state.selected_department = departments[0]
 
-    document_types = DEFAULT_DOCUMENT_TYPES
-
-    if not document_types:
-        document_types = ["退院時サマリ"]
-
-    if "selected_document_type" not in st.session_state:
-        st.session_state.selected_document_type = document_types[0] if document_types else "退院時サマリ"
-
-    selected_document_type = st.sidebar.selectbox(
-        "文書名",
-        document_types,
-        index=document_types.index(
-            st.session_state.selected_document_type) if st.session_state.selected_document_type in document_types else 0,
-        key="document_type_selector",
-        on_change=update_document_model
-    )
-
+    # 1. 診療科を最初に表示
     selected_dept = st.sidebar.selectbox(
         "診療科",
         departments,
@@ -70,18 +50,9 @@ def render_sidebar():
         key="department_selector"
     )
 
-    st.session_state.available_models = []
-    if GEMINI_MODEL and GEMINI_CREDENTIALS:
-        st.session_state.available_models.append("Gemini_Pro")
-    if GEMINI_FLASH_MODEL and GEMINI_CREDENTIALS:
-        st.session_state.available_models.append("Gemini_Flash")
-    if CLAUDE_API_KEY:
-        st.session_state.available_models.append("Claude")
-    if OPENAI_API_KEY:
-        st.session_state.available_models.append("GPT4.1")
-
     st.session_state.selected_department = selected_dept
 
+    # 2. 医師名を次に表示
     available_doctors = DEPARTMENT_DOCTORS_MAPPING.get(selected_dept, ["default"])
 
     if "selected_doctor" not in st.session_state or st.session_state.selected_doctor not in available_doctors:
@@ -113,6 +84,35 @@ def render_sidebar():
     if selected_doctor != previous_doctor:
         st.session_state.selected_doctor = selected_doctor
         save_user_settings(st.session_state.selected_department, st.session_state.selected_model, selected_doctor)
+
+    # 3. 文書名を次に表示
+    document_types = DEFAULT_DOCUMENT_TYPES
+
+    if not document_types:
+        document_types = ["退院時サマリ"]
+
+    if "selected_document_type" not in st.session_state:
+        st.session_state.selected_document_type = document_types[0] if document_types else "退院時サマリ"
+
+    selected_document_type = st.sidebar.selectbox(
+        "文書名",
+        document_types,
+        index=document_types.index(
+            st.session_state.selected_document_type) if st.session_state.selected_document_type in document_types else 0,
+        key="document_type_selector",
+        on_change=update_document_model
+    )
+
+    # 4. AIモデル関連の初期化
+    st.session_state.available_models = []
+    if GEMINI_MODEL and GEMINI_CREDENTIALS:
+        st.session_state.available_models.append("Gemini_Pro")
+    if GEMINI_FLASH_MODEL and GEMINI_CREDENTIALS:
+        st.session_state.available_models.append("Gemini_Flash")
+    if CLAUDE_API_KEY:
+        st.session_state.available_models.append("Claude")
+    if OPENAI_API_KEY:
+        st.session_state.available_models.append("GPT4.1")
 
     if len(st.session_state.available_models) > 1:
         if "selected_model" not in st.session_state:
@@ -159,7 +159,6 @@ def render_sidebar():
 
 
 def save_user_settings(department, model, doctor="default"):
-    """ユーザー設定をデータベースに保存"""
     try:
         if department != "default" and department not in DEFAULT_DEPARTMENTS:
             department = "default"
