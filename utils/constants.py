@@ -18,7 +18,7 @@ MESSAGES = {
 DEFAULT_SECTION_NAMES = ["治療経過", "特記事項", "備考"]
 
 APP_TYPE = "opinion_letter"
-DEFAULT_DEPARTMENTS = ["default", "内科", "消化器内科", "整形外科"]
+DEFAULT_DEPARTMENTS = ["default"]
 DEFAULT_DOCTORS = ["default"]
 DEFAULT_DOCUMENT_TYPES = ["主治医意見書", "訪問看護指示書"]
 DEFAULT_DOCUMENT_TYPE = "主治医意見書"
