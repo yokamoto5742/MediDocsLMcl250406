@@ -8,17 +8,18 @@ from utils.constants import DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPES
 
 
 def update_document_type():
+    st.session_state.selected_doc_type_for_prompt = st.session_state.prompt_document_type_selector
+
     prompt_data = get_prompt_by_department(
         st.session_state.selected_dept_for_prompt,
-        st.session_state.prompt_document_type_selector,
+        st.session_state.selected_doc_type_for_prompt,
         st.session_state.selected_doctor_for_prompt
     )
 
     if prompt_data and prompt_data.get("selected_model"):
-        st.session_state.document_model_mapping[st.session_state.prompt_document_type_selector] = prompt_data.get(
+        st.session_state.document_model_mapping[st.session_state.selected_doc_type_for_prompt] = prompt_data.get(
             "selected_model")
 
-    st.session_state.selected_doc_type_for_prompt = st.session_state.prompt_document_type_selector
     st.session_state.update_ui = True
 
 

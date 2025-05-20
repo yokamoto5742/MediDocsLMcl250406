@@ -22,7 +22,7 @@ JST = pytz.timezone('Asia/Tokyo')
 
 
 def generate_summary_task(input_text, selected_department, selected_model, result_queue, additional_info="",
-                          selected_document_type="退院時サマリ", selected_doctor="default"):
+                          selected_document_type="退院時サマリ", selected_doctor="default", model_explicitly_selected=False):
     try:
         if selected_department != "default" and selected_department not in DEFAULT_DEPARTMENTS:
             selected_department = "default"
@@ -31,6 +31,9 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
 
         prompt_data = get_prompt_by_department(selected_department, selected_document_type, selected_doctor)
         prompt_selected_model = prompt_data.get("selected_model") if prompt_data else None
+
+        if prompt_selected_model and not model_explicitly_selected:
+            selected_model = prompt_selected_model
 
         model_explicitly_selected = getattr(st.session_state, "model_explicitly_selected", False)
         if prompt_selected_model and not model_explicitly_selected:
@@ -148,6 +151,7 @@ def process_summary(input_text, additional_info=""):
         selected_department = getattr(st.session_state, "selected_department", "default")
         selected_document_type = getattr(st.session_state, "selected_document_type", "退院時サマリ")
         selected_doctor = getattr(st.session_state, "selected_doctor", "default")
+        model_explicitly_selected = getattr(st.session_state, "model_explicitly_selected", False)
 
         summary_thread = threading.Thread(
             target=generate_summary_task,
@@ -158,7 +162,8 @@ def process_summary(input_text, additional_info=""):
                 result_queue,
                 additional_info,
                 selected_document_type,
-                selected_doctor
+                selected_doctor,
+                model_explicitly_selected
             ),
         )
         summary_thread.start()
