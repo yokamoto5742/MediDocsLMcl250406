@@ -17,10 +17,11 @@ def update_document_model():
 
     st.session_state.selected_document_type = new_doc_type
 
-    prompt_data = get_prompt_by_department(selected_dept, new_doc_type, selected_doctor)
-
-    if prompt_data and prompt_data.get("selected_model") in st.session_state.available_models:
-        st.session_state.selected_model = prompt_data.get("selected_model")
+    model_explicitly_selected = getattr(st.session_state, "model_explicitly_selected", False)
+    if not model_explicitly_selected:
+        prompt_data = get_prompt_by_department(selected_dept, new_doc_type, selected_doctor)
+        if prompt_data and prompt_data.get("selected_model") in st.session_state.available_models:
+            st.session_state.selected_model = prompt_data.get("selected_model")
 
 
 def render_sidebar():
@@ -80,6 +81,7 @@ def render_sidebar():
 
     if selected_dept != previous_dept:
         if selected_dept == "default":
+            st.session_state.model_explicitly_selected = False
             if "Gemini_Pro" in st.session_state.available_models:
                 st.session_state.selected_model = "Gemini_Pro"
             elif st.session_state.available_models:
@@ -87,6 +89,7 @@ def render_sidebar():
             st.session_state.selected_doctor = "default"
         else:
             st.session_state.selected_doctor = available_doctors[0]
+            st.session_state.model_explicitly_selected = False
 
         save_user_settings(selected_dept, st.session_state.selected_model, st.session_state.selected_doctor)
         st.rerun()
@@ -127,10 +130,13 @@ def render_sidebar():
 
         if selected_model != previous_model:
             st.session_state.selected_model = selected_model
-            save_user_settings(st.session_state.selected_department, st.session_state.selected_model, st.session_state.selected_doctor)
+            st.session_state.model_explicitly_selected = True
+            save_user_settings(st.session_state.selected_department, st.session_state.selected_model,
+                               st.session_state.selected_doctor)
 
     elif len(st.session_state.available_models) == 1:
         st.session_state.selected_model = st.session_state.available_models[0]
+        st.session_state.model_explicitly_selected = False
 
     st.sidebar.markdown("・入力および出力テキストは保存されません")
     st.sidebar.markdown("・出力結果は必ず確認してください")

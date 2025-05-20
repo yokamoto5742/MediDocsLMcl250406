@@ -32,13 +32,11 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
         prompt_data = get_prompt_by_department(selected_department, selected_document_type, selected_doctor)
         prompt_selected_model = prompt_data.get("selected_model") if prompt_data else None
 
-        if prompt_selected_model:
+        model_explicitly_selected = getattr(st.session_state, "model_explicitly_selected", False)
+        if prompt_selected_model and not model_explicitly_selected:
             selected_model = prompt_selected_model
 
-        # 入力テキストの長さを推定（文字数をおおよそのトークン数として使用）
         estimated_tokens = len(input_text) + len(additional_info or "")
-
-        # トークン数が閾値を超えた場合、Gemini_Proに自動切り替え
         original_model = selected_model
         model_switched = False
 
