@@ -3,10 +3,6 @@ MESSAGES = {
     "PROMPT_CREATED": "プロンプトを新規作成しました",
     "PROMPT_DELETED": "プロンプトを削除しました",
 
-    "DEPARTMENT_EXISTS": "この診療科は既に存在します",
-    "DEPARTMENT_CREATED": "診療科を登録しました",
-    "DEPARTMENT_DELETED": "診療科を削除しました",
-
     "FIELD_REQUIRED": "すべての項目を入力してください",
     "NO_INPUT": "⚠️ カルテ情報を入力してください",
     "INPUT_TOO_SHORT": "⚠️ 入力テキストが短すぎます",
