@@ -15,19 +15,15 @@ MESSAGES = {
     "NO_API_CREDENTIALS": "⚠️ 使用可能なAI APIの認証情報が設定されていません。環境変数を確認してください。",
 }
 
-DEFAULT_SECTION_NAMES = ["入院期間", "現病歴", "入院時検査", "入院中の治療経過", "退院申し送り", "備考"]
+DEFAULT_SECTION_NAMES = ["治療経過", "特記事項", "備考"]
 
-APP_TYPE = "discharge_summary"
-DEFAULT_DEPARTMENTS = ["内科", "消化器内科", "整形外科", "眼科"]
-DEFAULT_DOCTORS = ["default", "田中宏明", "真野鋭志", "太田悟", "橋本義弘"]
-DEFAULT_DOCUMENT_TYPES = ["退院時サマリ", "現病歴", "主治医意見書", "訪問看護指示書"]
-DEFAULT_DOCUMENT_TYPE = "退院時サマリ"
-DOCUMENT_TYPE_OPTIONS = ["すべて", "不明"]
+APP_TYPE = "opinion_letter"
+DEFAULT_DEPARTMENTS = ["default", "内科", "消化器内科", "整形外科"]
+DEFAULT_DOCTORS = ["default"]
+DEFAULT_DOCUMENT_TYPES = ["主治医意見書", "訪問看護指示書"]
+DEFAULT_DOCUMENT_TYPE = "主治医意見書"
+DOCUMENT_TYPE_OPTIONS = ["すべて", "主治医意見書", "訪問看護指示書"]
 
 DEPARTMENT_DOCTORS_MAPPING = {
     "default": ["default"],
-    "内科": ["default", "田中宏明"],
-    "消化器内科": ["default", "真野鋭志"],
-    "整形外科": ["default", "太田悟"],
-    "眼科": ["default", "橋本義弘"]
 }

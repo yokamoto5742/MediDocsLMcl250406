@@ -22,7 +22,7 @@ JST = pytz.timezone('Asia/Tokyo')
 
 
 def generate_summary_task(input_text, selected_department, selected_model, result_queue, additional_info="",
-                          selected_document_type="退院時サマリ", selected_doctor="default", model_explicitly_selected=False):
+                          selected_document_type="主治医意見書", selected_doctor="default", model_explicitly_selected=False):
     try:
         if selected_department != "default" and selected_department not in DEFAULT_DEPARTMENTS:
             selected_department = "default"

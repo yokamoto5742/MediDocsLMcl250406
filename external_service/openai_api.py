@@ -18,7 +18,7 @@ def initialize_openai():
         raise APIError(f"OpenAI API初期化エラー: {str(e)}")
 
 
-def create_summary_prompt(medical_text, additional_info="", department="default", document_type="退院時サマリ", doctor="default"):
+def create_summary_prompt(medical_text, additional_info="", department="default", document_type="主治医意見書", doctor="default"):
     prompt_data = get_prompt_by_department(department, document_type, doctor)
 
     if not prompt_data:
@@ -31,7 +31,7 @@ def create_summary_prompt(medical_text, additional_info="", department="default"
     return prompt
 
 
-def openai_generate_summary(medical_text, additional_info="", department="default", document_type="退院時サマリ",
+def openai_generate_summary(medical_text, additional_info="", department="default", document_type="主治医意見書",
                             doctor="default"):
     try:
         initialize_openai()

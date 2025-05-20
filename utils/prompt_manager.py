@@ -143,7 +143,7 @@ def create_or_update_prompt(department, document_type, doctor, content, selected
 def delete_prompt(department, document_type, doctor):
     """プロンプトを削除"""
     try:
-        if department == "default" and document_type == "退院時サマリ" and doctor == "default":
+        if department == "default" and document_type == "主治医意見書" and doctor == "default":
             return False, "デフォルトプロンプトは削除できません"
 
         prompt_collection = get_prompt_collection()
@@ -206,7 +206,7 @@ def insert_document(collection, document):
                     """
             params = {
                 "department": document["department"],
-                "document_type": document.get("document_type", "退院時サマリ"),
+                "document_type": document.get("document_type", "主治医意見書"),
                 "doctor": document["doctor"],
                 "content": document["content"],
                 "selected_model": document.get("selected_model"),
@@ -229,7 +229,7 @@ def initialize_default_prompt():
     try:
         prompt_collection = get_prompt_collection()
 
-        query = "SELECT * FROM prompts WHERE department = 'default' AND document_type = '退院時サマリ' AND doctor = 'default' AND is_default = true"
+        query = "SELECT * FROM prompts WHERE department = 'default' AND document_type = '主治医意見書' AND doctor = 'default' AND is_default = true"
         default_prompt = prompt_collection.execute_query(query)
 
         if not default_prompt:
@@ -238,7 +238,7 @@ def initialize_default_prompt():
 
             insert_document(prompt_collection, {
                 "department": "default",
-                "document_type": "退院時サマリ",
+                "document_type": "主治医意見書",
                 "doctor": "default",
                 "content": default_prompt_content,
                 "is_default": True
@@ -247,7 +247,7 @@ def initialize_default_prompt():
         raise DatabaseError(f"デフォルトプロンプトの初期化に失敗しました: {str(e)}")
 
 
-def get_prompt_by_department(department="default", document_type="退院時サマリ", doctor="default"):
+def get_prompt_by_department(department="default", document_type="主治医意見書", doctor="default"):
     try:
         prompt_collection = get_prompt_collection()
         query = "SELECT * FROM prompts WHERE department = :department AND document_type = :document_type AND doctor = :doctor"
@@ -259,7 +259,7 @@ def get_prompt_by_department(department="default", document_type="退院時サ�
 
         if not prompt:
             # リクエストされた組み合わせが存在しない場合はデフォルトを取得
-            default_query = "SELECT * FROM prompts WHERE department = 'default' AND document_type = '退院時サマリ' AND doctor = 'default' AND is_default = true"
+            default_query = "SELECT * FROM prompts WHERE department = 'default' AND document_type = '主治医意見書' AND doctor = 'default' AND is_default = true"
             prompt = prompt_collection.execute_query(default_query)
 
         return prompt[0] if prompt else None
