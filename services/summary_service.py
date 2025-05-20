@@ -43,8 +43,9 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
 
         if estimated_tokens > MAX_TOKEN_THRESHOLD:
             if GEMINI_CREDENTIALS and GEMINI_MODEL:
-                selected_model = "Gemini_Pro"
-                model_switched = True
+                if selected_model != "Gemini_Pro":
+                    selected_model = "Gemini_Pro"
+                    model_switched = True
             elif not GEMINI_CREDENTIALS:
                 raise APIError("入力テキストが長すぎます。Gemini APIの認証情報が設定されていないため処理できません。")
 
