@@ -29,13 +29,11 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
         if selected_document_type not in DEFAULT_DOCUMENT_TYPES:
             selected_document_type = DEFAULT_DOCUMENT_TYPES[0]
 
+        # プロンプトデータからモデルを取得
         prompt_data = get_prompt_by_department(selected_department, selected_document_type, selected_doctor)
         prompt_selected_model = prompt_data.get("selected_model") if prompt_data else None
 
-        if prompt_selected_model and not model_explicitly_selected:
-            selected_model = prompt_selected_model
-
-        model_explicitly_selected = getattr(st.session_state, "model_explicitly_selected", False)
+        # ユーザーが明示的にモデルを選択していない場合は、プロンプトに設定されたモデルを使用
         if prompt_selected_model and not model_explicitly_selected:
             selected_model = prompt_selected_model
 

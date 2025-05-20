@@ -17,11 +17,19 @@ def update_document_model():
 
     st.session_state.selected_document_type = new_doc_type
 
-    model_explicitly_selected = getattr(st.session_state, "model_explicitly_selected", False)
-    if not model_explicitly_selected:
-        prompt_data = get_prompt_by_department(selected_dept, new_doc_type, selected_doctor)
-        if prompt_data and prompt_data.get("selected_model") in st.session_state.available_models:
-            st.session_state.selected_model = prompt_data.get("selected_model")
+    # 文書タイプ変更時にはモデル選択をリセット
+    st.session_state.model_explicitly_selected = False
+
+    # プロンプトデータからモデルを取得
+    prompt_data = get_prompt_by_department(selected_dept, new_doc_type, selected_doctor)
+    if prompt_data and prompt_data.get("selected_model") in st.session_state.available_models:
+        st.session_state.selected_model = prompt_data.get("selected_model")
+    elif "available_models" in st.session_state and st.session_state.available_models:
+        # プロンプトデータにモデルがなければデフォルトモデルを設定
+        if "Gemini_Pro" in st.session_state.available_models:
+            st.session_state.selected_model = "Gemini_Pro"
+        else:
+            st.session_state.selected_model = st.session_state.available_models[0]
 
 
 def render_sidebar():
@@ -171,7 +179,8 @@ def save_user_settings(department, model, doctor="default"):
                     """
         else:
             query = """
-                    INSERT INTO app_settings (setting_id, selected_department, selected_model, selected_doctor, updated_at)
+                    INSERT INTO app_settings (setting_id, selected_department, selected_model, selected_doctor, \
+                                              updated_at)
                     VALUES ('user_preferences', :department, :model, :doctor, CURRENT_TIMESTAMP) \
                     """
 
@@ -192,7 +201,8 @@ def load_user_settings():
         settings = db_manager.execute_query(query)
 
         if settings:
-            return settings[0]["selected_department"], settings[0]["selected_model"], settings[0].get("selected_doctor", "default")
+            return settings[0]["selected_department"], settings[0]["selected_model"], settings[0].get("selected_doctor",
+                                                                                                      "default")
         return None, None, None
     except Exception as e:
         print(f"設定の読み込みに失敗しました: {str(e)}")
