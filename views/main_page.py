@@ -3,6 +3,7 @@ import streamlit as st
 from services.summary_service import process_summary
 from utils.error_handlers import handle_error
 from ui_components.navigation import render_sidebar
+from utils.constants import DEFAULT_SECTION_NAMES
 
 
 def clear_inputs():
@@ -64,7 +65,7 @@ def render_summary_results():
                         height=150
                         )
 
-            sections = ["入院期間", "現病歴", "入院時検査", "入院中の治療経過", "退院申し送り", "備考"]
+            sections = [DEFAULT_SECTION_NAMES]
             for i, section in enumerate(sections, 1):
                 with tabs[i]:
                     section_content = st.session_state.parsed_summary.get(section, "")
