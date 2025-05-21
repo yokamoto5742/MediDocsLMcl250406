@@ -3,7 +3,6 @@ import streamlit as st
 from services.summary_service import process_summary
 from utils.error_handlers import handle_error
 from ui_components.navigation import render_sidebar
-from utils.constants import DEFAULT_SECTION_NAMES
 
 
 def clear_inputs():
@@ -53,33 +52,38 @@ def render_input_section():
 def render_summary_results():
     if st.session_state.discharge_summary:
         if st.session_state.parsed_summary:
-            tabs = st.tabs([
-                "全文", "入院期間", "現病歴", "入院時検査",
-                "入院中の治療経過", "退院申し送り", "備考"
+            tab_all, tab_treatment, tab_special, tab_note = st.tabs([
+                "全文", "治療経過", "特記事項", "備考"
             ])
 
-            with tabs[0]:
+            with tab_all:
                 st.subheader("全文")
                 st.code(st.session_state.discharge_summary,
                         language=None,
                         height=150
                         )
 
-            sections = [DEFAULT_SECTION_NAMES]
-            for i, section in enumerate(sections, 1):
-                with tabs[i]:
-                    section_content = st.session_state.parsed_summary.get(section, "")
-                    st.subheader(section)
-                    st.code(section_content,
-                            language=None,
-                            height=150
-                            )
+            with tab_treatment:
+                section_content = st.session_state.parsed_summary.get("治療経過", "")
+                st.subheader("治療経過")
+                st.code(section_content, language=None, height=150)
+
+            with tab_special:
+                section_content = st.session_state.parsed_summary.get("特記事項", "")
+                st.subheader("特記事項")
+                st.code(section_content, language=None, height=150)
+
+            with tab_note:
+                section_content = st.session_state.parsed_summary.get("備考", "")
+                st.subheader("備考")
+                st.code(section_content, language=None, height=150)
 
         st.info("💡 テキストエリアの右上にマウスを合わせて左クリックでコピーできます")
 
         if "summary_generation_time" in st.session_state and st.session_state.summary_generation_time is not None:
             processing_time = st.session_state.summary_generation_time
             st.info(f"⏱️ 処理時間: {processing_time:.0f} 秒")
+
 
 @handle_error
 def main_page_app():
