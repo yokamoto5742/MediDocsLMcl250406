@@ -29,11 +29,9 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
         if selected_document_type not in DEFAULT_DOCUMENT_TYPES:
             selected_document_type = DEFAULT_DOCUMENT_TYPES[0]
 
-        # プロンプトデータからモデルを取得
         prompt_data = get_prompt_by_department(selected_department, selected_document_type, selected_doctor)
         prompt_selected_model = prompt_data.get("selected_model") if prompt_data else None
 
-        # ユーザーが明示的にモデルを選択していない場合は、プロンプトに設定されたモデルを使用
         if prompt_selected_model and not model_explicitly_selected:
             selected_model = prompt_selected_model
 
@@ -41,13 +39,12 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
         original_model = selected_model
         model_switched = False
 
-        if estimated_tokens > MAX_TOKEN_THRESHOLD:
+        if original_model == "Claude" and estimated_tokens > MAX_TOKEN_THRESHOLD:
             if GEMINI_CREDENTIALS and GEMINI_MODEL:
-                if selected_model != "Gemini_Pro":
-                    selected_model = "Gemini_Pro"
-                    model_switched = True
-            elif not GEMINI_CREDENTIALS:
-                raise APIError("TOKEN_THRESHOLD_EXCEEDED_NO_GEMINI")
+                selected_model = "Gemini_Pro"
+                model_switched = True
+            else:
+                raise APIError(MESSAGES["TOKEN_THRESHOLD_EXCEEDED_NO_GEMINI"])
 
         match selected_model:
             case "Claude" if CLAUDE_API_KEY:
