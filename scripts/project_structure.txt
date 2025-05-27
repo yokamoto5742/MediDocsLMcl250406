@@ -1,0 +1,75 @@
+============================================================
+プロジェクト構造: MediDocsLMcl
+パス: C:\Users\yokam\PycharmProjects\MediDocsLMcl
+生成日時: 2025-05-27 18:34:13
+============================================================
+
+└── MediDocsLMcl
+    ├── alembic
+    │   ├── versions
+    │   │   └── 001_initial_schema.py
+    │   └── script.py.mako
+    ├── backups
+    ├── database
+    │   ├── __init__.py
+    │   ├── db.py
+    │   ├── models.py
+    │   └── schema.py
+    ├── docs
+    │   ├── README.md
+    │   └── LICENSE
+    ├── external_service
+    │   ├── __init__.py
+    │   ├── claude_api.py
+    │   ├── gemini_api.py
+    │   └── openai_api.py
+    ├── scripts
+    │   ├── backup_manager.py
+    │   ├── db_reset.py
+    │   ├── init_db.py
+    │   ├── mongo_migration_script.py
+    │   └── openai_api_response.py
+    ├── services
+    │   ├── __init__.py
+    │   └── summary_service.py
+    ├── tests
+    │   ├── __init__.py
+    │   ├── conftest.py
+    │   ├── test_app.py
+    │   ├── test_auth.py
+    │   ├── test_backup_manager.py
+    │   ├── test_claude_api.py
+    │   ├── test_config.py
+    │   ├── test_db.py
+    │   ├── test_gemini_api.py
+    │   ├── test_prompt_manager.py
+    │   └── test_text_processor.py
+    ├── ui_components
+    │   ├── __init__.py
+    │   └── navigation.py
+    ├── utils
+    │   ├── __init__.py
+    │   ├── config.py
+    │   ├── constants.py
+    │   ├── error_handlers.py
+    │   ├── exceptions.py
+    │   ├── prompt_manager.py
+    │   └── text_processor.py
+    ├── views
+    │   ├── __init__.py
+    │   ├── main_page.py
+    │   ├── prompt_management_page.py
+    │   └── statistics_page.py
+    ├── alembic.ini
+    ├── config.ini
+    ├── Procfile
+    ├── requirements.txt
+    ├── app.py
+    ├── project_structure.txt
+    ├── recommended_project_structure_script.py
+    ├── runtime.txt
+    └── setup.sh
+
+============================================================
+除外パターン: *.egg-info, *.log, *.pyc, *.pyd, *.pyo, *.swo, *.swp, *.tmp, *~, .DS_Store, .cache, .coverage, .env, .git, .gitignore, .hg, .idea, .npm, .pytest_cache, .svn, .tox, .venv, .vscode, Thumbs.db, __pycache__, build, desktop.ini, dist, env, node_modules, venv
+============================================================
