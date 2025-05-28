@@ -1,18 +1,17 @@
-from sqlalchemy import text
-import time
 import os
+import time
 from subprocess import run, PIPE
-from utils.exceptions import DatabaseError
+
+from sqlalchemy import text
+
 from database.db import DatabaseManager
+from utils.exceptions import DatabaseError
 
 
 def run_alembic_migrations():
-    """Alembicマイグレーションを実行する関数"""
     try:
-        # アプリケーションのルートディレクトリを取得
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-        # alembicコマンドを実行
         result = run(
             ["alembic", "upgrade", "head"],
             cwd=root_dir,
@@ -166,5 +165,4 @@ def initialize_database():
             print(f"{wait_time}秒後に再試行します...")
             time.sleep(wait_time)
 
-    # 全リトライが失敗した場合
     raise DatabaseError(f"データベースの初期化に失敗しました: {str(last_error)}")
