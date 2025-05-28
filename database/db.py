@@ -1,8 +1,9 @@
 import os
-from urllib.parse import urlparse
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
+from urllib.parse import urlparse
 
 from utils.config import (
     POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER,
