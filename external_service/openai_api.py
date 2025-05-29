@@ -41,21 +41,3 @@ class OpenAIAPIClient(BaseAPIClient):
         output_tokens = response.usage.completion_tokens
 
         return summary_text, input_tokens, output_tokens
-
-
-# 下位互換性のための関数
-def initialize_openai():
-    client = OpenAIAPIClient()
-    return client.initialize()
-
-
-def create_summary_prompt(medical_text, additional_info="", department="default",
-                          document_type="主治医意見書", doctor="default"):
-    client = OpenAIAPIClient()
-    return client.create_summary_prompt(medical_text, additional_info, department, document_type, doctor)
-
-
-def openai_generate_summary(medical_text, additional_info="", department="default",
-                            document_type="主治医意見書", doctor="default"):
-    client = OpenAIAPIClient()
-    return client.generate_summary(medical_text, additional_info, department, document_type, doctor)

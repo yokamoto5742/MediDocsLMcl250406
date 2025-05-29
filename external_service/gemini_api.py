@@ -53,22 +53,3 @@ class GeminiAPIClient(BaseAPIClient):
             output_tokens = response.usage_metadata.candidates_token_count
 
         return summary_text, input_tokens, output_tokens
-
-
-# 下位互換性のための関数
-def initialize_gemini():
-    client = GeminiAPIClient()
-    client.initialize()
-    return client.client
-
-
-def create_summary_prompt(medical_text, additional_info="", department="default",
-                          document_type="主治医意見書", doctor="default"):
-    client = GeminiAPIClient()
-    return client.create_summary_prompt(medical_text, additional_info, department, document_type, doctor)
-
-
-def gemini_generate_summary(medical_text, additional_info="", department="default",
-                            document_type="主治医意見書", doctor="default", model_name=None):
-    client = GeminiAPIClient()
-    return client.generate_summary(medical_text, additional_info, department, document_type, doctor, model_name)

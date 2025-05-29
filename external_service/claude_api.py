@@ -40,21 +40,3 @@ class ClaudeAPIClient(BaseAPIClient):
         output_tokens = response.usage.output_tokens
 
         return summary_text, input_tokens, output_tokens
-
-
-# 下位互換性のための関数
-def initialize_claude():
-    client = ClaudeAPIClient()
-    return client.initialize()
-
-
-def create_summary_prompt(medical_text, additional_info="", department="default",
-                          document_type="主治医意見書", doctor="default"):
-    client = ClaudeAPIClient()
-    return client.create_summary_prompt(medical_text, additional_info, department, document_type, doctor)
-
-
-def claude_generate_summary(medical_text, additional_info="", department="default",
-                            document_type="主治医意見書", doctor="default"):
-    client = ClaudeAPIClient()
-    return client.generate_summary(medical_text, additional_info, department, document_type, doctor)
