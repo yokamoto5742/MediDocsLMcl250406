@@ -13,6 +13,7 @@ MESSAGES = {
     "CLAUDE_API_CREDENTIALS_MISSING": "⚠️ Claude APIの認証情報が設定されていません。環境変数を確認してください。",
     "OPENAI_API_CREDENTIALS_MISSING": "⚠️ OpenAI APIの認証情報が設定されていません。環境変数を確認してください。",
     "NO_API_CREDENTIALS": "⚠️ 使用可能なAI APIの認証情報が設定されていません。環境変数を確認してください。",
+    "OPENAI_API_QUOTA_EXCEEDED": "⚠️ OpenAI APIのクォータを超過しています。請求情報を確認するか、管理者に連絡してください。",
 }
 
 DEFAULT_SECTION_NAMES = ["治療経過", "特記事項", "備考"]

@@ -77,8 +77,7 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
             if provider == "openai":
                 error_str = str(e)
                 if "insufficient_quota" in error_str or "exceeded your current quota" in error_str:
-                    raise APIError(
-                        "OpenAI APIのクォータを超過しています。請求情報を確認するか、管理者に連絡してください。")
+                    raise APIError(MESSAGES["OPENAI_API_QUOTA_EXCEEDED"])
             raise e
 
         discharge_summary = format_discharge_summary(discharge_summary)
