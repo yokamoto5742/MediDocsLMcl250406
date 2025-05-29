@@ -1,5 +1,7 @@
 import time
+
 from sqlalchemy import text
+
 from database.db import DatabaseManager
 from database.schema import initialize_database
 from utils.exceptions import DatabaseError
@@ -29,10 +31,7 @@ def reset_database():
 
     while retry_count < max_retries:
         try:
-            # 1. すべてのテーブルを削除
             drop_all_tables()
-
-            # 2. データベースを初期化（テーブル作成とデフォルトデータの挿入）
             initialize_database()
 
             print("データベースが正常にリセットされました")
@@ -45,7 +44,6 @@ def reset_database():
             print(f"{wait_time}秒後に再試行します...")
             time.sleep(wait_time)
 
-    # 全リトライが失敗した場合
     raise DatabaseError(f"データベースのリセットに失敗しました: {str(last_error)}")
 
 
