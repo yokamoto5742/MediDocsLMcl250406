@@ -7,11 +7,8 @@ import pytz
 import streamlit as st
 
 from database.db import DatabaseManager
-from external_service.claude_api import claude_generate_summary
-from external_service.gemini_api import gemini_generate_summary
-from external_service.openai_api import openai_generate_summary
-from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, MAX_INPUT_TOKENS, \
-    MIN_INPUT_TOKENS, OPENAI_API_KEY, MAX_TOKEN_THRESHOLD
+from external_service.api_factory import generate_summary
+from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, OPENAI_API_KEY, MAX_TOKEN_THRESHOLD
 from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
@@ -46,59 +43,42 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
             else:
                 raise APIError(MESSAGES["TOKEN_THRESHOLD_EXCEEDED_NO_GEMINI"])
 
-        match selected_model:
-            case "Claude" if CLAUDE_API_KEY:
-                discharge_summary, input_tokens, output_tokens = claude_generate_summary(
-                    input_text,
-                    additional_info,
-                    selected_department,
-                    selected_document_type,
-                    selected_doctor
-                )
-                model_detail = selected_model
+        provider_mapping = {
+            "Claude": ("claude", selected_model),
+            "Gemini_Pro": ("gemini", GEMINI_MODEL),
+            "Gemini_Flash": ("gemini", GEMINI_FLASH_MODEL),
+            "GPT4.1": ("openai", selected_model)
+        }
 
-            case "Gemini_Pro" if GEMINI_MODEL and GEMINI_CREDENTIALS:
-                discharge_summary, input_tokens, output_tokens = gemini_generate_summary(
-                    input_text,
-                    additional_info,
-                    selected_department,
-                    selected_document_type,
-                    selected_doctor,
-                    GEMINI_MODEL,
-                )
-                model_detail = GEMINI_MODEL
+        if selected_model not in provider_mapping:
+            raise APIError(MESSAGES["NO_API_CREDENTIALS"])
 
-            case "Gemini_Flash" if GEMINI_FLASH_MODEL and GEMINI_CREDENTIALS:
-                discharge_summary, input_tokens, output_tokens = gemini_generate_summary(
-                    input_text,
-                    additional_info,
-                    selected_department,
-                    selected_document_type,
-                    selected_doctor,
-                    GEMINI_FLASH_MODEL,
-                )
-                model_detail = GEMINI_FLASH_MODEL
+        provider, model_name = provider_mapping[selected_model]
 
-            case "GPT4.1" if OPENAI_API_KEY:
-                try:
-                    discharge_summary, input_tokens, output_tokens = openai_generate_summary(
-                        input_text,
-                        additional_info,
-                        selected_department,
-                        selected_document_type,
-                        selected_doctor,
-                    )
-                    model_detail = selected_model
-                except Exception as e:
-                    error_str = str(e)
-                    if "insufficient_quota" in error_str or "exceeded your current quota" in error_str:
-                        raise APIError(
-                            "OpenAI APIのクォータを超過しています。請求情報を確認するか、管理者に連絡してください。")
-                    else:
-                        raise e
+        if ((provider == "claude" and not CLAUDE_API_KEY) or
+                (provider == "gemini" and not GEMINI_CREDENTIALS) or
+                (provider == "openai" and not OPENAI_API_KEY)):
+            raise APIError(MESSAGES["NO_API_CREDENTIALS"])
 
-            case _:
-                raise APIError(MESSAGES["NO_API_CREDENTIALS"])
+        try:
+            discharge_summary, input_tokens, output_tokens = generate_summary(
+                provider=provider,
+                medical_text=input_text,
+                additional_info=additional_info,
+                department=selected_department,
+                document_type=selected_document_type,
+                doctor=selected_doctor,
+                model_name=model_name
+            )
+            model_detail = model_name if provider == "gemini" else selected_model
+
+        except Exception as e:
+            if provider == "openai":
+                error_str = str(e)
+                if "insufficient_quota" in error_str or "exceeded your current quota" in error_str:
+                    raise APIError(
+                        "OpenAI APIのクォータを超過しています。請求情報を確認するか、管理者に連絡してください。")
+            raise e
 
         discharge_summary = format_discharge_summary(discharge_summary)
         parsed_summary = parse_discharge_summary(discharge_summary)
