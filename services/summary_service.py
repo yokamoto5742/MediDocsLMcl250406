@@ -8,7 +8,8 @@ import streamlit as st
 
 from database.db import DatabaseManager
 from external_service.api_factory import generate_summary
-from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, OPENAI_API_KEY, MAX_TOKEN_THRESHOLD
+from utils.config import (CLAUDE_API_KEY, CLAUDE_MODEL,
+                          GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, OPENAI_API_KEY,OPENAI_MODEL, MAX_TOKEN_THRESHOLD)
 from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
@@ -44,10 +45,10 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
                 raise APIError(MESSAGES["TOKEN_THRESHOLD_EXCEEDED_NO_GEMINI"])
 
         provider_mapping = {
-            "Claude": ("claude", selected_model),
+            "Claude": ("claude", CLAUDE_MODEL),
             "Gemini_Pro": ("gemini", GEMINI_MODEL),
             "Gemini_Flash": ("gemini", GEMINI_FLASH_MODEL),
-            "GPT4.1": ("openai", selected_model)
+            "GPT4.1": ("openai", OPENAI_MODEL)
         }
 
         if selected_model not in provider_mapping:
