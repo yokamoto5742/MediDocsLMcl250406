@@ -1,7 +1,7 @@
 import streamlit as st
 
 from database.db import DatabaseManager
-from utils.config import GEMINI_MODEL, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, CLAUDE_API_KEY, OPENAI_API_KEY
+from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, OPENAI_API_KEY
 from utils.constants import DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING
 from utils.prompt_manager import get_prompt_by_department
 
@@ -41,7 +41,6 @@ def render_sidebar():
         index = 0
         st.session_state.selected_department = departments[0]
 
-    # 1. 診療科を最初に表示（選択肢が複数ある場合のみ）
     if len(departments) > 1:
         selected_dept = st.sidebar.selectbox(
             "診療科",
@@ -52,11 +51,9 @@ def render_sidebar():
         )
         st.session_state.selected_department = selected_dept
     else:
-        # 選択肢が1つしかない場合は自動選択
         st.session_state.selected_department = departments[0]
         selected_dept = departments[0]
 
-    # 2. 医師名を次に表示（選択肢が複数ある場合のみ）
     available_doctors = DEPARTMENT_DOCTORS_MAPPING.get(selected_dept, ["default"])
 
     if "selected_doctor" not in st.session_state or st.session_state.selected_doctor not in available_doctors:
@@ -89,11 +86,9 @@ def render_sidebar():
             st.session_state.selected_doctor = selected_doctor
             save_user_settings(st.session_state.selected_department, st.session_state.selected_model, selected_doctor)
     else:
-        # 選択肢が1つしかない場合は自動選択
         st.session_state.selected_doctor = available_doctors[0]
         selected_doctor = available_doctors[0]
 
-    # 3. 文書名を次に表示（選択肢が複数ある場合のみ）
     document_types = DEFAULT_DOCUMENT_TYPES
 
     if not document_types:
