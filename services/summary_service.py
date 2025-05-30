@@ -125,7 +125,7 @@ def process_summary(input_text, additional_info=""):
         selected_model = getattr(st.session_state, "selected_model",
                                  available_models[0] if available_models else None)
         selected_department = getattr(st.session_state, "selected_department", "default")
-        selected_document_type = getattr(st.session_state, "selected_document_type", "退院時サマリ")
+        selected_document_type = getattr(st.session_state, "selected_document_type", "主治医意見書")
         selected_doctor = getattr(st.session_state, "selected_doctor", "default")
         model_explicitly_selected = getattr(st.session_state, "model_explicitly_selected", False)
 
@@ -145,7 +145,7 @@ def process_summary(input_text, additional_info=""):
         summary_thread.start()
         elapsed_time = 0
 
-        with st.spinner("サマリ作成中..."):
+        with st.spinner("作成中..."):
             status_placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
             while summary_thread.is_alive():
                 time.sleep(1)
@@ -170,7 +170,7 @@ def process_summary(input_text, additional_info=""):
             # モデルが自動切り替えされた場合に通知
             if result.get("model_switched"):
                 st.info(
-                    f"⚠️ 入力テキストが長いため、自動的に {result['original_model']} から Gemini_Pro に切り替えました。")
+                    f"⚠️ 入力テキストが長いため{result['original_model']} から Gemini_Pro に切り替えました")
 
             try:
                 db_manager = DatabaseManager.get_instance()
@@ -200,10 +200,10 @@ def process_summary(input_text, additional_info=""):
                 db_manager.execute_query(query, usage_data, fetch=False)
 
             except Exception as db_error:
-                st.warning(f"利用状況のDB保存中にエラーが発生しました: {str(db_error)}")
+                st.warning(f"データベース保存中にエラーが発生しました: {str(db_error)}")
 
         else:
             raise result['error']
 
     except Exception as e:
-        raise APIError(f"退院時サマリの作成中にエラーが発生しました: {str(e)}")
+        raise APIError(f"作成中にエラーが発生しました: {str(e)}")
