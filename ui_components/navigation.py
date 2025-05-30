@@ -101,11 +101,9 @@ def render_sidebar():
             on_change=update_document_model
         )
     else:
-        # 選択肢が1つしかない場合は自動選択
         st.session_state.selected_document_type = document_types[0]
         selected_document_type = document_types[0]
 
-    # 4. AIモデル関連の初期化
     st.session_state.available_models = []
     if GEMINI_MODEL and GEMINI_CREDENTIALS:
         st.session_state.available_models.append("Gemini_Pro")
