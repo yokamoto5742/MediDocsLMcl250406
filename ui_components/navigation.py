@@ -61,15 +61,9 @@ def render_sidebar():
 
     if selected_dept != previous_dept:
         if selected_dept == "default":
-            st.session_state.model_explicitly_selected = False
-            if "Gemini_Pro" in st.session_state.available_models:
-                st.session_state.selected_model = "Gemini_Pro"
-            elif st.session_state.available_models:
-                st.session_state.selected_model = st.session_state.available_models[0]
             st.session_state.selected_doctor = "default"
         else:
             st.session_state.selected_doctor = available_doctors[0]
-            st.session_state.model_explicitly_selected = False
 
         save_user_settings(selected_dept, st.session_state.selected_model, st.session_state.selected_doctor)
         st.rerun()
