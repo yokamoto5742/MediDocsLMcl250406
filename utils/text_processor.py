@@ -1,7 +1,7 @@
 from utils.constants import DEFAULT_SECTION_NAMES
 
 
-def format_discharge_summary(summary_text):
+def format_output_summary(summary_text):
     processed_text = (
         summary_text.replace('*', '')
         .replace('＊', '')
@@ -12,7 +12,7 @@ def format_discharge_summary(summary_text):
     return processed_text
 
 
-def parse_discharge_summary(summary_text):
+def parse_output_summary(summary_text):
     sections = {section: "" for section in DEFAULT_SECTION_NAMES}
 
     section_aliases = {

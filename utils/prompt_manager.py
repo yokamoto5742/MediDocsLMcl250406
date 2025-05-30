@@ -234,7 +234,7 @@ def initialize_default_prompt():
 
         if not default_prompt:
             config = get_config()
-            default_prompt_content = config['PROMPTS']['discharge_summary']
+            default_prompt_content = config['PROMPTS']['summary']
 
             insert_document(prompt_collection, {
                 "department": "default",
@@ -274,7 +274,7 @@ def initialize_database():
 
         prompt_collection = get_prompt_collection()
         config = get_config()
-        default_prompt_content = config['PROMPTS']['discharge_summary']
+        default_prompt_content = config['PROMPTS']['summary']
         departments = DEFAULT_DEPARTMENTS
         document_types = DEFAULT_DOCUMENT_TYPES
 

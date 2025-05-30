@@ -15,8 +15,8 @@ st.set_page_config(
     layout="wide"
 )
 
-if "discharge_summary" not in st.session_state:
-    st.session_state.discharge_summary = ""
+if "output_summary" not in st.session_state:
+    st.session_state.output_summary = ""
 if "parsed_summary" not in st.session_state:
     st.session_state.parsed_summary = {}
 if "selected_department" not in st.session_state:

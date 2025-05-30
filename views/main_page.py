@@ -8,7 +8,7 @@ from ui_components.navigation import render_sidebar
 def clear_inputs():
     st.session_state.input_text = ""
     st.session_state.additional_info = "【前回の記載】\n(ここに貼り付け)"
-    st.session_state.discharge_summary = ""
+    st.session_state.output_summary = ""
     st.session_state.parsed_summary = {}
     st.session_state.summary_generation_time = None
     st.session_state.clear_input = True
@@ -50,7 +50,7 @@ def render_input_section():
 
 
 def render_summary_results():
-    if st.session_state.discharge_summary:
+    if st.session_state.output_summary:
         if st.session_state.parsed_summary:
             tab_all, tab_treatment, tab_special, tab_note = st.tabs([
                 "全文", "治療経過", "特記事項", "備考"
@@ -58,7 +58,7 @@ def render_summary_results():
 
             with tab_all:
                 st.subheader("全文")
-                st.code(st.session_state.discharge_summary,
+                st.code(st.session_state.output_summary,
                         language=None,
                         height=150
                         )

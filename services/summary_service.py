@@ -14,7 +14,7 @@ from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENTS, DEFAULT_DOC
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
 from utils.prompt_manager import get_prompt_by_department
-from utils.text_processor import format_discharge_summary, parse_discharge_summary
+from utils.text_processor import format_output_summary, parse_output_summary
 
 JST = pytz.timezone('Asia/Tokyo')
 
@@ -62,7 +62,7 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
             raise APIError(MESSAGES["NO_API_CREDENTIALS"])
 
         try:
-            discharge_summary, input_tokens, output_tokens = generate_summary(
+            output_summary, input_tokens, output_tokens = generate_summary(
                 provider=provider,
                 medical_text=input_text,
                 additional_info=additional_info,
@@ -80,12 +80,12 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
                     raise APIError(MESSAGES["OPENAI_API_QUOTA_EXCEEDED"])
             raise e
 
-        discharge_summary = format_discharge_summary(discharge_summary)
-        parsed_summary = parse_discharge_summary(discharge_summary)
+        output_summary = format_output_summary(output_summary)
+        parsed_summary = parse_output_summary(output_summary)
 
         result_queue.put({
             "success": True,
-            "discharge_summary": discharge_summary,
+            "output_summary": output_summary,
             "parsed_summary": parsed_summary,
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
@@ -157,7 +157,7 @@ def process_summary(input_text, additional_info=""):
         result = result_queue.get()
 
         if result["success"]:
-            st.session_state.discharge_summary = result["discharge_summary"]
+            st.session_state.output_summary = result["output_summary"]
             st.session_state.parsed_summary = result["parsed_summary"]
 
             input_tokens = result["input_tokens"]
