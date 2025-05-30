@@ -22,19 +22,10 @@ def get_current_datetime():
 
 
 def update_document(collection, query_dict, update_data):
-    """
-    ドキュメントを更新する
-
-    Args:
-        collection: DatabaseManagerのインスタンス
-        query_dict: 更新対象を特定するための条件辞書
-        update_data: 更新するデータを含む辞書
-    """
     try:
         now = get_current_datetime()
         update_data.update({"updated_at": now})
 
-        # query_dictがdepartmentを含む場合はpromptsテーブル
         if "department" in query_dict:
             query = """
                     UPDATE prompts
@@ -49,9 +40,7 @@ def update_document(collection, query_dict, update_data):
                 "updated_at": update_data["updated_at"],
                 "department": query_dict["department"]
             }
-        # query_dictがnameを含む場合はdepartmentsテーブル
         elif "name" in query_dict:
-            # 更新対象のフィールドだけを含めるように調整
             set_clauses = []
             params = {"name": query_dict["name"], "updated_at": update_data["updated_at"]}
 
@@ -83,7 +72,6 @@ def get_all_departments():
 
 
 def get_all_prompts():
-    """すべてのプロンプト情報を取得"""
     try:
         prompt_collection = get_prompt_collection()
         query = "SELECT * FROM prompts ORDER BY department"
@@ -93,7 +81,6 @@ def get_all_prompts():
 
 
 def create_or_update_prompt(department, document_type, doctor, content, selected_model=None):
-    """プロンプトを作成または更新"""
     try:
         if not department or not document_type or not doctor or not content:
             return False, "すべての項目を入力してください"
@@ -141,17 +128,14 @@ def create_or_update_prompt(department, document_type, doctor, content, selected
 
 
 def delete_prompt(department, document_type, doctor):
-    """プロンプトを削除"""
     try:
         if department == "default" and document_type == "主治医意見書" and doctor == "default":
             return False, "デフォルトプロンプトは削除できません"
 
         prompt_collection = get_prompt_collection()
 
-        # トランザクション開始
         session = prompt_collection.get_session()
         try:
-            # プロンプトを削除
             prompt_query = "DELETE FROM prompts WHERE department = :department AND document_type = :document_type AND doctor = :doctor"
             result = session.execute(text(prompt_query), {
                 "department": department,
@@ -199,7 +183,6 @@ def insert_document(collection, document):
                 "updated_at": document["updated_at"]
             }
         elif "department" in document:
-            # promptsテーブルへの挿入
             query = """
                     INSERT INTO prompts (department, document_type, doctor, content, selected_model, is_default, created_at, updated_at)
                     VALUES (:department, :document_type, :doctor, :content, :selected_model, :is_default, :created_at, :updated_at) RETURNING id; \
@@ -225,7 +208,6 @@ def insert_document(collection, document):
 
 
 def initialize_default_prompt():
-    """デフォルトプロンプトの初期化"""
     try:
         prompt_collection = get_prompt_collection()
 
@@ -258,7 +240,6 @@ def get_prompt_by_department(department="default", document_type="主治医意�
         })
 
         if not prompt:
-            # リクエストされた組み合わせが存在しない場合はデフォルトを取得
             default_query = "SELECT * FROM prompts WHERE department = 'default' AND document_type = '主治医意見書' AND doctor = 'default' AND is_default = true"
             prompt = prompt_collection.execute_query(default_query)
 

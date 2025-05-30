@@ -5,11 +5,6 @@ from dotenv import load_dotenv
 
 
 def load_environment_variables():
-    mongodb_uri = os.environ.get("MONGODB_URI")
-
-    if mongodb_uri:
-        return
-
     base_dir = Path(__file__).parent.parent
     env_path = os.path.join(base_dir, '.env')
 

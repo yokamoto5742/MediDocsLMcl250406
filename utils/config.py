@@ -9,7 +9,6 @@ def get_config():
     config = configparser.ConfigParser()
     base_dir = Path(__file__).parent.parent
     config_path = os.path.join(base_dir, 'config.ini')
-
     config.read(config_path, encoding='utf-8')
 
     return config
@@ -27,7 +26,7 @@ def parse_database_url():
             "port": parsed.port,
             "user": parsed.username,
             "password": parsed.password,
-            "database": parsed.path[1:]  # 最初の/を除去
+            "database": parsed.path[1:]
         }
     return None
 
