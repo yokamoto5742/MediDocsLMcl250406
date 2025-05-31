@@ -39,7 +39,7 @@ if "summary_generation_time" not in st.session_state:
 
 
 @handle_error
-def main_app():
+def main():
     if st.session_state.current_page == "prompt_edit":
         prompt_management_ui()
         return
@@ -49,10 +49,6 @@ def main_app():
 
     main_page_app()
 
-
-@handle_error
-def main():
-    main_app()
 
 if __name__ == "__main__":
     main()
