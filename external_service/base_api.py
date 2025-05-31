@@ -3,7 +3,7 @@ from typing import Tuple, Optional
 
 from utils.config import get_config
 from utils.exceptions import APIError
-from utils.prompt_manager import get_prompt_by_department
+from utils.prompt_manager import get_prompt
 
 
 class BaseAPIClient(ABC):
@@ -22,7 +22,7 @@ class BaseAPIClient(ABC):
     def create_summary_prompt(self, medical_text: str, additional_info: str = "", 
                             department: str = "default", document_type: str = "主治医意見書", 
                             doctor: str = "default") -> str:
-        prompt_data = get_prompt_by_department(department, document_type, doctor)
+        prompt_data = get_prompt(department, document_type, doctor)
 
         if not prompt_data:
             config = get_config()
@@ -35,7 +35,7 @@ class BaseAPIClient(ABC):
     
     def get_model_name(self, department: str, document_type: str, doctor: str) -> str:
         """使用するモデル名を取得（共通メソッド）"""
-        prompt_data = get_prompt_by_department(department, document_type, doctor)
+        prompt_data = get_prompt(department, document_type, doctor)
         return prompt_data.get("selected_model") if prompt_data and prompt_data.get(
             "selected_model") else self.default_model
     

@@ -2,7 +2,7 @@ import streamlit as st
 
 from utils.error_handlers import handle_error
 from utils.exceptions import AppError
-from utils.prompt_manager import get_all_departments, get_prompt_by_department, create_or_update_prompt, delete_prompt
+from utils.prompt_manager import get_all_departments, get_prompt, create_or_update_prompt, delete_prompt
 from ui_components.navigation import change_page
 from utils.constants import DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPES
 
@@ -10,7 +10,7 @@ from utils.constants import DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPES
 def update_document_type():
     st.session_state.selected_doc_type_for_prompt = st.session_state.prompt_document_type_selector
 
-    prompt_data = get_prompt_by_department(
+    prompt_data = get_prompt(
         st.session_state.selected_dept_for_prompt,
         st.session_state.selected_doc_type_for_prompt,
         st.session_state.selected_doctor_for_prompt
@@ -65,7 +65,7 @@ def prompt_management_ui():
 
     selected_dept = st.session_state.selected_dept_for_prompt
     selected_doctor = st.session_state.selected_doctor_for_prompt
-    prompt_data = get_prompt_by_department(selected_dept, selected_doc_type, selected_doctor)
+    prompt_data = get_prompt(selected_dept, selected_doc_type, selected_doctor)
 
     available_models = []
     if "available_models" in st.session_state:

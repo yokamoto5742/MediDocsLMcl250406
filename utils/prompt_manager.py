@@ -229,7 +229,7 @@ def initialize_default_prompt():
         raise DatabaseError(f"デフォルトプロンプトの初期化に失敗しました: {str(e)}")
 
 
-def get_prompt_by_department(department="default", document_type="主治医意見書", doctor="default"):
+def get_prompt(department="default", document_type="主治医意見書", doctor="default"):
     try:
         prompt_collection = get_prompt_collection()
         query = "SELECT * FROM prompts WHERE department = :department AND document_type = :document_type AND doctor = :doctor"

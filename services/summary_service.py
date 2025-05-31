@@ -13,7 +13,7 @@ from utils.config import (CLAUDE_API_KEY, CLAUDE_MODEL,
 from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
-from utils.prompt_manager import get_prompt_by_department
+from utils.prompt_manager import get_prompt
 from utils.text_processor import format_output_summary, parse_output_summary
 
 JST = pytz.timezone('Asia/Tokyo')
@@ -27,7 +27,7 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
         if selected_document_type not in DEFAULT_DOCUMENT_TYPES:
             selected_document_type = DEFAULT_DOCUMENT_TYPES[0]
 
-        prompt_data = get_prompt_by_department(selected_department, selected_document_type, selected_doctor)
+        prompt_data = get_prompt(selected_department, selected_document_type, selected_doctor)
         prompt_selected_model = prompt_data.get("selected_model") if prompt_data else None
 
         if prompt_selected_model and not model_explicitly_selected:
