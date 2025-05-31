@@ -1,10 +1,10 @@
 import streamlit as st
 
+from utils.constants import DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPES
 from utils.error_handlers import handle_error
 from utils.exceptions import AppError
 from utils.prompt_manager import get_all_departments, get_prompt, create_or_update_prompt, delete_prompt
 from ui_components.navigation import change_page
-from utils.constants import DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPES
 
 
 def update_document_type():
@@ -71,14 +71,12 @@ def prompt_management_ui():
     if "available_models" in st.session_state:
         available_models = st.session_state.available_models
 
-    model_options = ["指定なし"] + available_models
+    model_options = available_models
 
     if prompt_data and prompt_data.get("selected_model"):
         selected_model = prompt_data.get("selected_model")
     elif selected_doc_type in st.session_state.document_model_mapping:
         selected_model = st.session_state.document_model_mapping[selected_doc_type]
-    else:
-        selected_model = "指定なし"
 
     st.session_state.document_model_mapping[selected_doc_type] = selected_model
 
@@ -95,7 +93,6 @@ def prompt_management_ui():
             on_change=lambda: st.session_state.document_model_mapping.update({selected_doc_type: prompt_model})
         )
 
-    # 2行目: 診療科と医師名
     col3, col4 = st.columns(2)
     with col3:
         selected_dept = st.selectbox(
@@ -120,15 +117,10 @@ def prompt_management_ui():
             key="prompt_doctor_selector"
         )
 
-    # セッション状態を更新
     st.session_state.selected_dept_for_prompt = selected_dept
     st.session_state.selected_doc_type_for_prompt = selected_doc_type
     st.session_state.selected_doctor_for_prompt = selected_doctor
-
-    if prompt_model != "指定なし":
-        st.session_state.document_model_mapping[selected_doc_type] = prompt_model
-    else:
-        prompt_model = None
+    st.session_state.document_model_mapping[selected_doc_type] = prompt_model
 
     with st.form(key=f"edit_prompt_form_{selected_dept}_{selected_doc_type}_{selected_doctor}"):
         prompt_content = st.text_area(
@@ -138,10 +130,9 @@ def prompt_management_ui():
             key=f"prompt_content_{selected_dept}_{selected_doc_type}_{selected_doctor}"
         )
 
-        submit = st.form_submit_button("プロンプトを保存")
+        submit = st.form_submit_button("保存")
 
         if submit:
-            # 文書タイプとAIモデルのマッピングを保存
             if prompt_model:
                 st.session_state.document_model_mapping[selected_doc_type] = prompt_model
 

@@ -34,14 +34,14 @@ def render_input_section():
 
     additional_info = st.text_area(
         "追加情報入力",
-        height=70,
+        height=100,
         key="additional_info"
     )
 
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("サマリ作成", type="primary"):
+        if st.button("作成", type="primary"):
             process_summary(input_text, additional_info)
 
     with col2:

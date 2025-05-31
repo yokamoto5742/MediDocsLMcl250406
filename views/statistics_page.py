@@ -25,7 +25,6 @@ def usage_statistics_ui():
         change_page("main")
         st.rerun()
 
-    # DatabaseManagerインスタンスを正しく取得
     db_manager = DatabaseManager.get_instance()
 
     col1, col2 = st.columns(2)
@@ -49,7 +48,6 @@ def usage_statistics_ui():
     start_datetime = datetime.datetime.combine(start_date, datetime.time.min)
     end_datetime = datetime.datetime.combine(end_date, datetime.time.max)
 
-    # PostgreSQL用のクエリ条件を構築
     query_conditions = []
     query_params = {
         "start_date": start_datetime,
@@ -75,10 +73,8 @@ def usage_statistics_ui():
             query_conditions.append("document_types = :doc_type")
             query_params["doc_type"] = selected_document_type
 
-    # 条件をANDで結合
     where_clause = " AND ".join(query_conditions)
 
-    # 合計統計の取得
     total_query = f"""
     SELECT
         COUNT(*) as count,
@@ -92,7 +88,7 @@ def usage_statistics_ui():
     total_summary = db_manager.execute_query(total_query, query_params)
 
     if not total_summary or total_summary[0]["count"] == 0:
-        st.info("指定した期間のデータがありません")
+        st.info("指定期間のデータがありません")
         return
 
     dept_query = f"""
@@ -130,7 +126,6 @@ def usage_statistics_ui():
 
     records = db_manager.execute_query(records_query, query_params)
 
-    # 診療科ごとのデータを整形
     data = []
     for stat in dept_summary:
         dept_name = "全科共通" if stat["department"] == "default" else stat["department"]
@@ -149,11 +144,10 @@ def usage_statistics_ui():
     df = pd.DataFrame(data)
     st.dataframe(df, hide_index=True)
 
-    # 詳細データを整形
     detail_data = []
     for record in records:
         model_detail = str(record.get("model_detail", "")).lower()
-        model_info = "Claude"  # デフォルト値
+        model_info = "Gemini_Pro" # デフォルト値
 
         for model_name, config in MODEL_MAPPING.items():
             pattern = config["pattern"]
