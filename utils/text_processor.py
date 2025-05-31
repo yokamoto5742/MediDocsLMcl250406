@@ -14,11 +14,6 @@ def format_output_summary(summary_text):
 
 def parse_output_summary(summary_text):
     sections = {section: "" for section in DEFAULT_SECTION_NAMES}
-
-    section_aliases = {
-        "禁忌・アレルギー": "禁忌/アレルギー"
-    }
-
     lines = summary_text.split('\n')
     current_section = None
 
