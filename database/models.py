@@ -12,6 +12,8 @@ class AppSetting(Base):
     setting_id = Column(String(100), unique=True, nullable=False)
     selected_department = Column(String(100))
     selected_model = Column(String(50))
+    selected_document_type = Column(String(100))
+    selected_doctor = Column(String(100))
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
 
 
