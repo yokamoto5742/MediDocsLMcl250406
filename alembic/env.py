@@ -4,8 +4,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-import os
-from utils.config import POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_SSL
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -18,38 +17,13 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-from database.models import Base
+from main import Base
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-
-def get_url():
-    # HerokuのDATABASE_URLが設定されている場合はそれを使用
-    database_url = os.environ.get("DATABASE_URL")
-
-    if database_url:
-        # Herokuの修正: postgres:// → postgresql://
-        if database_url.startswith("postgres://"):
-            database_url = database_url.replace("postgres://", "postgresql://", 1)
-
-        # SSL設定を追加
-        if "?" in database_url:
-            database_url += "&sslmode=require"
-        else:
-            database_url += "?sslmode=require"
-
-        return database_url
-    else:
-        # 個別の環境変数からの接続設定
-        url = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-        if POSTGRES_SSL:
-            url += f"?sslmode={POSTGRES_SSL}"
-        return url
 
 
 def run_migrations_offline() -> None:
@@ -64,7 +38,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = get_url()
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -83,17 +57,22 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    # 環境変数からDB接続情報を取得
-    config_section = config.get_section(config.config_ini_section)
-    # 直接SQLAlchemy URLを設定する
-    config_section['sqlalchemy.url'] = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-
-    # Herokuの場合はDATABASE_URLを優先
-    if os.environ.get("DATABASE_URL"):
-        config_section['sqlalchemy.url'] = get_url()
-
     connectable = engine_from_config(
-        config_section,
+        config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection, target_metadata=target_metadata
+        )
+
+        with context.begin_transaction():
+            context.run_migrations()
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
