@@ -20,7 +20,7 @@ if "output_summary" not in st.session_state:
 if "parsed_summary" not in st.session_state:
     st.session_state.parsed_summary = {}
 if "selected_department" not in st.session_state:
-    saved_dept, saved_model, saved_doctor = load_user_settings()
+    saved_dept, saved_model, saved_document_type, saved_doctor = load_user_settings()
     st.session_state.selected_department = saved_dept if saved_dept else "default"
     if saved_model:
         st.session_state.selected_model = saved_model
