@@ -29,7 +29,7 @@ def update_document_model():
 
 
 def render_sidebar():
-    departments = ["default"] + DEFAULT_DEPARTMENTS
+    departments = ["default"] + [dept for dept in DEFAULT_DEPARTMENTS if dept != "default"]
 
     previous_dept = st.session_state.selected_department
     previous_model = getattr(st.session_state, "selected_model", None)
