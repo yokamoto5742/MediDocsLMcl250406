@@ -158,7 +158,7 @@ def render_sidebar():
         st.rerun()
 
 
-def save_user_settings(department, model, doctor="default"):
+def save_user_settings(department, model, doctor="default", document_type="主治医意見書"):
     try:
         if department != "default" and department not in DEFAULT_DEPARTMENTS:
             department = "default"
@@ -172,20 +172,22 @@ def save_user_settings(department, model, doctor="default"):
                     UPDATE app_settings
                     SET selected_department = :department, \
                         selected_model      = :model, \
+                        selected_document_type = :document_type, \
                         selected_doctor     = :doctor, \
                         updated_at          = CURRENT_TIMESTAMP
                     WHERE setting_id = 'user_preferences' \
                     """
         else:
             query = """
-                    INSERT INTO app_settings (setting_id, selected_department, selected_model, selected_doctor, \
+                    INSERT INTO app_settings (setting_id, selected_department, selected_model, selected_document_type, selected_doctor, \
                                               updated_at)
-                    VALUES ('user_preferences', :department, :model, :doctor, CURRENT_TIMESTAMP) \
+                    VALUES ('user_preferences', :department, :model, :document_type, :doctor, CURRENT_TIMESTAMP) \
                     """
 
         db_manager.execute_query(query, {
             "department": department,
             "model": model,
+            "document_type": document_type,
             "doctor": doctor
         }, fetch=False)
 
@@ -196,13 +198,15 @@ def save_user_settings(department, model, doctor="default"):
 def load_user_settings():
     try:
         db_manager = DatabaseManager.get_instance()
-        query = "SELECT selected_department, selected_model, selected_doctor FROM app_settings WHERE setting_id = 'user_preferences'"
+        query = "SELECT selected_department, selected_model, selected_document_type, selected_doctor FROM app_settings WHERE setting_id = 'user_preferences'"
         settings = db_manager.execute_query(query)
 
         if settings:
-            return settings[0]["selected_department"], settings[0]["selected_model"], settings[0].get("selected_doctor",
-                                                                                                      "default")
-        return None, None, None
+            return (settings[0]["selected_department"],
+                   settings[0]["selected_model"],
+                   settings[0].get("selected_document_type", "主治医意見書"),
+                   settings[0].get("selected_doctor", "default"))
+        return None, None, None, None
     except Exception as e:
         print(f"設定の読み込みに失敗しました: {str(e)}")
-        return None, None, None
+        return None, None, None, None

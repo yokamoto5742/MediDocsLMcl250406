@@ -130,6 +130,10 @@ def create_tables():
                          ( \
                              50 \
                          ),
+                             selected_document_type VARCHAR \
+                         ( \
+                             100 \
+                         ),
                              selected_doctor VARCHAR \
                          ( \
                              100 \
