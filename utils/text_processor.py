@@ -1,5 +1,12 @@
 from utils.constants import DEFAULT_SECTION_NAMES
 
+section_aliases = {
+    "治療内容": "治療経過",
+    "その他": "備考",
+    "補足": "備考",
+    "メモ": "備考"
+}
+
 
 def format_output_summary(summary_text):
     processed_text = (
