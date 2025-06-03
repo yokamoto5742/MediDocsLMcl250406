@@ -160,31 +160,42 @@ def render_sidebar():
 
 def save_user_settings(department, model, doctor="default", document_type="主治医意見書"):
     try:
+        from utils.constants import APP_TYPE
+
         if department != "default" and department not in DEFAULT_DEPARTMENTS:
             department = "default"
         db_manager = DatabaseManager.get_instance()
 
-        check_query = "SELECT * FROM app_settings WHERE setting_id = 'user_preferences'"
-        existing = db_manager.execute_query(check_query)
+        check_query = """
+                      SELECT * \
+                      FROM app_settings
+                      WHERE setting_id = 'user_preferences' \
+                        AND app_type = :app_type \
+                      """
+        existing = db_manager.execute_query(check_query, {"app_type": APP_TYPE})
 
         if existing:
             query = """
                     UPDATE app_settings
-                    SET selected_department = :department, \
-                        selected_model      = :model, \
-                        selected_document_type = :document_type, \
-                        selected_doctor     = :doctor, \
-                        updated_at          = CURRENT_TIMESTAMP
+                    SET selected_department    = :department,
+                        selected_model         = :model,
+                        selected_document_type = :document_type,
+                        selected_doctor        = :doctor,
+                        updated_at             = CURRENT_TIMESTAMP
                     WHERE setting_id = 'user_preferences' \
+                      AND app_type = :app_type \
                     """
         else:
             query = """
-                    INSERT INTO app_settings (setting_id, selected_department, selected_model, selected_document_type, selected_doctor, \
-                                              updated_at)
-                    VALUES ('user_preferences', :department, :model, :document_type, :doctor, CURRENT_TIMESTAMP) \
+                    INSERT INTO app_settings
+                    (setting_id, app_type, selected_department, selected_model,
+                     selected_document_type, selected_doctor, updated_at)
+                    VALUES ('user_preferences', :app_type, :department, :model,
+                            :document_type, :doctor, CURRENT_TIMESTAMP) \
                     """
 
         db_manager.execute_query(query, {
+            "app_type": APP_TYPE,
             "department": department,
             "model": model,
             "document_type": document_type,
@@ -197,15 +208,22 @@ def save_user_settings(department, model, doctor="default", document_type="主�
 
 def load_user_settings():
     try:
+        from utils.constants import APP_TYPE
+
         db_manager = DatabaseManager.get_instance()
-        query = "SELECT selected_department, selected_model, selected_document_type, selected_doctor FROM app_settings WHERE setting_id = 'user_preferences'"
-        settings = db_manager.execute_query(query)
+        query = """
+                SELECT selected_department, selected_model, selected_document_type, selected_doctor
+                FROM app_settings
+                WHERE setting_id = 'user_preferences' \
+                  AND app_type = :app_type \
+                """
+        settings = db_manager.execute_query(query, {"app_type": APP_TYPE})
 
         if settings:
             return (settings[0]["selected_department"],
-                   settings[0]["selected_model"],
-                   settings[0].get("selected_document_type", "主治医意見書"),
-                   settings[0].get("selected_doctor", "default"))
+                    settings[0]["selected_model"],
+                    settings[0].get("selected_document_type", "主治医意見書"),
+                    settings[0].get("selected_doctor", "default"))
         return None, None, None, None
     except Exception as e:
         print(f"設定の読み込みに失敗しました: {str(e)}")

@@ -9,12 +9,17 @@ class AppSetting(Base):
     __tablename__ = 'app_settings'
 
     id = Column(Integer, primary_key=True)
-    setting_id = Column(String(100), unique=True, nullable=False)
+    setting_id = Column(String(100), nullable=False)
+    app_type = Column(String(50), nullable=False)
     selected_department = Column(String(100))
     selected_model = Column(String(50))
     selected_document_type = Column(String(100))
     selected_doctor = Column(String(100))
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint('setting_id', 'app_type', name='unique_setting_per_app'),
+    )
 
 
 class Prompt(Base):

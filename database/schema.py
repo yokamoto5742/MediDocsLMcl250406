@@ -121,7 +121,11 @@ def create_tables():
                              VARCHAR \
                          ( \
                              100 \
-                         ) UNIQUE NOT NULL,
+                         ) NOT NULL,
+                             app_type VARCHAR \
+                         ( \
+                             50 \
+                         ) NOT NULL,
                              selected_department VARCHAR \
                          ( \
                              100 \
@@ -138,8 +142,9 @@ def create_tables():
                          ( \
                              100 \
                          ),
-                             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-                                                      ); \
+                             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                                                      CONSTRAINT unique_setting_per_app UNIQUE (setting_id, app_type)
+                             ); \
                          """
 
     try:

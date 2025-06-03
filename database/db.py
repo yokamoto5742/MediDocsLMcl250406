@@ -111,10 +111,14 @@ def get_usage_collection():
         raise DatabaseError(f"使用状況の取得に失敗しました: {str(e)}")
 
 
-def get_settings_collection():
+def get_settings_collection(app_type=None):
     try:
         db_manager = DatabaseManager.get_instance()
-        query = "SELECT * FROM app_settings"
-        return db_manager.execute_query(query)
+        if app_type:
+            query = "SELECT * FROM app_settings WHERE app_type = :app_type"
+            return db_manager.execute_query(query, {"app_type": app_type})
+        else:
+            query = "SELECT * FROM app_settings"
+            return db_manager.execute_query(query)
     except Exception as e:
         raise DatabaseError(f"設定の取得に失敗しました: {str(e)}")
