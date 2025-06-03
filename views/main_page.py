@@ -57,25 +57,18 @@ def render_summary_results():
             ])
 
             with tab_all:
-                st.subheader("全文")
-                st.code(st.session_state.output_summary,
-                        language=None,
-                        height=150
-                        )
+                st.code(st.session_state.output_summary,language=None,height=150)
 
             with tab_treatment:
                 section_content = st.session_state.parsed_summary.get("治療経過", "")
-                st.subheader("治療経過")
                 st.code(section_content, language=None, height=150)
 
             with tab_special:
                 section_content = st.session_state.parsed_summary.get("特記事項", "")
-                st.subheader("特記事項")
                 st.code(section_content, language=None, height=150)
 
             with tab_note:
                 section_content = st.session_state.parsed_summary.get("備考", "")
-                st.subheader("備考")
                 st.code(section_content, language=None, height=150)
 
         st.info("💡 テキストエリアの右上にマウスを合わせて左クリックでコピーできます")
