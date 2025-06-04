@@ -16,6 +16,13 @@ MESSAGES = {
     "NO_API_CREDENTIALS": "⚠️ 使用可能なAI APIの認証情報が設定されていません。環境変数を確認してください。",
 }
 
+TAB_NAMES = {
+    "ALL": "全文",
+    "TREATMENT": "治療経過",
+    "SPECIAL": "特記事項",
+    "NOTE": "備考"
+}
+
 DEFAULT_SECTION_NAMES = ["治療経過", "特記事項", "備考"]
 
 APP_TYPE = "opinion_letter"
