@@ -53,24 +53,22 @@ def render_input_section():
 def render_summary_results():
     if st.session_state.output_summary:
         if st.session_state.parsed_summary:
-            tab_all, tab_treatment, tab_special, tab_note = st.tabs([
-                TAB_NAMES["ALL"], TAB_NAMES["TREATMENT"], TAB_NAMES["SPECIAL"], TAB_NAMES["NOTE"]
-            ])
+            tabs = st.tabs([
+                TAB_NAMES["ALL"], TAB_NAMES["TREATMENT"], TAB_NAMES["SPECIAL"], TAB_NAMES["NOTE"]])
 
-            with tab_all:
-                st.code(st.session_state.output_summary,language=None,height=150)
+            with tabs[0]:
+                st.code(st.session_state.output_summary,
+                        language=None,
+                        height=150
+                        )
 
-            with tab_treatment:
-                section_content = st.session_state.parsed_summary.get("治療経過", "")
-                st.code(section_content, language=None, height=150)
-
-            with tab_special:
-                section_content = st.session_state.parsed_summary.get("特記事項", "")
-                st.code(section_content, language=None, height=150)
-
-            with tab_note:
-                section_content = st.session_state.parsed_summary.get("備考", "")
-                st.code(section_content, language=None, height=150)
+            sections = [TAB_NAMES["TREATMENT"], TAB_NAMES["SPECIAL"], TAB_NAMES["NOTE"]]
+            for i, section in enumerate(sections, 1):
+                with tabs[i]:
+                    section_content = st.session_state.parsed_summary.get(section, "")
+                    st.code(section_content,
+                            language=None,
+                            height=150)
 
         st.info(MESSAGES["COPY_INSTRUCTION"])
 
