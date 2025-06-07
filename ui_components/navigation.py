@@ -85,12 +85,8 @@ def render_sidebar():
 
     document_types = DEFAULT_DOCUMENT_TYPES
 
-    if not document_types:
-        document_types = ["主治医意見書"]
-
     if "selected_document_type" not in st.session_state:
-        st.session_state.selected_document_type = document_types[0] if document_types else "主治医意見書"
-
+        st.session_state.selected_document_type = document_types[0] if document_types else DEFAULT_DOCUMENT_TYPE
     if len(document_types) > 1:
         selected_document_type = st.sidebar.selectbox(
             "文書名",
