@@ -2,6 +2,7 @@ import datetime
 import queue
 import threading
 import time
+from typing import Dict, Any, Tuple
 
 import pytz
 import streamlit as st
@@ -9,7 +10,9 @@ import streamlit as st
 from database.db import DatabaseManager
 from external_service.api_factory import generate_summary
 from utils.config import (CLAUDE_API_KEY, CLAUDE_MODEL,
-                          GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, OPENAI_API_KEY,OPENAI_MODEL, MAX_TOKEN_THRESHOLD)
+                          GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL,
+                          MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, OPENAI_API_KEY,
+                          OPENAI_MODEL, MAX_TOKEN_THRESHOLD)
 from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
@@ -19,67 +22,40 @@ from utils.text_processor import format_output_summary, parse_output_summary
 JST = pytz.timezone('Asia/Tokyo')
 
 
-def generate_summary_task(input_text, selected_department, selected_model, result_queue, additional_info="",
-                          selected_document_type="主治医意見書", selected_doctor="default", model_explicitly_selected=False):
+def generate_summary_task(input_text: str, selected_department: str, selected_model: str,
+                          result_queue: queue.Queue, additional_info: str = "",
+                          selected_document_type: str = "主治医意見書",
+                          selected_doctor: str = "default",
+                          model_explicitly_selected: bool = False) -> None:
+    """バックグラウンドで要約生成を実行するタスク"""
     try:
-        if selected_department != "default" and selected_department not in DEFAULT_DEPARTMENTS:
-            selected_department = "default"
-        if selected_document_type not in DEFAULT_DOCUMENT_TYPES:
-            selected_document_type = DEFAULT_DOCUMENT_TYPES[0]
+        # 部門と文書タイプの正規化
+        normalized_dept, normalized_doc_type = normalize_selection_params(
+            selected_department, selected_document_type
+        )
 
-        prompt_data = get_prompt(selected_department, selected_document_type, selected_doctor)
-        prompt_selected_model = prompt_data.get("selected_model") if prompt_data else None
+        # モデル選択の処理
+        final_model, model_switched, original_model = determine_final_model(
+            normalized_dept, normalized_doc_type, selected_doctor,
+            selected_model, model_explicitly_selected, input_text, additional_info
+        )
 
-        if prompt_selected_model and not model_explicitly_selected:
-            selected_model = prompt_selected_model
+        # API呼び出し
+        provider, model_name = get_provider_and_model(final_model)
+        validate_api_credentials_for_provider(provider)
 
-        estimated_tokens = len(input_text) + len(additional_info or "")
-        original_model = selected_model
-        model_switched = False
+        output_summary, input_tokens, output_tokens = generate_summary(
+            provider=provider,
+            medical_text=input_text,
+            additional_info=additional_info,
+            department=normalized_dept,
+            document_type=normalized_doc_type,
+            doctor=selected_doctor,
+            model_name=model_name
+        )
 
-        if original_model == "Claude" and estimated_tokens > MAX_TOKEN_THRESHOLD:
-            if GEMINI_CREDENTIALS and GEMINI_MODEL:
-                selected_model = "Gemini_Pro"
-                model_switched = True
-            else:
-                raise APIError(MESSAGES["TOKEN_THRESHOLD_EXCEEDED_NO_GEMINI"])
-
-        provider_mapping = {
-            "Claude": ("claude", CLAUDE_MODEL),
-            "Gemini_Pro": ("gemini", GEMINI_MODEL),
-            "Gemini_Flash": ("gemini", GEMINI_FLASH_MODEL),
-            "GPT4.1": ("openai", OPENAI_MODEL)
-        }
-
-        if selected_model not in provider_mapping:
-            raise APIError(MESSAGES["NO_API_CREDENTIALS"])
-
-        provider, model_name = provider_mapping[selected_model]
-
-        if ((provider == "claude" and not CLAUDE_API_KEY) or
-                (provider == "gemini" and not GEMINI_CREDENTIALS) or
-                (provider == "openai" and not OPENAI_API_KEY)):
-            raise APIError(MESSAGES["NO_API_CREDENTIALS"])
-
-        try:
-            output_summary, input_tokens, output_tokens = generate_summary(
-                provider=provider,
-                medical_text=input_text,
-                additional_info=additional_info,
-                department=selected_department,
-                document_type=selected_document_type,
-                doctor=selected_doctor,
-                model_name=model_name
-            )
-            model_detail = model_name if provider == "gemini" else selected_model
-
-        except Exception as e:
-            if provider == "openai":
-                error_str = str(e)
-                if "insufficient_quota" in error_str or "exceeded your current quota" in error_str:
-                    raise APIError(MESSAGES["OPENAI_API_QUOTA_EXCEEDED"])
-            raise e
-
+        # 結果の処理
+        model_detail = model_name if provider == "gemini" else final_model
         output_summary = format_output_summary(output_summary)
         parsed_summary = parse_output_summary(output_summary)
 
@@ -95,14 +71,48 @@ def generate_summary_task(input_text, selected_department, selected_model, resul
         })
 
     except Exception as e:
+        if "openai" in str(e).lower():
+            error_str = str(e)
+            if "insufficient_quota" in error_str or "exceeded your current quota" in error_str:
+                result_queue.put({"success": False, "error": APIError(MESSAGES["OPENAI_API_QUOTA_EXCEEDED"])})
+                return
         result_queue.put({"success": False, "error": e})
 
 
 @handle_error
-def process_summary(input_text, additional_info=""):
-    if not GEMINI_CREDENTIALS and not CLAUDE_API_KEY and not OPENAI_API_KEY:
+def process_summary(input_text: str, additional_info: str = "") -> None:
+    """要約処理のメイン関数"""
+    # 事前検証
+    validate_api_credentials()
+    validate_input_text(input_text)
+
+    try:
+        # セッション状態の取得
+        session_params = get_session_parameters()
+
+        # 要約生成の実行
+        result = execute_summary_generation_with_ui(
+            input_text, additional_info, session_params
+        )
+
+        # 成功結果の処理
+        if result["success"]:
+            handle_success_result(result, session_params)
+        else:
+            raise result['error']
+
+    except Exception as e:
+        raise APIError(f"作成中にエラーが発生しました: {str(e)}")
+
+
+def validate_api_credentials() -> None:
+    """API認証情報の存在確認"""
+    if not any([GEMINI_CREDENTIALS, CLAUDE_API_KEY, OPENAI_API_KEY]):
         raise APIError(MESSAGES["NO_API_CREDENTIALS"])
 
+
+def validate_input_text(input_text: str) -> None:
+    """入力テキストの検証"""
     if not input_text:
         st.warning(MESSAGES["NO_INPUT"])
         return
@@ -116,94 +126,174 @@ def process_summary(input_text, additional_info=""):
         st.warning(f"{MESSAGES['INPUT_TOO_LONG']}")
         return
 
+
+def get_session_parameters() -> Dict[str, Any]:
+    """セッション状態から必要なパラメータを取得"""
+    return {
+        "available_models": getattr(st.session_state, "available_models", []),
+        "selected_model": getattr(st.session_state, "selected_model", None),
+        "selected_department": getattr(st.session_state, "selected_department", "default"),
+        "selected_document_type": getattr(st.session_state, "selected_document_type", "主治医意見書"),
+        "selected_doctor": getattr(st.session_state, "selected_doctor", "default"),
+        "model_explicitly_selected": getattr(st.session_state, "model_explicitly_selected", False)
+    }
+
+
+def execute_summary_generation_with_ui(input_text: str, additional_info: str,
+                                       session_params: Dict[str, Any]) -> Dict[str, Any]:
+    """UI表示付きで要約生成を実行"""
+    start_time = datetime.datetime.now()
+    status_placeholder = st.empty()
+    result_queue = queue.Queue()
+
+    # バックグラウンドスレッドで実行
+    summary_thread = threading.Thread(
+        target=generate_summary_task,
+        args=(
+            input_text,
+            session_params["selected_department"],
+            session_params["selected_model"],
+            result_queue,
+            additional_info,
+            session_params["selected_document_type"],
+            session_params["selected_doctor"],
+            session_params["model_explicitly_selected"]
+        ),
+    )
+    summary_thread.start()
+
+    # 進行状況の表示
+    display_progress_with_timer(summary_thread, status_placeholder, start_time)
+
+    # 結果の取得
+    summary_thread.join()
+    status_placeholder.empty()
+    result = result_queue.get()
+
+    # 処理時間の記録
+    if result["success"]:
+        processing_time = (datetime.datetime.now() - start_time).total_seconds()
+        st.session_state.summary_generation_time = processing_time
+        result["processing_time"] = processing_time
+
+    return result
+
+
+def display_progress_with_timer(thread: threading.Thread, placeholder: st.empty,
+                                start_time: datetime.datetime) -> None:
+    """進行状況とタイマーを表示"""
+    elapsed_time = 0
+    with st.spinner("作成中..."):
+        placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
+        while thread.is_alive():
+            time.sleep(1)
+            elapsed_time = int((datetime.datetime.now() - start_time).total_seconds())
+            placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
+
+
+def handle_success_result(result: Dict[str, Any], session_params: Dict[str, Any]) -> None:
+    """成功した要約生成結果の処理"""
+    # セッション状態の更新
+    st.session_state.output_summary = result["output_summary"]
+    st.session_state.parsed_summary = result["parsed_summary"]
+
+    # モデル切り替え通知
+    if result.get("model_switched"):
+        st.info(f"⚠️ 入力テキストが長いため{result['original_model']} から Gemini_Pro に切り替えました")
+
+    # データベースへの保存
+    save_usage_to_database(result, session_params)
+
+
+def save_usage_to_database(result: Dict[str, Any], session_params: Dict[str, Any]) -> None:
+    """使用状況をデータベースに保存"""
     try:
-        start_time = datetime.datetime.now()
-        status_placeholder = st.empty()
-        result_queue = queue.Queue()
+        db_manager = DatabaseManager.get_instance()
+        now_jst = datetime.datetime.now().astimezone(JST)
 
-        available_models = getattr(st.session_state, "available_models", [])
-        selected_model = getattr(st.session_state, "selected_model",
-                                 available_models[0] if available_models else None)
-        selected_department = getattr(st.session_state, "selected_department", "default")
-        selected_document_type = getattr(st.session_state, "selected_document_type", "主治医意見書")
-        selected_doctor = getattr(st.session_state, "selected_doctor", "default")
-        model_explicitly_selected = getattr(st.session_state, "model_explicitly_selected", False)
+        usage_data = {
+            "date": now_jst,
+            "app_type": APP_TYPE,
+            "document_types": session_params["selected_document_type"],
+            "model_detail": result["model_detail"],
+            "department": session_params["selected_department"],
+            "doctor": session_params["selected_doctor"],
+            "input_tokens": result["input_tokens"],
+            "output_tokens": result["output_tokens"],
+            "total_tokens": result["input_tokens"] + result["output_tokens"],
+            "processing_time": round(result["processing_time"])
+        }
 
-        summary_thread = threading.Thread(
-            target=generate_summary_task,
-            args=(
-                input_text,
-                selected_department,
-                selected_model,
-                result_queue,
-                additional_info,
-                selected_document_type,
-                selected_doctor,
-                model_explicitly_selected
-            ),
-        )
-        summary_thread.start()
-        elapsed_time = 0
+        query = """
+                INSERT INTO summary_usage
+                (date, app_type, document_types, model_detail, department, doctor,
+                 input_tokens, output_tokens, total_tokens, processing_time)
+                VALUES (:date, :app_type, :document_types, :model_detail, :department, :doctor,
+                        :input_tokens, :output_tokens, :total_tokens, :processing_time) \
+                """
 
-        with st.spinner("作成中..."):
-            status_placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
-            while summary_thread.is_alive():
-                time.sleep(1)
-                elapsed_time = int((datetime.datetime.now() - start_time).total_seconds())
-                status_placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
+        db_manager.execute_query(query, usage_data, fetch=False)
 
-        summary_thread.join()
-        status_placeholder.empty()
-        result = result_queue.get()
+    except Exception as db_error:
+        st.warning(f"データベース保存中にエラーが発生しました: {str(db_error)}")
 
-        if result["success"]:
-            st.session_state.output_summary = result["output_summary"]
-            st.session_state.parsed_summary = result["parsed_summary"]
 
-            input_tokens = result["input_tokens"]
-            output_tokens = result["output_tokens"]
-            model_detail = result["model_detail"]
-            end_time = datetime.datetime.now()
-            processing_time = (end_time - start_time).total_seconds()
-            st.session_state.summary_generation_time = processing_time
+def normalize_selection_params(department: str, document_type: str) -> Tuple[str, str]:
+    """部門と文書タイプの正規化"""
+    normalized_dept = department if department in DEFAULT_DEPARTMENTS else "default"
+    normalized_doc_type = document_type if document_type in DEFAULT_DOCUMENT_TYPES else DEFAULT_DOCUMENT_TYPES[0]
+    return normalized_dept, normalized_doc_type
 
-            # モデルが自動切り替えされた場合に通知
-            if result.get("model_switched"):
-                st.info(
-                    f"⚠️ 入力テキストが長いため{result['original_model']} から Gemini_Pro に切り替えました")
 
-            try:
-                db_manager = DatabaseManager.get_instance()
-                now_jst = datetime.datetime.now().astimezone(JST)
+def determine_final_model(department: str, document_type: str, doctor: str,
+                          selected_model: str, model_explicitly_selected: bool,
+                          input_text: str, additional_info: str) -> Tuple[str, bool, str]:
+    """最終的に使用するモデルを決定"""
+    # プロンプト設定からモデルを取得
+    prompt_data = get_prompt(department, document_type, doctor)
+    prompt_selected_model = prompt_data.get("selected_model") if prompt_data else None
 
-                usage_data = {
-                    "date": now_jst,
-                    "app_type": APP_TYPE,
-                    "document_types": selected_document_type,
-                    "model_detail": model_detail,
-                    "department": selected_department,
-                    "doctor": selected_doctor,
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "total_tokens": input_tokens + output_tokens,
-                    "processing_time": round(processing_time)
-                }
+    # モデルが明示的に選択されていない場合、プロンプト設定を優先
+    if prompt_selected_model and not model_explicitly_selected:
+        selected_model = prompt_selected_model
 
-                query = """
-                        INSERT INTO summary_usage
-                        (date, app_type, document_types, model_detail, department, doctor, input_tokens, output_tokens, \
-                         total_tokens, processing_time)
-                        VALUES (:date, :app_type, :document_types, :model_detail, :department, :doctor, :input_tokens, \
-                                :output_tokens, :total_tokens, :processing_time) \
-                        """
+    # トークン数による自動切り替え
+    estimated_tokens = len(input_text) + len(additional_info or "")
+    original_model = selected_model
+    model_switched = False
 
-                db_manager.execute_query(query, usage_data, fetch=False)
-
-            except Exception as db_error:
-                st.warning(f"データベース保存中にエラーが発生しました: {str(db_error)}")
-
+    if selected_model == "Claude" and estimated_tokens > MAX_TOKEN_THRESHOLD:
+        if GEMINI_CREDENTIALS and GEMINI_MODEL:
+            selected_model = "Gemini_Pro"
+            model_switched = True
         else:
-            raise result['error']
+            raise APIError(MESSAGES["TOKEN_THRESHOLD_EXCEEDED_NO_GEMINI"])
 
-    except Exception as e:
-        raise APIError(f"作成中にエラーが発生しました: {str(e)}")
+    return selected_model, model_switched, original_model
+
+
+def get_provider_and_model(selected_model: str) -> Tuple[str, str]:
+    """選択されたモデルからプロバイダーとモデル名を取得"""
+    provider_mapping = {
+        "Claude": ("claude", CLAUDE_MODEL),
+        "Gemini_Pro": ("gemini", GEMINI_MODEL),
+        "Gemini_Flash": ("gemini", GEMINI_FLASH_MODEL),
+        "GPT4.1": ("openai", OPENAI_MODEL)
+    }
+
+    if selected_model not in provider_mapping:
+        raise APIError(MESSAGES["NO_API_CREDENTIALS"])
+
+    return provider_mapping[selected_model]
+
+
+def validate_api_credentials_for_provider(provider: str) -> None:
+    """指定されたプロバイダーの認証情報を確認"""
+    credentials_check = {
+        "claude": CLAUDE_API_KEY,
+        "gemini": GEMINI_CREDENTIALS,
+        "openai": OPENAI_API_KEY
+    }
+
+    if not credentials_check.get(provider):
+        raise APIError(MESSAGES["NO_API_CREDENTIALS"])
