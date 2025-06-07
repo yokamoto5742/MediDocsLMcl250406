@@ -13,7 +13,7 @@ from utils.config import (CLAUDE_API_KEY, CLAUDE_MODEL,
                           GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL,
                           MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, OPENAI_API_KEY,
                           OPENAI_MODEL, MAX_TOKEN_THRESHOLD)
-from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENT, DOCUMENT_TYPES, DEFAULT_DOCUMENT_TYPE
+from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE,DOCUMENT_TYPES
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
 from utils.prompt_manager import get_prompt
@@ -27,20 +27,16 @@ def generate_summary_task(input_text: str, selected_department: str, selected_mo
                           selected_document_type: str = DEFAULT_DOCUMENT_TYPE,
                           selected_doctor: str = "default",
                           model_explicitly_selected: bool = False) -> None:
-    """バックグラウンドで要約生成を実行するタスク"""
     try:
-        # 部門と文書タイプの正規化
         normalized_dept, normalized_doc_type = normalize_selection_params(
             selected_department, selected_document_type
         )
 
-        # モデル選択の処理
         final_model, model_switched, original_model = determine_final_model(
             normalized_dept, normalized_doc_type, selected_doctor,
             selected_model, model_explicitly_selected, input_text, additional_info
         )
 
-        # API呼び出し
         provider, model_name = get_provider_and_model(final_model)
         validate_api_credentials_for_provider(provider)
 
@@ -54,7 +50,6 @@ def generate_summary_task(input_text: str, selected_department: str, selected_mo
             model_name=model_name
         )
 
-        # 結果の処理
         model_detail = model_name if provider == "gemini" else final_model
         output_summary = format_output_summary(output_summary)
         parsed_summary = parse_output_summary(output_summary)
@@ -81,21 +76,16 @@ def generate_summary_task(input_text: str, selected_department: str, selected_mo
 
 @handle_error
 def process_summary(input_text: str, additional_info: str = "") -> None:
-    """要約処理のメイン関数"""
-    # 事前検証
     validate_api_credentials()
     validate_input_text(input_text)
 
     try:
-        # セッション状態の取得
         session_params = get_session_parameters()
 
-        # 要約生成の実行
         result = execute_summary_generation_with_ui(
             input_text, additional_info, session_params
         )
 
-        # 成功結果の処理
         if result["success"]:
             handle_success_result(result, session_params)
         else:
@@ -106,13 +96,11 @@ def process_summary(input_text: str, additional_info: str = "") -> None:
 
 
 def validate_api_credentials() -> None:
-    """API認証情報の存在確認"""
     if not any([GEMINI_CREDENTIALS, CLAUDE_API_KEY, OPENAI_API_KEY]):
         raise APIError(MESSAGES["NO_API_CREDENTIALS"])
 
 
 def validate_input_text(input_text: str) -> None:
-    """入力テキストの検証"""
     if not input_text:
         st.warning(MESSAGES["NO_INPUT"])
         return
@@ -128,7 +116,6 @@ def validate_input_text(input_text: str) -> None:
 
 
 def get_session_parameters() -> Dict[str, Any]:
-    """セッション状態から必要なパラメータを取得"""
     return {
         "available_models": getattr(st.session_state, "available_models", []),
         "selected_model": getattr(st.session_state, "selected_model", None),
@@ -141,12 +128,10 @@ def get_session_parameters() -> Dict[str, Any]:
 
 def execute_summary_generation_with_ui(input_text: str, additional_info: str,
                                        session_params: Dict[str, Any]) -> Dict[str, Any]:
-    """UI表示付きで要約生成を実行"""
     start_time = datetime.datetime.now()
     status_placeholder = st.empty()
     result_queue = queue.Queue()
 
-    # バックグラウンドスレッドで実行
     summary_thread = threading.Thread(
         target=generate_summary_task,
         args=(
@@ -162,15 +147,12 @@ def execute_summary_generation_with_ui(input_text: str, additional_info: str,
     )
     summary_thread.start()
 
-    # 進行状況の表示
     display_progress_with_timer(summary_thread, status_placeholder, start_time)
 
-    # 結果の取得
     summary_thread.join()
     status_placeholder.empty()
     result = result_queue.get()
 
-    # 処理時間の記録
     if result["success"]:
         processing_time = (datetime.datetime.now() - start_time).total_seconds()
         st.session_state.summary_generation_time = processing_time
@@ -181,7 +163,6 @@ def execute_summary_generation_with_ui(input_text: str, additional_info: str,
 
 def display_progress_with_timer(thread: threading.Thread, placeholder: st.empty,
                                 start_time: datetime.datetime) -> None:
-    """進行状況とタイマーを表示"""
     elapsed_time = 0
     with st.spinner("作成中..."):
         placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
@@ -192,21 +173,16 @@ def display_progress_with_timer(thread: threading.Thread, placeholder: st.empty,
 
 
 def handle_success_result(result: Dict[str, Any], session_params: Dict[str, Any]) -> None:
-    """成功した要約生成結果の処理"""
-    # セッション状態の更新
     st.session_state.output_summary = result["output_summary"]
     st.session_state.parsed_summary = result["parsed_summary"]
 
-    # モデル切り替え通知
     if result.get("model_switched"):
         st.info(f"⚠️ 入力テキストが長いため{result['original_model']} から Gemini_Pro に切り替えました")
 
-    # データベースへの保存
     save_usage_to_database(result, session_params)
 
 
 def save_usage_to_database(result: Dict[str, Any], session_params: Dict[str, Any]) -> None:
-    """使用状況をデータベースに保存"""
     try:
         db_manager = DatabaseManager.get_instance()
         now_jst = datetime.datetime.now().astimezone(JST)
@@ -239,7 +215,6 @@ def save_usage_to_database(result: Dict[str, Any], session_params: Dict[str, Any
 
 
 def normalize_selection_params(department: str, document_type: str) -> Tuple[str, str]:
-    """部門と文書タイプの正規化"""
     normalized_dept = department if department in DEFAULT_DEPARTMENT else "default"
     normalized_doc_type = document_type if document_type in DOCUMENT_TYPES else DOCUMENT_TYPES[0]
     return normalized_dept, normalized_doc_type
@@ -248,16 +223,12 @@ def normalize_selection_params(department: str, document_type: str) -> Tuple[str
 def determine_final_model(department: str, document_type: str, doctor: str,
                           selected_model: str, model_explicitly_selected: bool,
                           input_text: str, additional_info: str) -> Tuple[str, bool, str]:
-    """最終的に使用するモデルを決定"""
-    # プロンプト設定からモデルを取得
     prompt_data = get_prompt(department, document_type, doctor)
     prompt_selected_model = prompt_data.get("selected_model") if prompt_data else None
 
-    # モデルが明示的に選択されていない場合、プロンプト設定を優先
     if prompt_selected_model and not model_explicitly_selected:
         selected_model = prompt_selected_model
 
-    # トークン数による自動切り替え
     estimated_tokens = len(input_text) + len(additional_info or "")
     original_model = selected_model
     model_switched = False
@@ -273,7 +244,6 @@ def determine_final_model(department: str, document_type: str, doctor: str,
 
 
 def get_provider_and_model(selected_model: str) -> Tuple[str, str]:
-    """選択されたモデルからプロバイダーとモデル名を取得"""
     provider_mapping = {
         "Claude": ("claude", CLAUDE_MODEL),
         "Gemini_Pro": ("gemini", GEMINI_MODEL),
@@ -288,7 +258,6 @@ def get_provider_and_model(selected_model: str) -> Tuple[str, str]:
 
 
 def validate_api_credentials_for_provider(provider: str) -> None:
-    """指定されたプロバイダーの認証情報を確認"""
     credentials_check = {
         "claude": CLAUDE_API_KEY,
         "gemini": GEMINI_CREDENTIALS,
