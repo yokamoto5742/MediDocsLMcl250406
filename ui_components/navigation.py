@@ -2,7 +2,7 @@ import streamlit as st
 
 from database.db import DatabaseManager
 from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, OPENAI_API_KEY
-from utils.constants import DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING
+from utils.constants import DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPE
 from utils.prompt_manager import get_prompt
 
 
@@ -158,7 +158,7 @@ def render_sidebar():
         st.rerun()
 
 
-def save_user_settings(department, model, doctor="default", document_type="主治医意見書"):
+def save_user_settings(department, model, doctor="default", document_type=DEFAULT_DOCUMENT_TYPE):
     try:
         from utils.constants import APP_TYPE
 
@@ -222,7 +222,7 @@ def load_user_settings():
         if settings:
             return (settings[0]["selected_department"],
                     settings[0]["selected_model"],
-                    settings[0].get("selected_document_type", "主治医意見書"),
+                    settings[0].get("selected_document_type", DEFAULT_DOCUMENT_TYPE),
                     settings[0].get("selected_doctor", "default"))
         return None, None, None, None
     except Exception as e:

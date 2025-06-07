@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Tuple, Optional
 
 from utils.config import get_config
+from utils.constants import DEFAULT_DOCUMENT_TYPE
 from utils.exceptions import APIError
 from utils.prompt_manager import get_prompt
 
@@ -40,7 +41,7 @@ class BaseAPIClient(ABC):
             "selected_model") else self.default_model
     
     def generate_summary(self, medical_text: str, additional_info: str = "", 
-                        department: str = "default", document_type: str = "主治医意見書",
+                        department: str = "default", document_type: str = DEFAULT_DOCUMENT_TYPE,
                         doctor: str = "default", model_name: Optional[str] = None) -> Tuple[str, int, int]:
         try:
             self.initialize()

@@ -13,7 +13,7 @@ from utils.config import (CLAUDE_API_KEY, CLAUDE_MODEL,
                           GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL,
                           MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, OPENAI_API_KEY,
                           OPENAI_MODEL, MAX_TOKEN_THRESHOLD)
-from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES
+from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES, DEFAULT_DOCUMENT_TYPE
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
 from utils.prompt_manager import get_prompt
@@ -24,7 +24,7 @@ JST = pytz.timezone('Asia/Tokyo')
 
 def generate_summary_task(input_text: str, selected_department: str, selected_model: str,
                           result_queue: queue.Queue, additional_info: str = "",
-                          selected_document_type: str = "主治医意見書",
+                          selected_document_type: str = DEFAULT_DOCUMENT_TYPE,
                           selected_doctor: str = "default",
                           model_explicitly_selected: bool = False) -> None:
     """バックグラウンドで要約生成を実行するタスク"""
@@ -133,7 +133,7 @@ def get_session_parameters() -> Dict[str, Any]:
         "available_models": getattr(st.session_state, "available_models", []),
         "selected_model": getattr(st.session_state, "selected_model", None),
         "selected_department": getattr(st.session_state, "selected_department", "default"),
-        "selected_document_type": getattr(st.session_state, "selected_document_type", "主治医意見書"),
+        "selected_document_type": getattr(st.session_state, "selected_document_type", DEFAULT_DOCUMENT_TYPE),
         "selected_doctor": getattr(st.session_state, "selected_doctor", "default"),
         "model_explicitly_selected": getattr(st.session_state, "model_explicitly_selected", False)
     }

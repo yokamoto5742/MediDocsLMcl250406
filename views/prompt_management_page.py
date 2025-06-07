@@ -1,6 +1,6 @@
 import streamlit as st
 
-from utils.constants import DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPES
+from utils.constants import DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPES, DEFAULT_DOCUMENT_TYPE
 from utils.error_handlers import handle_error
 from utils.exceptions import AppError
 from utils.prompt_manager import get_all_departments, get_prompt, create_or_update_prompt, delete_prompt
@@ -37,7 +37,7 @@ def prompt_management_ui():
         st.session_state.selected_dept_for_prompt = "default"
 
     if "selected_doc_type_for_prompt" not in st.session_state:
-        st.session_state.selected_doc_type_for_prompt = "主治医意見書"
+        st.session_state.selected_doc_type_for_prompt = DEFAULT_DOCUMENT_TYPE
 
     if "selected_doctor_for_prompt" not in st.session_state:
         st.session_state.selected_doctor_for_prompt = "default"
@@ -45,7 +45,7 @@ def prompt_management_ui():
     departments = ["default"] + get_all_departments()
     document_types = DEFAULT_DOCUMENT_TYPES
     if not document_types:
-        document_types = ["主治医意見書"]
+        document_types = [DEFAULT_DOCUMENT_TYPE]
 
     if "document_model_mapping" not in st.session_state:
         st.session_state.document_model_mapping = {}
@@ -143,14 +143,14 @@ def prompt_management_ui():
             else:
                 raise AppError(message)
 
-    if selected_dept != "default" or selected_doc_type != "主治医意見書" or selected_doctor != "default":
+    if selected_dept != "default" or selected_doc_type != DEFAULT_DOCUMENT_TYPE or selected_doctor != "default":
         if st.button("プロンプトを削除", key=f"delete_prompt_{selected_dept}_{selected_doc_type}_{selected_doctor}",
                      type="primary"):
             success, message = delete_prompt(selected_dept, selected_doc_type, selected_doctor)
             if success:
                 st.session_state.success_message = message
                 st.session_state.selected_dept_for_prompt = "default"
-                st.session_state.selected_doc_type_for_prompt = "主治医意見書"
+                st.session_state.selected_doc_type_for_prompt = DEFAULT_DOCUMENT_TYPE
                 st.session_state.selected_doctor_for_prompt = "default"
                 st.rerun()
             else:
