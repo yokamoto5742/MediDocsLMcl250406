@@ -1,6 +1,6 @@
 import streamlit as st
 
-from utils.constants import DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPES, DEFAULT_DOCUMENT_TYPE
+from utils.constants import DEPARTMENT_DOCTORS_MAPPING, DOCUMENT_TYPES, DEFAULT_DOCUMENT_TYPE
 from utils.error_handlers import handle_error
 from utils.exceptions import AppError
 from utils.prompt_manager import get_all_departments, get_prompt, create_or_update_prompt, delete_prompt
@@ -43,7 +43,7 @@ def prompt_management_ui():
         st.session_state.selected_doctor_for_prompt = "default"
 
     departments = ["default"] + get_all_departments()
-    document_types = DEFAULT_DOCUMENT_TYPES
+    document_types = DOCUMENT_TYPES
     if not document_types:
         document_types = [DEFAULT_DOCUMENT_TYPE]
 

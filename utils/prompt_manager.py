@@ -4,7 +4,7 @@ from sqlalchemy import text
 
 from database.db import DatabaseManager
 from utils.config import get_config
-from utils.constants import DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPE
+from utils.constants import DEFAULT_DEPARTMENT, DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPE
 from utils.exceptions import DatabaseError, AppError
 from database.schema import initialize_database as init_schema
 
@@ -68,7 +68,7 @@ def update_document(collection, query_dict, update_data):
 
 
 def get_all_departments():
-    return DEFAULT_DEPARTMENTS
+    return DEFAULT_DEPARTMENT
 
 
 def get_all_prompts():
@@ -256,8 +256,8 @@ def initialize_database():
         prompt_collection = get_prompt_collection()
         config = get_config()
         default_prompt_content = config['PROMPTS']['summary']
-        departments = DEFAULT_DEPARTMENTS
-        document_types = DEFAULT_DOCUMENT_TYPES
+        departments = DEFAULT_DEPARTMENT
+        document_types = DOCUMENT_TYPES
 
         for dept in departments:
             doctors = DEPARTMENT_DOCTORS_MAPPING.get(dept, ["default"])

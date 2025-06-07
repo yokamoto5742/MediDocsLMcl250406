@@ -2,7 +2,7 @@ import streamlit as st
 
 from database.db import DatabaseManager
 from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, OPENAI_API_KEY
-from utils.constants import DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPE
+from utils.constants import DEFAULT_DEPARTMENT, DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPE
 from utils.prompt_manager import get_prompt
 
 
@@ -29,7 +29,7 @@ def update_document_model():
 
 
 def render_sidebar():
-    departments = ["default"] + [dept for dept in DEFAULT_DEPARTMENTS if dept != "default"]
+    departments = ["default"] + [dept for dept in DEFAULT_DEPARTMENT if dept != "default"]
 
     previous_dept = st.session_state.selected_department
     previous_model = getattr(st.session_state, "selected_model", None)
@@ -83,7 +83,7 @@ def render_sidebar():
         st.session_state.selected_doctor = available_doctors[0]
         selected_doctor = available_doctors[0]
 
-    document_types = DEFAULT_DOCUMENT_TYPES
+    document_types = DOCUMENT_TYPES
 
     if "selected_document_type" not in st.session_state:
         st.session_state.selected_document_type = document_types[0] if document_types else DEFAULT_DOCUMENT_TYPE
@@ -158,7 +158,7 @@ def save_user_settings(department, model, doctor="default", document_type=DEFAUL
     try:
         from utils.constants import APP_TYPE
 
-        if department != "default" and department not in DEFAULT_DEPARTMENTS:
+        if department != "default" and department not in DEFAULT_DEPARTMENT:
             department = "default"
         db_manager = DatabaseManager.get_instance()
 

@@ -13,7 +13,7 @@ from utils.config import (CLAUDE_API_KEY, CLAUDE_MODEL,
                           GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL,
                           MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, OPENAI_API_KEY,
                           OPENAI_MODEL, MAX_TOKEN_THRESHOLD)
-from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES, DEFAULT_DOCUMENT_TYPE
+from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENT, DOCUMENT_TYPES, DEFAULT_DOCUMENT_TYPE
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
 from utils.prompt_manager import get_prompt
@@ -240,8 +240,8 @@ def save_usage_to_database(result: Dict[str, Any], session_params: Dict[str, Any
 
 def normalize_selection_params(department: str, document_type: str) -> Tuple[str, str]:
     """部門と文書タイプの正規化"""
-    normalized_dept = department if department in DEFAULT_DEPARTMENTS else "default"
-    normalized_doc_type = document_type if document_type in DEFAULT_DOCUMENT_TYPES else DEFAULT_DOCUMENT_TYPES[0]
+    normalized_dept = department if department in DEFAULT_DEPARTMENT else "default"
+    normalized_doc_type = document_type if document_type in DOCUMENT_TYPES else DOCUMENT_TYPES[0]
     return normalized_dept, normalized_doc_type
 
 
