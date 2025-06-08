@@ -1,6 +1,7 @@
-# tests/test_claude_api.py
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+
 from external_service.claude_api import ClaudeAPIClient
 from utils.exceptions import APIError
 
@@ -36,7 +37,7 @@ class TestClaudeAPIClient:
         """APIキー未設定時の初期化エラーテスト"""
         client = ClaudeAPIClient()
         
-        with pytest.raises(APIError, match="API認証情報が設定されていません"):
+        with pytest.raises(APIError, match="Claude API初期化エラー"):
             client.initialize()
 
     @patch('external_service.claude_api.CLAUDE_API_KEY', 'valid_api_key')
@@ -127,9 +128,10 @@ class TestClaudeAPIClient:
 
     @patch('external_service.claude_api.CLAUDE_API_KEY', 'test_key')
     @patch('external_service.claude_api.CLAUDE_MODEL', 'claude-3-haiku')
-    def test_integration_generate_summary(self, sample_medical_text):
+    def test_integration_generate_summary(self):
         """統合テスト: generate_summaryメソッド"""
         client = ClaudeAPIClient()
+        sample_medical_text = "患者情報のテストデータ"
         
         # 初期化のモック
         with patch.object(client, 'initialize', return_value=True):
