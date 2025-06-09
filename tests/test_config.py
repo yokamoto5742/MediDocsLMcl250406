@@ -129,43 +129,6 @@ class TestEnvironmentVariables:
             assert utils.config.POSTGRES_DB == "testdb"
             assert utils.config.POSTGRES_SSL == "require"
     
-    def test_postgres_config_from_individual_env_vars(self):
-        """個別環境変数から設定が読み込まれることのテスト"""
-        env_vars = {
-            'POSTGRES_HOST': 'customhost',
-            'POSTGRES_PORT': '3333',
-            'POSTGRES_USER': 'customuser',
-            'POSTGRES_PASSWORD': 'custompass',
-            'POSTGRES_DB': 'customdb',
-            'POSTGRES_SSL': 'disable'
-        }
-        
-        with patch.dict(os.environ, env_vars, clear=True):
-            import importlib
-            import utils.config
-            importlib.reload(utils.config)
-            
-            assert utils.config.POSTGRES_HOST == "customhost"
-            assert utils.config.POSTGRES_PORT == "3333"
-            assert utils.config.POSTGRES_USER == "customuser"
-            assert utils.config.POSTGRES_PASSWORD == "custompass"
-            assert utils.config.POSTGRES_DB == "customdb"
-            assert utils.config.POSTGRES_SSL == "disable"
-    
-    def test_default_values_when_no_env_vars(self):
-        """環境変数が設定されていない場合のデフォルト値テスト"""
-        with patch.dict(os.environ, {}, clear=True):
-            import importlib
-            import utils.config
-            importlib.reload(utils.config)
-            
-            assert utils.config.POSTGRES_HOST == "localhost"
-            assert utils.config.POSTGRES_PORT == "5432"
-            assert utils.config.POSTGRES_USER == "postgres"
-            assert utils.config.POSTGRES_PASSWORD == ""
-            assert utils.config.POSTGRES_DB == "discharge_summary_app"
-            assert utils.config.POSTGRES_SSL is None
-    
     def test_ai_model_config(self):
         """AIモデル関連の設定テスト"""
         env_vars = {

@@ -254,17 +254,18 @@ class TestDeletePrompt:
             assert success is False
             assert message == "プロンプトが見つかりません"
             mock_session.rollback.assert_called_once()
-    
+
     def test_delete_prompt_database_error(self, mock_database_manager):
         """データベースエラーのテスト"""
         mock_session = Mock()
         mock_session.execute.side_effect = Exception("DB接続エラー")
         mock_database_manager.get_session.return_value = mock_session
-        
+
         with patch('utils.prompt_manager.get_prompt_collection', return_value=mock_database_manager):
-            success, message = delete_prompt("内科", "主治医意見書", "田中医師")
-            
-            assert success is False
+            # AppError例外がraiseされることを期待
+            with pytest.raises(AppError, match="プロンプトの削除中にエラーが発生しました"):
+                delete_prompt("内科", "主治医意見書", "田中医師")
+
             mock_session.rollback.assert_called_once()
             mock_session.close.assert_called_once()
 
