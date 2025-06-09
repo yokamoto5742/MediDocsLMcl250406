@@ -1,9 +1,12 @@
-# tests/test_openai_api.py
 import pytest
 from unittest.mock import Mock, patch
 from external_service.openai_api import OpenAIAPIClient
 from utils.exceptions import APIError
 
+@pytest.fixture
+def sample_medical_text():
+    """サンプルの医療テキスト"""
+    return "患者は38歳男性で、胸痛を主訴として来院。心電図で異常所見なし。"
 
 class TestOpenAIAPIClient:
     """OpenAIAPIClientクラスのテスト"""
@@ -35,8 +38,8 @@ class TestOpenAIAPIClient:
     def test_initialize_missing_api_key(self):
         """APIキー未設定時の初期化エラーテスト"""
         client = OpenAIAPIClient()
-        
-        with pytest.raises(APIError, match="API認証情報が設定されていません"):
+
+        with pytest.raises(APIError, match="OpenAI API初期化エラー:.*Gemini APIの認証情報が設定されていません"):
             client.initialize()
 
     @patch('external_service.openai_api.OPENAI_API_KEY', 'valid_openai_key')
