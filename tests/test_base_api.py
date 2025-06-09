@@ -5,7 +5,7 @@ from external_service.base_api import BaseAPIClient
 from utils.exceptions import APIError
 
 
-class TestableAPIClient(BaseAPIClient):
+class MockableAPIClient(BaseAPIClient):
     """テスト用のBaseAPIClient具象実装クラス"""
     
     def __init__(self, api_key="test_key", default_model="test_model"):
@@ -31,7 +31,7 @@ class TestBaseAPIClient:
 
     def test_init(self):
         """初期化テスト"""
-        client = TestableAPIClient("test_api_key", "test_model")
+        client = MockableAPIClient("test_api_key", "test_model")
         assert client.api_key == "test_api_key"
         assert client.default_model == "test_model"
 
@@ -50,7 +50,7 @@ class TestBaseAPIClient:
             }
         }
 
-        client = TestableAPIClient()
+        client = MockableAPIClient()
         prompt = client.create_summary_prompt(
             medical_text=sample_medical_text,
             additional_info="追加情報テスト",
@@ -80,7 +80,7 @@ class TestBaseAPIClient:
 
         mock_get_prompt.return_value = mock_prompt_data
 
-        client = TestableAPIClient()
+        client = MockableAPIClient()
         prompt = client.create_summary_prompt(
             medical_text=sample_medical_text,
             additional_info="",
@@ -108,7 +108,7 @@ class TestBaseAPIClient:
 
         mock_get_prompt.return_value = mock_prompt_data
 
-        client = TestableAPIClient()
+        client = MockableAPIClient()
         model_name = client.get_model_name("内科", "診断書", "田中医師")
 
         assert model_name == mock_prompt_data['selected_model']
@@ -121,7 +121,7 @@ class TestBaseAPIClient:
 
         mock_get_prompt.return_value = None
 
-        client = TestableAPIClient()
+        client = MockableAPIClient()
 
         with patch.object(client, 'create_summary_prompt') as mock_create_prompt:
             mock_create_prompt.return_value = "テストプロンプト"
@@ -146,7 +146,7 @@ class TestBaseAPIClient:
 
         mock_get_prompt.return_value = None
 
-        client = TestableAPIClient()
+        client = MockableAPIClient()
 
         with patch.object(client, '_generate_content') as mock_generate:
             mock_generate.return_value = ("指定モデル結果", 120, 60)
@@ -166,7 +166,7 @@ class TestBaseAPIClient:
         # テストデータを直接定義
         sample_medical_text = "患者情報のテストデータ"
 
-        client = TestableAPIClient(api_key="")  # 空のAPIキー
+        client = MockableAPIClient(api_key="")  # 空のAPIキー
 
         with pytest.raises(APIError, match="APIキーが設定されていません"):
             client.generate_summary(medical_text=sample_medical_text)
@@ -176,7 +176,7 @@ class TestBaseAPIClient:
         # テストデータを直接定義
         sample_medical_text = "患者情報のテストデータ"
 
-        client = TestableAPIClient()
+        client = MockableAPIClient()
 
         with patch.object(client, '_generate_content') as mock_generate:
             mock_generate.side_effect = APIError("テスト用APIエラー")
@@ -189,10 +189,10 @@ class TestBaseAPIClient:
         # テストデータを直接定義
         sample_medical_text = "患者情報のテストデータ"
 
-        client = TestableAPIClient()
+        client = MockableAPIClient()
 
         with patch.object(client, '_generate_content') as mock_generate:
             mock_generate.side_effect = ValueError("予期しないエラー")
 
-            with pytest.raises(APIError, match="TestableAPIClientでエラーが発生しました"):
+            with pytest.raises(APIError, match="MockableAPIClientでエラーが発生しました"):
                 client.generate_summary(medical_text=sample_medical_text)
