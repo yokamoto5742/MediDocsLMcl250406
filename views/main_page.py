@@ -1,6 +1,7 @@
 import streamlit as st
 
 from services.summary_service import process_summary
+from utils.constants import MESSAGES, TAB_NAMES
 from utils.error_handlers import handle_error
 from ui_components.navigation import render_sidebar
 
@@ -52,37 +53,28 @@ def render_input_section():
 def render_summary_results():
     if st.session_state.output_summary:
         if st.session_state.parsed_summary:
-            tab_all, tab_treatment, tab_special, tab_note = st.tabs([
-                "全文", "治療経過", "特記事項", "備考"
-            ])
+            tabs = st.tabs([
+                TAB_NAMES["ALL"], TAB_NAMES["TREATMENT"], TAB_NAMES["SPECIAL"], TAB_NAMES["NOTE"]])
 
-            with tab_all:
-                st.subheader("全文")
+            with tabs[0]:
                 st.code(st.session_state.output_summary,
                         language=None,
                         height=150
                         )
 
-            with tab_treatment:
-                section_content = st.session_state.parsed_summary.get("治療経過", "")
-                st.subheader("治療経過")
-                st.code(section_content, language=None, height=150)
+            sections = [TAB_NAMES["TREATMENT"], TAB_NAMES["SPECIAL"], TAB_NAMES["NOTE"]]
+            for i, section in enumerate(sections, 1):
+                with tabs[i]:
+                    section_content = st.session_state.parsed_summary.get(section, "")
+                    st.code(section_content,
+                            language=None,
+                            height=150)
 
-            with tab_special:
-                section_content = st.session_state.parsed_summary.get("特記事項", "")
-                st.subheader("特記事項")
-                st.code(section_content, language=None, height=150)
-
-            with tab_note:
-                section_content = st.session_state.parsed_summary.get("備考", "")
-                st.subheader("備考")
-                st.code(section_content, language=None, height=150)
-
-        st.info("💡 テキストエリアの右上にマウスを合わせて左クリックでコピーできます")
+        st.info(MESSAGES["COPY_INSTRUCTION"])
 
         if "summary_generation_time" in st.session_state and st.session_state.summary_generation_time is not None:
             processing_time = st.session_state.summary_generation_time
-            st.info(f"⏱️ 処理時間: {processing_time:.0f} 秒")
+            st.info(MESSAGES["PROCESSING_TIME"].format(processing_time=processing_time))
 
 
 @handle_error

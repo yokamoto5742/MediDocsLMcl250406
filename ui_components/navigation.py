@@ -2,7 +2,7 @@ import streamlit as st
 
 from database.db import DatabaseManager
 from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, OPENAI_API_KEY
-from utils.constants import DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING
+from utils.constants import DEFAULT_DEPARTMENT, DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPE
 from utils.prompt_manager import get_prompt
 
 
@@ -29,7 +29,7 @@ def update_document_model():
 
 
 def render_sidebar():
-    departments = ["default"] + [dept for dept in DEFAULT_DEPARTMENTS if dept != "default"]
+    departments = ["default"] + [dept for dept in DEFAULT_DEPARTMENT if dept != "default"]
 
     previous_dept = st.session_state.selected_department
     previous_model = getattr(st.session_state, "selected_model", None)
@@ -83,14 +83,10 @@ def render_sidebar():
         st.session_state.selected_doctor = available_doctors[0]
         selected_doctor = available_doctors[0]
 
-    document_types = DEFAULT_DOCUMENT_TYPES
-
-    if not document_types:
-        document_types = ["主治医意見書"]
+    document_types = DOCUMENT_TYPES
 
     if "selected_document_type" not in st.session_state:
-        st.session_state.selected_document_type = document_types[0] if document_types else "主治医意見書"
-
+        st.session_state.selected_document_type = document_types[0] if document_types else DEFAULT_DOCUMENT_TYPE
     if len(document_types) > 1:
         selected_document_type = st.sidebar.selectbox(
             "文書名",
@@ -158,33 +154,36 @@ def render_sidebar():
         st.rerun()
 
 
-def save_user_settings(department, model, doctor="default", document_type="主治医意見書"):
+def save_user_settings(department, model, doctor="default", document_type=DEFAULT_DOCUMENT_TYPE):
     try:
-        if department != "default" and department not in DEFAULT_DEPARTMENTS:
+        from utils.constants import APP_TYPE
+
+        if department != "default" and department not in DEFAULT_DEPARTMENT:
             department = "default"
         db_manager = DatabaseManager.get_instance()
 
-        check_query = "SELECT * FROM app_settings WHERE setting_id = 'user_preferences'"
-        existing = db_manager.execute_query(check_query)
+        # アプリタイプごとに異なるsetting_idを使用
+        setting_id = f"user_preferences_{APP_TYPE}"
 
-        if existing:
-            query = """
-                    UPDATE app_settings
-                    SET selected_department = :department, \
-                        selected_model      = :model, \
-                        selected_document_type = :document_type, \
-                        selected_doctor     = :doctor, \
-                        updated_at          = CURRENT_TIMESTAMP
-                    WHERE setting_id = 'user_preferences' \
-                    """
-        else:
-            query = """
-                    INSERT INTO app_settings (setting_id, selected_department, selected_model, selected_document_type, selected_doctor, \
-                                              updated_at)
-                    VALUES ('user_preferences', :department, :model, :document_type, :doctor, CURRENT_TIMESTAMP) \
-                    """
+        query = """
+                INSERT INTO app_settings
+                (setting_id, app_type, selected_department, selected_model,
+                 selected_document_type, selected_doctor, updated_at)
+                VALUES (:setting_id, :app_type, :department, :model,
+                        :document_type, :doctor, CURRENT_TIMESTAMP) ON CONFLICT (setting_id) 
+                DO \
+                UPDATE SET
+                    app_type = EXCLUDED.app_type, \
+                    selected_department = EXCLUDED.selected_department, \
+                    selected_model = EXCLUDED.selected_model, \
+                    selected_document_type = EXCLUDED.selected_document_type, \
+                    selected_doctor = EXCLUDED.selected_doctor, \
+                    updated_at = CURRENT_TIMESTAMP
+                """
 
         db_manager.execute_query(query, {
+            "setting_id": setting_id,
+            "app_type": APP_TYPE,
             "department": department,
             "model": model,
             "document_type": document_type,
@@ -197,15 +196,23 @@ def save_user_settings(department, model, doctor="default", document_type="主�
 
 def load_user_settings():
     try:
+        from utils.constants import APP_TYPE
+
         db_manager = DatabaseManager.get_instance()
-        query = "SELECT selected_department, selected_model, selected_document_type, selected_doctor FROM app_settings WHERE setting_id = 'user_preferences'"
-        settings = db_manager.execute_query(query)
+        setting_id = f"user_preferences_{APP_TYPE}"
+
+        query = """
+                SELECT selected_department, selected_model, selected_document_type, selected_doctor
+                FROM app_settings
+                WHERE setting_id = :setting_id
+                """
+        settings = db_manager.execute_query(query, {"setting_id": setting_id})
 
         if settings:
             return (settings[0]["selected_department"],
-                   settings[0]["selected_model"],
-                   settings[0].get("selected_document_type", "主治医意見書"),
-                   settings[0].get("selected_doctor", "default"))
+                    settings[0]["selected_model"],
+                    settings[0].get("selected_document_type", DEFAULT_DOCUMENT_TYPE),
+                    settings[0].get("selected_doctor", "default"))
         return None, None, None, None
     except Exception as e:
         print(f"設定の読み込みに失敗しました: {str(e)}")

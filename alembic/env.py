@@ -4,6 +4,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+from dotenv import load_dotenv
 
 config = context.config
 
@@ -14,6 +15,9 @@ from database.models import Base
 target_metadata = Base.metadata
 
 import os
+
+load_dotenv()
+
 if not config.get_main_option("sqlalchemy.url"):
     database_url = os.environ.get("DATABASE_URL")
     if database_url:

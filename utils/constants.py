@@ -1,3 +1,5 @@
+from utils.config import APP_TYPE
+
 MESSAGES = {
     "PROMPT_UPDATED": "プロンプトを更新しました",
     "PROMPT_CREATED": "プロンプトを新規作成しました",
@@ -18,13 +20,19 @@ MESSAGES = {
     "PROCESSING_TIME": "⏱️ 処理時間: {processing_time:.1f}秒",
 }
 
+TAB_NAMES = {
+    "ALL": "全文",
+    "TREATMENT": "治療経過",
+    "SPECIAL": "特記事項",
+    "NOTE": "備考"
+}
+
 DEFAULT_SECTION_NAMES = ["治療経過", "特記事項", "備考"]
 
-APP_TYPE = "opinion_letter"
-DEFAULT_DEPARTMENTS = ["default"]
-DEFAULT_DOCTORS = ["default"]
-DEFAULT_DOCUMENT_TYPES = ["主治医意見書", "訪問看護指示書"]
+DEFAULT_DEPARTMENT = ["default"]
+DEFAULT_DOCTOR = ["default"]
 DEFAULT_DOCUMENT_TYPE = "主治医意見書"
+DOCUMENT_TYPES = ["主治医意見書", "訪問看護指示書"]
 DOCUMENT_TYPE_OPTIONS = ["すべて", "主治医意見書", "訪問看護指示書"]
 
 DEPARTMENT_DOCTORS_MAPPING = {

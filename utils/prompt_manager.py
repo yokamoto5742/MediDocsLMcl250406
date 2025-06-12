@@ -4,7 +4,7 @@ from sqlalchemy import text
 
 from database.db import DatabaseManager
 from utils.config import get_config
-from utils.constants import DEFAULT_DEPARTMENTS, DEFAULT_DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING
+from utils.constants import DEFAULT_DEPARTMENT, DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPE
 from utils.exceptions import DatabaseError, AppError
 from database.schema import initialize_database as init_schema
 
@@ -68,7 +68,7 @@ def update_document(collection, query_dict, update_data):
 
 
 def get_all_departments():
-    return DEFAULT_DEPARTMENTS
+    return DEFAULT_DEPARTMENT
 
 
 def get_all_prompts():
@@ -129,7 +129,7 @@ def create_or_update_prompt(department, document_type, doctor, content, selected
 
 def delete_prompt(department, document_type, doctor):
     try:
-        if department == "default" and document_type == "主治医意見書" and doctor == "default":
+        if department == "default" and document_type == DEFAULT_DOCUMENT_TYPE and doctor == "default":
             return False, "デフォルトプロンプトは削除できません"
 
         prompt_collection = get_prompt_collection()
@@ -211,7 +211,7 @@ def initialize_default_prompt():
     try:
         prompt_collection = get_prompt_collection()
 
-        query = "SELECT * FROM prompts WHERE department = 'default' AND document_type = '主治医意見書' AND doctor = 'default' AND is_default = true"
+        query = f"SELECT * FROM prompts WHERE department = 'default' AND document_type = '{DEFAULT_DOCUMENT_TYPE}' AND doctor = 'default' AND is_default = true"
         default_prompt = prompt_collection.execute_query(query)
 
         if not default_prompt:
@@ -220,7 +220,7 @@ def initialize_default_prompt():
 
             insert_document(prompt_collection, {
                 "department": "default",
-                "document_type": "主治医意見書",
+                "document_type": DEFAULT_DOCUMENT_TYPE,
                 "doctor": "default",
                 "content": default_prompt_content,
                 "is_default": True
@@ -229,7 +229,7 @@ def initialize_default_prompt():
         raise DatabaseError(f"デフォルトプロンプトの初期化に失敗しました: {str(e)}")
 
 
-def get_prompt(department="default", document_type="主治医意見書", doctor="default"):
+def get_prompt(department="default", document_type=DEFAULT_DOCUMENT_TYPE, doctor="default"):
     try:
         prompt_collection = get_prompt_collection()
         query = "SELECT * FROM prompts WHERE department = :department AND document_type = :document_type AND doctor = :doctor"
@@ -240,7 +240,7 @@ def get_prompt(department="default", document_type="主治医意見書", doctor=
         })
 
         if not prompt:
-            default_query = "SELECT * FROM prompts WHERE department = 'default' AND document_type = '主治医意見書' AND doctor = 'default' AND is_default = true"
+            default_query = f"SELECT * FROM prompts WHERE department = 'default' AND document_type = '{DEFAULT_DOCUMENT_TYPE}' AND doctor = 'default' AND is_default = true"
             prompt = prompt_collection.execute_query(default_query)
 
         return prompt[0] if prompt else None
@@ -256,8 +256,8 @@ def initialize_database():
         prompt_collection = get_prompt_collection()
         config = get_config()
         default_prompt_content = config['PROMPTS']['summary']
-        departments = DEFAULT_DEPARTMENTS
-        document_types = DEFAULT_DOCUMENT_TYPES
+        departments = DEFAULT_DEPARTMENT
+        document_types = DOCUMENT_TYPES
 
         for dept in departments:
             doctors = DEPARTMENT_DOCTORS_MAPPING.get(dept, ["default"])
