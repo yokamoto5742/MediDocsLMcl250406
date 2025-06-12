@@ -1,3 +1,5 @@
+from utils.config import APP_TYPE
+
 MESSAGES = {
     "PROMPT_UPDATED": "プロンプトを更新しました",
     "PROMPT_CREATED": "プロンプトを新規作成しました",
@@ -25,7 +27,6 @@ TAB_NAMES = {
 
 DEFAULT_SECTION_NAMES = ["治療経過", "特記事項", "備考"]
 
-APP_TYPE = "opinion_letter"
 DEFAULT_DEPARTMENT = ["default"]
 DEFAULT_DOCTOR = ["default"]
 DEFAULT_DOCUMENT_TYPE = "主治医意見書"

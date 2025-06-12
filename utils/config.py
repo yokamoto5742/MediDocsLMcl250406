@@ -63,3 +63,5 @@ SELECTED_AI_MODEL = os.environ.get("SELECTED_AI_MODEL", "gemini")
 MAX_INPUT_TOKENS = int(os.environ.get("MAX_INPUT_TOKENS", "200000"))
 MIN_INPUT_TOKENS = int(os.environ.get("MIN_INPUT_TOKENS", "100"))
 MAX_TOKEN_THRESHOLD = int(os.environ.get("MAX_TOKEN_THRESHOLD", "40000"))
+
+APP_TYPE = os.environ.get("APP_TYPE", "default")
