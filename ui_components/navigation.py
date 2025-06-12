@@ -199,8 +199,6 @@ def load_user_settings():
         from utils.constants import APP_TYPE
 
         db_manager = DatabaseManager.get_instance()
-
-        # アプリタイプごとに異なるsetting_idを使用
         setting_id = f"user_preferences_{APP_TYPE}"
 
         query = """
