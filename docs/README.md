@@ -147,7 +147,6 @@ DEPARTMENT_DOCTORS_MAPPING = {
 │   ├── base_api.py          # 基底APIクラス
 │   ├── claude_api.py        # Claude API
 │   ├── gemini_api.py        # Gemini API
-│   └── openai_api.py        # OpenAI API
 ├── services/                # ビジネスロジック
 │   └── summary_service.py   # サマリー生成サービス
 ├── ui_components/           # UIコンポーネント
