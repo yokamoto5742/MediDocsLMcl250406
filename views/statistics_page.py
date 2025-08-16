@@ -15,7 +15,6 @@ MODEL_MAPPING = {
     "Gemini_Pro": {"pattern": "gemini", "exclude": "flash"},
     "Gemini_Flash": {"pattern": "flash", "exclude": None},
     "Claude": {"pattern": "claude", "exclude": None},
-    "GPT4.1": {"pattern": "gpt4.1", "exclude": None},
 }
 
 
@@ -34,7 +33,7 @@ def usage_statistics_ui():
         start_date = st.date_input("開始日", today - datetime.timedelta(days=7))
 
     with col2:
-        models = ["すべて", "Claude", "Gemini_Pro", "Gemini_Flash", "GPT4.1"]
+        models = ["すべて", "Claude", "Gemini_Pro", "Gemini_Flash"]
         selected_model = st.selectbox("AIモデル", models, index=0)
 
     col3, col4 = st.columns(2)

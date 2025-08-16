@@ -11,8 +11,7 @@ from database.db import DatabaseManager
 from external_service.api_factory import generate_summary
 from utils.config import (CLAUDE_API_KEY, CLAUDE_MODEL,
                           GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL,
-                          MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, OPENAI_API_KEY,
-                          OPENAI_MODEL, MAX_TOKEN_THRESHOLD)
+                          MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, MAX_TOKEN_THRESHOLD)
 from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE,DOCUMENT_TYPES
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
@@ -248,7 +247,6 @@ def get_provider_and_model(selected_model: str) -> Tuple[str, str]:
         "Claude": ("claude", CLAUDE_MODEL),
         "Gemini_Pro": ("gemini", GEMINI_MODEL),
         "Gemini_Flash": ("gemini", GEMINI_FLASH_MODEL),
-        "GPT4.1": ("openai", OPENAI_MODEL)
     }
 
     if selected_model not in provider_mapping:

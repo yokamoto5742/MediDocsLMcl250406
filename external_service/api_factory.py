@@ -4,13 +4,11 @@ from typing import Union
 from external_service.base_api import BaseAPIClient
 from external_service.claude_api import ClaudeAPIClient
 from external_service.gemini_api import GeminiAPIClient
-from external_service.openai_api import OpenAIAPIClient
 from utils.exceptions import APIError
 
 
 class APIProvider(Enum):
     CLAUDE = "claude"
-    OPENAI = "openai"
     GEMINI = "gemini"
 
 
@@ -25,7 +23,6 @@ class APIFactory:
         
         client_mapping = {
             APIProvider.CLAUDE: ClaudeAPIClient,
-            APIProvider.OPENAI: OpenAIAPIClient,
             APIProvider.GEMINI: GeminiAPIClient,
         }
         

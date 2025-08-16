@@ -1,7 +1,7 @@
 import streamlit as st
 
 from database.db import DatabaseManager
-from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, OPENAI_API_KEY
+from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL
 from utils.constants import DEFAULT_DEPARTMENT, DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPE
 from utils.prompt_manager import get_prompt
 
@@ -107,8 +107,6 @@ def render_sidebar():
         st.session_state.available_models.append("Gemini_Flash")
     if CLAUDE_API_KEY:
         st.session_state.available_models.append("Claude")
-    if OPENAI_API_KEY:
-        st.session_state.available_models.append("GPT4.1")
 
     if len(st.session_state.available_models) > 1:
         if "selected_model" not in st.session_state:
