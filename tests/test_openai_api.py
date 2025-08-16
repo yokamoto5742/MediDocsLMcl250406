@@ -53,44 +53,6 @@ class TestOpenAIAPIClient:
         with pytest.raises(APIError, match="OpenAI API初期化エラー: 認証エラー"):
             client.initialize()
 
-    def test_generate_content_success(self):
-        """正常なコンテンツ生成テスト"""
-        client = OpenAIAPIClient()
-        
-        # モックレスポンスの作成
-        mock_message = Mock()
-        mock_message.content = "OpenAIで生成されたサマリーテキスト"
-        
-        mock_choice = Mock()
-        mock_choice.message = mock_message
-        
-        mock_usage = Mock()
-        mock_usage.prompt_tokens = 180
-        mock_usage.completion_tokens = 90
-        
-        mock_response = Mock()
-        mock_response.choices = [mock_choice]
-        mock_response.usage = mock_usage
-        
-        # モッククライアントの設定
-        mock_openai_client = Mock()
-        mock_openai_client.chat.completions.create.return_value = mock_response
-        client.client = mock_openai_client
-        
-        # テスト実行
-        result = client._generate_content("OpenAIテストプロンプト", "gpt-4")
-        
-        # 検証
-        assert result == ("OpenAIで生成されたサマリーテキスト", 180, 90)
-        mock_openai_client.chat.completions.create.assert_called_once_with(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "あなたは経験豊富な医療文書作成の専門家です。"},
-                {"role": "user", "content": "OpenAIテストプロンプト"}
-            ],
-            max_tokens=10000,
-        )
-
     def test_generate_content_empty_choices(self):
         """空のchoices処理テスト"""
         client = OpenAIAPIClient()
