@@ -29,7 +29,7 @@ class OpenAIAPIClient(BaseAPIClient):
                 {"role": "system", "content": "あなたは経験豊富な医療文書作成の専門家です。"},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=10000,
+            max_completion_tokens=10000,
         )
 
         if response.choices and response.choices[0].message.content:

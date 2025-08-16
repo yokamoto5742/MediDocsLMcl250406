@@ -77,8 +77,8 @@ def prompt_management_ui():
         selected_model = prompt_data.get("selected_model")
     elif selected_doc_type in st.session_state.document_model_mapping:
         selected_model = st.session_state.document_model_mapping[selected_doc_type]
-
-    st.session_state.document_model_mapping[selected_doc_type] = selected_model
+    else:
+        selected_model = model_options[0] if model_options else None
 
     model_index = 0
     if selected_model in model_options:
