@@ -65,12 +65,11 @@ def generate_summary_task(input_text: str, selected_department: str, selected_mo
         })
 
     except Exception as e:
-        if "openai" in str(e).lower():
-            error_str = str(e)
-            if "insufficient_quota" in error_str or "exceeded your current quota" in error_str:
-                result_queue.put({"success": False, "error": APIError(MESSAGES["OPENAI_API_QUOTA_EXCEEDED"])})
-                return
-        result_queue.put({"success": False, "error": e})
+        result_queue.put({
+            "success": False,
+            "error": str(e)
+        })
+        raise APIError(f"要約生成中にエラーが発生しました: {str(e)}")
 
 
 @handle_error
@@ -259,7 +258,6 @@ def validate_api_credentials_for_provider(provider: str) -> None:
     credentials_check = {
         "claude": CLAUDE_API_KEY,
         "gemini": GEMINI_CREDENTIALS,
-        "openai": OPENAI_API_KEY
     }
 
     if not credentials_check.get(provider):
