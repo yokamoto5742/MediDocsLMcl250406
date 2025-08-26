@@ -140,8 +140,7 @@ def render_sidebar():
         st.session_state.selected_model = st.session_state.available_models[0]
         st.session_state.model_explicitly_selected = False
 
-    st.sidebar.markdown("・入力および出力テキストは保存されません")
-    st.sidebar.markdown("・出力結果は必ず確認してください")
+    st.sidebar.markdown("生成AIは不正確な場合があります。回答をカルテでご確認ください。")
 
     if st.sidebar.button("プロンプト管理", key="sidebar_prompt_management"):
         change_page("prompt_edit")
