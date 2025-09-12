@@ -52,13 +52,19 @@ GEMINI_MODEL = os.environ.get("GEMINI_MODEL")
 GEMINI_FLASH_MODEL = os.environ.get("GEMINI_FLASH_MODEL")
 GEMINI_THINKING_BUDGET = int(os.environ.get("GEMINI_THINKING_BUDGET", "0")) if os.environ.get("GEMINI_THINKING_BUDGET") else None
 
-CLAUDE_API_KEY = os.environ.get("CLAUDE_API_KEY")
-CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL")
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+AWS_REGION = os.environ.get("AWS_REGION")
+ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL")
+
+CLAUDE_API_KEY = True if all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, ANTHROPIC_MODEL]) else None
+CLAUDE_MODEL = ANTHROPIC_MODEL  # モデル名も互換性のため維持
 
 SELECTED_AI_MODEL = os.environ.get("SELECTED_AI_MODEL", "claude")
 
 MAX_INPUT_TOKENS = int(os.environ.get("MAX_INPUT_TOKENS", "300000"))
 MIN_INPUT_TOKENS = int(os.environ.get("MIN_INPUT_TOKENS", "100"))
 MAX_TOKEN_THRESHOLD = int(os.environ.get("MAX_TOKEN_THRESHOLD", "100000"))
+PROMPT_MANAGEMENT = os.environ.get("PROMPT_MANAGEMENT", "False").lower() == "true"
 
 APP_TYPE = os.environ.get("APP_TYPE", "default")

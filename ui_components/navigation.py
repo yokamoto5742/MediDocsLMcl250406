@@ -1,7 +1,7 @@
 import streamlit as st
 
 from database.db import DatabaseManager
-from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL
+from utils.config import CLAUDE_API_KEY, GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL, PROMPT_MANAGEMENT
 from utils.constants import DEFAULT_DEPARTMENT, DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPE
 from utils.prompt_manager import get_prompt
 
@@ -142,9 +142,10 @@ def render_sidebar():
 
     st.sidebar.markdown("生成AIは不正確な場合があります。回答をカルテでご確認ください。")
 
-    if st.sidebar.button("プロンプト管理", key="sidebar_prompt_management"):
-        change_page("prompt_edit")
-        st.rerun()
+    if PROMPT_MANAGEMENT:
+        if st.sidebar.button("プロンプト管理", key="sidebar_prompt_management"):
+            change_page("prompt_edit")
+            st.rerun()
 
     if st.sidebar.button("統計情報", key="sidebar_usage_statistics"):
         change_page("statistics")
