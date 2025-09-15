@@ -1,2 +1,7 @@
 .env
 /project_structure.txt
+
+__pycache__/
+*.pyc
+
+.idea/
