@@ -1,9 +1,10 @@
+from typing import Tuple
+
 from google import genai
 from google.genai import types
-from typing import Tuple, Optional
 
 from external_service.base_api import BaseAPIClient
-from utils.config import GEMINI_CREDENTIALS, GEMINI_MODEL, GEMINI_THINKING_BUDGET, GOOGLE_PROJECT_ID, GOOGLE_LOCATION
+from utils.config import GEMINI_MODEL, GEMINI_THINKING_BUDGET, GOOGLE_PROJECT_ID, GOOGLE_LOCATION
 from utils.constants import MESSAGES
 from utils.exceptions import APIError
 
