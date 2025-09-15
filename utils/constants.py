@@ -17,6 +17,10 @@ MESSAGES = {
     "API_CREDENTIALS_MISSING": "⚠️ Gemini APIの認証情報が設定されていません。環境変数を確認してください。",
     "NO_API_CREDENTIALS": "⚠️ 使用可能なAI APIの認証情報が設定されていません。環境変数を確認してください。",
 
+    "VERTEX_AI_PROJECT_MISSING": "⚠️ GOOGLE_PROJECT_ID環境変数が設定されていません。",
+    "VERTEX_AI_INIT_ERROR": "Vertex AI Gemini API初期化エラー: {error}",
+    "VERTEX_AI_API_ERROR": "Vertex AI Gemini API呼び出しエラー: {error}",
+
     "AWS_CREDENTIALS_MISSING": "⚠️ AWS認証情報が設定されていません。環境変数を確認してください。",
     "ANTHROPIC_MODEL_MISSING": "⚠️ ANTHROPIC_MODELが設定されていません。環境変数を確認してください。",
     "BEDROCK_INIT_ERROR": "Amazon Bedrock Claude API初期化エラー: {error}",
