@@ -69,7 +69,7 @@ def generate_summary_task(input_text: str, selected_department: str, selected_mo
             "success": False,
             "error": str(e)
         })
-        raise APIError(f"要約生成中にエラーが発生しました: {str(e)}")
+        raise APIError(f"Summary generation error: {str(e)}")
 
 
 @handle_error

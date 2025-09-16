@@ -34,7 +34,6 @@ class TestValidateApiCredentials:
 
     @patch('services.summary_service.GEMINI_CREDENTIALS', None)
     @patch('services.summary_service.CLAUDE_API_KEY', None)
-    @patch('services.summary_service.OPENAI_API_KEY', None)
     def test_validate_api_credentials_no_credentials(self):
         """API認証情報が全て未設定の場合のテスト"""
         from utils.exceptions import APIError
@@ -44,7 +43,6 @@ class TestValidateApiCredentials:
 
     @patch('services.summary_service.GEMINI_CREDENTIALS', 'test_gemini_key')
     @patch('services.summary_service.CLAUDE_API_KEY', None)
-    @patch('services.summary_service.OPENAI_API_KEY', None)
     def test_validate_api_credentials_with_gemini(self):
         """Gemini認証情報のみ設定されている場合のテスト"""
         # 例外が発生しないことを確認
@@ -52,7 +50,6 @@ class TestValidateApiCredentials:
 
     @patch('services.summary_service.GEMINI_CREDENTIALS', None)
     @patch('services.summary_service.CLAUDE_API_KEY', 'test_claude_key')
-    @patch('services.summary_service.OPENAI_API_KEY', None)
     def test_validate_api_credentials_with_claude(self):
         """Claude認証情報のみ設定されている場合のテスト"""
         # 例外が発生しないことを確認
@@ -126,7 +123,6 @@ class TestGetProviderAndModel:
     @patch('services.summary_service.CLAUDE_MODEL', 'claude-3-sonnet')
     @patch('services.summary_service.GEMINI_MODEL', 'gemini-pro')
     @patch('services.summary_service.GEMINI_FLASH_MODEL', 'gemini-flash')
-    @patch('services.summary_service.OPENAI_MODEL', 'gpt-4')
     def test_get_provider_and_model_claude(self):
         """Claudeモデルの取得テスト"""
         provider, model = get_provider_and_model('Claude')
@@ -147,12 +143,6 @@ class TestGetProviderAndModel:
         assert provider == 'gemini'
         assert model == 'gemini-flash'
 
-    @patch('services.summary_service.OPENAI_MODEL', 'gpt-4')
-    def test_get_provider_and_model_openai(self):
-        """OpenAIモデルの取得テスト"""
-        provider, model = get_provider_and_model('GPT4.1')
-        assert provider == 'openai'
-        assert model == 'gpt-4'
 
     def test_get_provider_and_model_invalid(self):
         """無効なモデルの取得テスト"""
@@ -185,11 +175,6 @@ class TestValidateApiCredentialsForProvider:
         # 例外が発生しないことを確認
         validate_api_credentials_for_provider('gemini')
 
-    @patch('services.summary_service.OPENAI_API_KEY', 'test_openai_key')
-    def test_validate_api_credentials_for_provider_openai_valid(self):
-        """OpenAI認証情報が有効な場合のテスト"""
-        # 例外が発生しないことを確認
-        validate_api_credentials_for_provider('openai')
 
 
 class TestDetermineFinalModel:
@@ -321,35 +306,21 @@ class TestGenerateSummaryTask:
     @patch('services.summary_service.normalize_selection_params')
     def test_generate_summary_task_exception(self, mock_normalize):
         """サマリー生成タスクの例外処理テスト"""
-        mock_normalize.side_effect = Exception("テストエラー")
+        mock_normalize.side_effect = Exception("Test Error")
 
         result_queue = queue.Queue()
 
-        generate_summary_task(
-            TEST_INPUT_TEXT, '内科', 'Claude', result_queue
-        )
-
-        result = result_queue.get()
-
-        assert result['success'] == False
-        assert isinstance(result['error'], Exception)
-
-    @patch('services.summary_service.normalize_selection_params')
-    def test_generate_summary_task_openai_quota_error(self, mock_normalize):
-        """OpenAI APIクォータエラーのテスト"""
-        mock_normalize.side_effect = Exception("openai insufficient_quota error")
-
-        result_queue = queue.Queue()
-
-        generate_summary_task(
-            TEST_INPUT_TEXT, '内科', 'Claude', result_queue
-        )
-
-        result = result_queue.get()
-
-        assert result['success'] == False
         from utils.exceptions import APIError
-        assert isinstance(result['error'], APIError)
+        with pytest.raises(APIError):
+            generate_summary_task(
+                TEST_INPUT_TEXT, '内科', 'Claude', result_queue
+            )
+
+        result = result_queue.get()
+
+        assert result['success'] == False
+        assert isinstance(result['error'], str)
+
 
 
 class TestSaveUsageToDatabase:

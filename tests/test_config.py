@@ -134,25 +134,23 @@ class TestEnvironmentVariables:
         env_vars = {
             'GEMINI_CREDENTIALS': 'test_gemini_creds',
             'GEMINI_MODEL': 'gemini-pro',
-            'CLAUDE_API_KEY': 'test_claude_key',
-            'CLAUDE_MODEL': 'claude-3',
-            'OPENAI_API_KEY': 'test_openai_key',
-            'OPENAI_MODEL': 'gpt-4',
+            'AWS_ACCESS_KEY_ID': 'test_access_key',
+            'AWS_SECRET_ACCESS_KEY': 'test_secret_key',
+            'AWS_REGION': 'us-east-1',
+            'ANTHROPIC_MODEL': 'claude-3-sonnet',
             'SELECTED_AI_MODEL': 'claude',
             'GEMINI_THINKING_BUDGET': '1000'
         }
-        
+
         with patch.dict(os.environ, env_vars):
             import importlib
             import utils.config
             importlib.reload(utils.config)
-            
+
             assert utils.config.GEMINI_CREDENTIALS == 'test_gemini_creds'
             assert utils.config.GEMINI_MODEL == 'gemini-pro'
-            assert utils.config.CLAUDE_API_KEY == 'test_claude_key'
-            assert utils.config.CLAUDE_MODEL == 'claude-3'
-            assert utils.config.OPENAI_API_KEY == 'test_openai_key'
-            assert utils.config.OPENAI_MODEL == 'gpt-4'
+            assert utils.config.CLAUDE_API_KEY == True  # AWS設定があればTrue
+            assert utils.config.CLAUDE_MODEL == 'claude-3-sonnet'
             assert utils.config.SELECTED_AI_MODEL == 'claude'
             assert utils.config.GEMINI_THINKING_BUDGET == 1000
     
