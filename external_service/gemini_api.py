@@ -1,7 +1,10 @@
+import json
+import os
 from typing import Tuple
 
 from google import genai
 from google.genai import types
+from google.oauth2 import service_account
 
 from external_service.base_api import BaseAPIClient
 from utils.config import GEMINI_MODEL, GEMINI_THINKING_BUDGET, GOOGLE_PROJECT_ID, GOOGLE_LOCATION
@@ -19,12 +22,49 @@ class GeminiAPIClient(BaseAPIClient):
             if not GOOGLE_PROJECT_ID:
                 raise APIError(MESSAGES["VERTEX_AI_PROJECT_MISSING"])
 
-            self.client = genai.Client(
-                vertexai=True,
-                project=GOOGLE_PROJECT_ID,
-                location=GOOGLE_LOCATION,
-            )
+            # サービスアカウント認証情報を環境変数から取得
+            google_credentials_json = os.environ.get("GOOGLE_CREDENTIALS_JSON")
+            
+            if google_credentials_json:
+                # JSON文字列から認証情報を作成
+                try:
+                    # 直接JSON文字列として解析
+                    credentials_dict = json.loads(google_credentials_json)
+                    
+                    # サービスアカウント認証情報を作成
+                    credentials = service_account.Credentials.from_service_account_info(
+                        credentials_dict,
+                        scopes=['https://www.googleapis.com/auth/cloud-platform']
+                    )
+                    
+                    # Vertex AIクライアントを初期化（認証情報を渡す）
+                    self.client = genai.Client(
+                        vertexai=True,
+                        project=GOOGLE_PROJECT_ID,
+                        location=GOOGLE_LOCATION,
+                        credentials=credentials  # 明示的に認証情報を渡す
+                    )
+                    
+                    print(f"Vertex AI Client initialized successfully for project: {GOOGLE_PROJECT_ID}")
+                    
+                except json.JSONDecodeError as e:
+                    raise APIError(f"GOOGLE_CREDENTIALS_JSON環境変数の解析エラー: {str(e)}")
+                except KeyError as e:
+                    raise APIError(f"認証情報に必要なフィールドが不足: {str(e)}")
+                except Exception as e:
+                    raise APIError(f"認証情報の作成エラー: {str(e)}")
+            else:
+                # 従来の方法（ローカル環境用・ADCを使用）
+                print("Using Application Default Credentials (ADC)")
+                self.client = genai.Client(
+                    vertexai=True,
+                    project=GOOGLE_PROJECT_ID,
+                    location=GOOGLE_LOCATION,
+                )
+            
             return True
+        except APIError:
+            raise
         except Exception as e:
             raise APIError(MESSAGES["VERTEX_AI_INIT_ERROR"].format(error=str(e)))
 
