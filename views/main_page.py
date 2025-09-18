@@ -26,19 +26,19 @@ def render_input_section():
 
     previous_record = st.text_area(
         "前回の記載",
-        height=100,
+        height=70,
         key="previous_record"
     )
 
     input_text = st.text_area(
         "カルテ記載",
-        height=100,
+        height=70,
         key="input_text"
     )
 
     additional_info = st.text_area(
         "追加情報",
-        height=100,
+        height=70,
         key="additional_info"
     )
 

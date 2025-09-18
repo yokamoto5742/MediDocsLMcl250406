@@ -6,7 +6,7 @@
 
 ### 📋 文書作成機能
 - **主治医意見書**と**訪問看護指示書**の文書の自動生成
-- カルテ情報と追加情報を入力するだけで高精度な文書を作成
+- 前回の記載、カルテ情報、追加情報を入力するだけで高精度な文書を作成
 - 生成結果は「全文」「治療経過」「特記事項」「備考」のタブ形式で表示
 
 ### 🤖 複数AIモデル対応
@@ -29,10 +29,10 @@
 - Python 3.11以上
 - PostgreSQL 16以上
 
-### 必要なAPIキー
+### 必要なAPIキー・認証情報
 以下のいずれか1つ以上のAPIキーが必要です：
-- **Claude API**: Anthropic
-- **Gemini API**: Google AI Studio
+- **Claude API**: AWS Bedrock経由でのAnthropic Claude APIアクセス
+- **Gemini API**: Google Cloud Vertex AI経由でのGemini APIアクセス（サービスアカウントJSON認証）
 
 ## インストール手順
 
@@ -64,12 +64,16 @@ pip install -r requirements.txt
 DATABASE_URL=postgresql://username:password@localhost:5432/database_name
 
 # AI API設定（いずれか1つ以上設定）
-# Claude API
-CLAUDE_API_KEY=your_claude_api_key
-CLAUDE_MODEL=claude-3-5-sonnet-20241022
+# Claude API (AWS Bedrock)
+AWS_ACCESS_KEY_ID=your_aws_access_key_id
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+AWS_REGION=us-east-1
+ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 
-# Gemini API
-GOOGLE_CREDENTIALS_JSON=your_google_credentials_json
+# Gemini API (Google Cloud Vertex AI Service Account JSON)
+GOOGLE_CREDENTIALS_JSON={"type":"service_account","project_id":"your-project"...}
+GOOGLE_PROJECT_ID=your-google-cloud-project-id
+GOOGLE_LOCATION=us-central1
 GEMINI_MODEL=gemini-2.0-flash-thinking-exp
 GEMINI_FLASH_MODEL=gemini-1.5-flash
 GEMINI_THINKING_BUDGET=10000
@@ -101,10 +105,11 @@ streamlit run app.py
 
 #### 1. 文書作成
 1. **サイドバー**で診療科、医師名、文書タイプ、AIモデルを選択
-2. **カルテ記載入力**にカルテ情報を入力
-3. **追加情報入力**に前回記載や補足情報を入力（任意）
-4. **「作成」ボタン**をクリック
-5. 生成された文書をコピーして確認
+2. **前回の記載**に前回作成した医療文書の内容を入力（任意）
+3. **カルテ記載**にカルテ情報を入力
+4. **追加情報**に補足情報や特記事項を入力（任意）
+5. **「作成」ボタン**をクリック
+6. 生成された文書をコピーして確認
 
 #### 2. プロンプト管理
 1. サイドバーの**「プロンプト管理」**をクリック
@@ -185,7 +190,8 @@ DEPARTMENT_DOCTORS_MAPPING = {
 - データベースとユーザーの権限を確認
 
 #### API認証エラー
-- APIキーが正しく設定されているか確認
+- Claude API: AWS認証情報（Access Key ID、Secret Access Key、Region）が正しく設定されているか確認
+- Gemini API: Google Cloud認証情報（GOOGLE_CREDENTIALS_JSON、PROJECT_ID、LOCATION）が正しく設定されているか確認
 - APIキーの有効期限と使用制限を確認
 - ネットワーク接続を確認
 
