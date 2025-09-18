@@ -7,6 +7,7 @@ from ui_components.navigation import render_sidebar
 
 
 def clear_inputs():
+    st.session_state.previous_record = ""
     st.session_state.input_text = ""
     st.session_state.additional_info = ""
     st.session_state.output_summary = ""
@@ -22,6 +23,12 @@ def clear_inputs():
 def render_input_section():
     if "clear_input" not in st.session_state:
         st.session_state.clear_input = False
+
+    previous_record = st.text_area(
+        "前回の記載",
+        height=100,
+        key="previous_record"
+    )
 
     input_text = st.text_area(
         "カルテ記載",
@@ -39,7 +46,7 @@ def render_input_section():
 
     with col1:
         if st.button("作成", type="primary"):
-            process_summary(input_text, additional_info)
+            process_summary(input_text, additional_info, previous_record)
 
     with col2:
         if st.button("テキストをクリア", on_click=clear_inputs):

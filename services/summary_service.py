@@ -25,7 +25,8 @@ def generate_summary_task(input_text: str, selected_department: str, selected_mo
                           result_queue: queue.Queue, additional_info: str = "",
                           selected_document_type: str = DEFAULT_DOCUMENT_TYPE,
                           selected_doctor: str = "default",
-                          model_explicitly_selected: bool = False) -> None:
+                          model_explicitly_selected: bool = False,
+                          previous_record: str = "") -> None:
     try:
         normalized_dept, normalized_doc_type = normalize_selection_params(
             selected_department, selected_document_type
@@ -46,7 +47,8 @@ def generate_summary_task(input_text: str, selected_department: str, selected_mo
             department=normalized_dept,
             document_type=normalized_doc_type,
             doctor=selected_doctor,
-            model_name=model_name
+            model_name=model_name,
+            previous_record=previous_record
         )
 
         model_detail = model_name if provider == "gemini" else final_model
@@ -73,7 +75,7 @@ def generate_summary_task(input_text: str, selected_department: str, selected_mo
 
 
 @handle_error
-def process_summary(input_text: str, additional_info: str = "") -> None:
+def process_summary(input_text: str, additional_info: str = "", previous_record: str = "") -> None:
     validate_api_credentials()
     validate_input_text(input_text)
 
@@ -81,7 +83,7 @@ def process_summary(input_text: str, additional_info: str = "") -> None:
         session_params = get_session_parameters()
 
         result = execute_summary_generation_with_ui(
-            input_text, additional_info, session_params
+            input_text, additional_info, session_params, previous_record
         )
 
         if result["success"]:
@@ -125,7 +127,8 @@ def get_session_parameters() -> Dict[str, Any]:
 
 
 def execute_summary_generation_with_ui(input_text: str, additional_info: str,
-                                       session_params: Dict[str, Any]) -> Dict[str, Any]:
+                                       session_params: Dict[str, Any],
+                                       previous_record: str = "") -> Dict[str, Any]:
     start_time = datetime.datetime.now()
     status_placeholder = st.empty()
     result_queue = queue.Queue()
@@ -140,7 +143,8 @@ def execute_summary_generation_with_ui(input_text: str, additional_info: str,
             additional_info,
             session_params["selected_document_type"],
             session_params["selected_doctor"],
-            session_params["model_explicitly_selected"]
+            session_params["model_explicitly_selected"],
+            previous_record
         ),
     )
     summary_thread.start()

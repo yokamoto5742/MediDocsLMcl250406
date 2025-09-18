@@ -32,17 +32,18 @@ class APIFactory:
             raise APIError(f"未対応のAPIプロバイダー: {provider}")
     
     @staticmethod
-    def generate_summary_with_provider(provider: Union[APIProvider, str], 
-                                     medical_text: str, 
-                                     additional_info: str = "", 
-                                     department: str = "default", 
+    def generate_summary_with_provider(provider: Union[APIProvider, str],
+                                     medical_text: str,
+                                     additional_info: str = "",
+                                     department: str = "default",
                                      document_type: str = "主治医意見書",
-                                     doctor: str = "default", 
-                                     model_name: str = None):
+                                     doctor: str = "default",
+                                     model_name: str = None,
+                                     previous_record: str = ""):
         client = APIFactory.create_client(provider)
         return client.generate_summary(
-            medical_text, additional_info, department, 
-            document_type, doctor, model_name
+            medical_text, additional_info, department,
+            document_type, doctor, model_name, previous_record
         )
 
 
