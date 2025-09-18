@@ -27,14 +27,14 @@ def render_input_section():
         st.session_state.additional_info = "【前回の記載】\n(ここに貼り付け)"
 
     input_text = st.text_area(
-        "カルテ記載入力",
+        "カルテ記載",
         height=100,
         placeholder="ここを右クリックしてテキストを貼り付けてください...",
         key="input_text"
     )
 
     additional_info = st.text_area(
-        "追加情報入力",
+        "追加情報",
         height=100,
         key="additional_info"
     )
