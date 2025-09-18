@@ -8,11 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- ✨ Comprehensive project documentation (CLAUDE.md) for future development guidance
+- ✨ **Previous Record Input**: Added "前回の記載" input field to capture previous medical document content
+- 🔧 **Enhanced Prompt Integration**: Previous record content is now included in AI prompts for better context
+- 📝 **UI Improvements**: Optimized text area heights (70px) for better user experience
 - 🛠️ Claude Code configuration and hooks setup
 
 ### Changed
-- 📝 Updated project analysis and documentation structure
+- 🔄 **Credential Management**: Completely migrated from GEMINI_CREDENTIALS to GOOGLE_CREDENTIALS_JSON
+- 📖 **Documentation Update**: Updated README.md to reflect new input fields and authentication methods
+- 🎯 **Data Flow Enhancement**: Updated entire service chain to pass previous record through all functions
+- 📋 **Prompt Template**: Modified prompt structure to include: 【前回の記載】→【カルテ情報】→【追加情報】
+
+### Technical Improvements
+- 🏗️ **Service Layer**: Updated process_summary(), execute_summary_generation_with_ui(), generate_summary_task()
+- 🔌 **API Layer**: Enhanced base_api.py and api_factory.py to support previous record parameter
+- 🧪 **Test Updates**: Updated all test files to use GOOGLE_CREDENTIALS_JSON instead of GEMINI_CREDENTIALS
+- 📚 **Documentation**: Comprehensive README updates covering new features and correct authentication setup
 
 ## [2025-09-16] - Test Suite Modernization
 
