@@ -47,7 +47,7 @@ else:
     POSTGRES_DB = os.environ.get("POSTGRES_DB", "discharge_summary_app")
     POSTGRES_SSL = os.environ.get("POSTGRES_SSL", None)
 
-GEMINI_CREDENTIALS = os.environ.get("GEMINI_CREDENTIALS")
+GOOGLE_CREDENTIALS_JSON = os.environ.get("GOOGLE_CREDENTIALS_JSON")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL")
 GEMINI_FLASH_MODEL = os.environ.get("GEMINI_FLASH_MODEL")
 GEMINI_THINKING_BUDGET = int(os.environ.get("GEMINI_THINKING_BUDGET", "0")) if os.environ.get("GEMINI_THINKING_BUDGET") else None

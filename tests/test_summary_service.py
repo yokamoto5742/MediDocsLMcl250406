@@ -32,7 +32,7 @@ TEST_DOCTOR = "田中医師"
 class TestValidateApiCredentials:
     """API認証情報検証のテストクラス"""
 
-    @patch('services.summary_service.GEMINI_CREDENTIALS', None)
+    @patch('services.summary_service.GOOGLE_CREDENTIALS_JSON', None)
     @patch('services.summary_service.CLAUDE_API_KEY', None)
     def test_validate_api_credentials_no_credentials(self):
         """API認証情報が全て未設定の場合のテスト"""
@@ -41,14 +41,14 @@ class TestValidateApiCredentials:
         with pytest.raises(APIError):
             validate_api_credentials()
 
-    @patch('services.summary_service.GEMINI_CREDENTIALS', 'test_gemini_key')
+    @patch('services.summary_service.GOOGLE_CREDENTIALS_JSON', 'test_gemini_key')
     @patch('services.summary_service.CLAUDE_API_KEY', None)
     def test_validate_api_credentials_with_gemini(self):
         """Gemini認証情報のみ設定されている場合のテスト"""
         # 例外が発生しないことを確認
         validate_api_credentials()
 
-    @patch('services.summary_service.GEMINI_CREDENTIALS', None)
+    @patch('services.summary_service.GOOGLE_CREDENTIALS_JSON', None)
     @patch('services.summary_service.CLAUDE_API_KEY', 'test_claude_key')
     def test_validate_api_credentials_with_claude(self):
         """Claude認証情報のみ設定されている場合のテスト"""
@@ -169,7 +169,7 @@ class TestValidateApiCredentialsForProvider:
         with pytest.raises(APIError):
             validate_api_credentials_for_provider('claude')
 
-    @patch('services.summary_service.GEMINI_CREDENTIALS', 'test_gemini_creds')
+    @patch('services.summary_service.GOOGLE_CREDENTIALS_JSON', 'test_gemini_creds')
     def test_validate_api_credentials_for_provider_gemini_valid(self):
         """Gemini認証情報が有効な場合のテスト"""
         # 例外が発生しないことを確認
@@ -210,7 +210,7 @@ class TestDetermineFinalModel:
 
     @patch('services.summary_service.get_prompt')
     @patch('services.summary_service.MAX_TOKEN_THRESHOLD', 10)
-    @patch('services.summary_service.GEMINI_CREDENTIALS', 'test_creds')
+    @patch('services.summary_service.GOOGLE_CREDENTIALS_JSON', 'test_creds')
     @patch('services.summary_service.GEMINI_MODEL', 'gemini-pro')
     def test_determine_final_model_token_threshold_exceeded(self, mock_get_prompt):
         """トークン数制限を超えた場合のモデル切り替えテスト"""
@@ -226,7 +226,7 @@ class TestDetermineFinalModel:
 
     @patch('services.summary_service.get_prompt')
     @patch('services.summary_service.MAX_TOKEN_THRESHOLD', 10)
-    @patch('services.summary_service.GEMINI_CREDENTIALS', None)
+    @patch('services.summary_service.GOOGLE_CREDENTIALS_JSON', None)
     def test_determine_final_model_token_threshold_exceeded_no_gemini(self, mock_get_prompt):
         """トークン数制限を超えたがGeminiが利用できない場合のテスト"""
         mock_get_prompt.return_value = None

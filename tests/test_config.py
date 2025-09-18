@@ -132,7 +132,7 @@ class TestEnvironmentVariables:
     def test_ai_model_config(self):
         """AIモデル関連の設定テスト"""
         env_vars = {
-            'GEMINI_CREDENTIALS': 'test_gemini_creds',
+            'GOOGLE_CREDENTIALS_JSON': 'test_gemini_creds',
             'GEMINI_MODEL': 'gemini-pro',
             'AWS_ACCESS_KEY_ID': 'test_access_key',
             'AWS_SECRET_ACCESS_KEY': 'test_secret_key',
@@ -147,7 +147,7 @@ class TestEnvironmentVariables:
             import utils.config
             importlib.reload(utils.config)
 
-            assert utils.config.GEMINI_CREDENTIALS == 'test_gemini_creds'
+            assert utils.config.GOOGLE_CREDENTIALS_JSON == 'test_gemini_creds'
             assert utils.config.GEMINI_MODEL == 'gemini-pro'
             assert utils.config.CLAUDE_API_KEY == True  # AWS設定があればTrue
             assert utils.config.CLAUDE_MODEL == 'claude-3-sonnet'

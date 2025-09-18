@@ -10,7 +10,7 @@ import streamlit as st
 from database.db import DatabaseManager
 from external_service.api_factory import generate_summary
 from utils.config import (CLAUDE_API_KEY, CLAUDE_MODEL,
-                          GEMINI_CREDENTIALS, GEMINI_FLASH_MODEL, GEMINI_MODEL,
+                          GOOGLE_CREDENTIALS_JSON, GEMINI_FLASH_MODEL, GEMINI_MODEL,
                           MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, MAX_TOKEN_THRESHOLD)
 from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE,DOCUMENT_TYPES
 from utils.error_handlers import handle_error
@@ -94,7 +94,7 @@ def process_summary(input_text: str, additional_info: str = "") -> None:
 
 
 def validate_api_credentials() -> None:
-    if not any([GEMINI_CREDENTIALS, CLAUDE_API_KEY]):
+    if not any([GOOGLE_CREDENTIALS_JSON, CLAUDE_API_KEY]):
         raise APIError(MESSAGES["NO_API_CREDENTIALS"])
 
 
@@ -232,7 +232,7 @@ def determine_final_model(department: str, document_type: str, doctor: str,
     model_switched = False
 
     if selected_model == "Claude" and estimated_tokens > MAX_TOKEN_THRESHOLD:
-        if GEMINI_CREDENTIALS and GEMINI_MODEL:
+        if GOOGLE_CREDENTIALS_JSON and GEMINI_MODEL:
             selected_model = "Gemini_Pro"
             model_switched = True
         else:
@@ -257,7 +257,7 @@ def get_provider_and_model(selected_model: str) -> Tuple[str, str]:
 def validate_api_credentials_for_provider(provider: str) -> None:
     credentials_check = {
         "claude": CLAUDE_API_KEY,
-        "gemini": GEMINI_CREDENTIALS,
+        "gemini": GOOGLE_CREDENTIALS_JSON,
     }
 
     if not credentials_check.get(provider):

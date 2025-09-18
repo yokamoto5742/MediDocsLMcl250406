@@ -69,7 +69,7 @@ CLAUDE_API_KEY=your_claude_api_key
 CLAUDE_MODEL=claude-3-5-sonnet-20241022
 
 # Gemini API
-GEMINI_CREDENTIALS=your_gemini_api_key
+GOOGLE_CREDENTIALS_JSON=your_google_credentials_json
 GEMINI_MODEL=gemini-2.0-flash-thinking-exp
 GEMINI_FLASH_MODEL=gemini-1.5-flash
 GEMINI_THINKING_BUDGET=10000
