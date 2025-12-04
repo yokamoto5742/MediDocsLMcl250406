@@ -10,7 +10,7 @@ import streamlit as st
 from database.db import DatabaseManager
 from external_service.api_factory import generate_summary
 from utils.config import (CLAUDE_API_KEY, CLAUDE_MODEL,
-                          GOOGLE_CREDENTIALS_JSON, GEMINI_FLASH_MODEL, GEMINI_MODEL,
+                          GOOGLE_CREDENTIALS_JSON, GEMINI_MODEL,
                           MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, MAX_TOKEN_THRESHOLD)
 from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE,DOCUMENT_TYPES
 from utils.error_handlers import handle_error

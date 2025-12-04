@@ -1,7 +1,7 @@
 import streamlit as st
 
 from database.db import DatabaseManager
-from utils.config import CLAUDE_API_KEY, GOOGLE_CREDENTIALS_JSON, GEMINI_FLASH_MODEL, GEMINI_MODEL, PROMPT_MANAGEMENT
+from utils.config import CLAUDE_API_KEY, GOOGLE_CREDENTIALS_JSON, GEMINI_MODEL, PROMPT_MANAGEMENT
 from utils.constants import DEFAULT_DEPARTMENT, DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPE
 from utils.prompt_manager import get_prompt
 
