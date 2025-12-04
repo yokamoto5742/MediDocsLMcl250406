@@ -103,8 +103,6 @@ def render_sidebar():
     st.session_state.available_models = []
     if GEMINI_MODEL and GOOGLE_CREDENTIALS_JSON:
         st.session_state.available_models.append("Gemini_Pro")
-    if GEMINI_FLASH_MODEL and GOOGLE_CREDENTIALS_JSON:
-        st.session_state.available_models.append("Gemini_Flash")
     if CLAUDE_API_KEY:
         st.session_state.available_models.append("Claude")
 

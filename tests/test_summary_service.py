@@ -122,7 +122,6 @@ class TestGetProviderAndModel:
 
     @patch('services.summary_service.CLAUDE_MODEL', 'claude-3-sonnet')
     @patch('services.summary_service.GEMINI_MODEL', 'gemini-pro')
-    @patch('services.summary_service.GEMINI_FLASH_MODEL', 'gemini-flash')
     def test_get_provider_and_model_claude(self):
         """Claudeモデルの取得テスト"""
         provider, model = get_provider_and_model('Claude')
@@ -135,13 +134,6 @@ class TestGetProviderAndModel:
         provider, model = get_provider_and_model('Gemini_Pro')
         assert provider == 'gemini'
         assert model == 'gemini-pro'
-
-    @patch('services.summary_service.GEMINI_FLASH_MODEL', 'gemini-flash')
-    def test_get_provider_and_model_gemini_flash(self):
-        """Gemini Flashモデルの取得テスト"""
-        provider, model = get_provider_and_model('Gemini_Flash')
-        assert provider == 'gemini'
-        assert model == 'gemini-flash'
 
 
     def test_get_provider_and_model_invalid(self):

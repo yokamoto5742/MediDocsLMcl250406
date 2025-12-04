@@ -249,7 +249,6 @@ def get_provider_and_model(selected_model: str) -> Tuple[str, str]:
     provider_mapping = {
         "Claude": ("claude", CLAUDE_MODEL),
         "Gemini_Pro": ("gemini", GEMINI_MODEL),
-        "Gemini_Flash": ("gemini", GEMINI_FLASH_MODEL),
     }
 
     if selected_model not in provider_mapping:

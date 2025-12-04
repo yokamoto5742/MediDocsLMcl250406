@@ -138,8 +138,7 @@ class TestEnvironmentVariables:
             'AWS_SECRET_ACCESS_KEY': 'test_secret_key',
             'AWS_REGION': 'us-east-1',
             'ANTHROPIC_MODEL': 'claude-3-sonnet',
-            'SELECTED_AI_MODEL': 'claude',
-            'GEMINI_THINKING_BUDGET': '1000'
+            'SELECTED_AI_MODEL': 'claude'
         }
 
         with patch.dict(os.environ, env_vars):
@@ -152,7 +151,6 @@ class TestEnvironmentVariables:
             assert utils.config.CLAUDE_API_KEY == True  # AWS設定があればTrue
             assert utils.config.CLAUDE_MODEL == 'claude-3-sonnet'
             assert utils.config.SELECTED_AI_MODEL == 'claude'
-            assert utils.config.GEMINI_THINKING_BUDGET == 1000
     
     def test_token_limits_config(self):
         """トークン制限の設定テスト"""
