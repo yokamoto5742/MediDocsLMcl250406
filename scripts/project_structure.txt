@@ -1,7 +1,7 @@
 ============================================================
 プロジェクト構造: MediDocsLMcl
 パス: C:\Users\yokam\PycharmProjects\MediDocsLMcl
-生成日時: 2025-08-16 16:00:02
+生成日時: 2025-12-29 11:16:44
 ============================================================
 
 └── MediDocsLMcl
@@ -11,19 +11,23 @@
     │   ├── models.py
     │   └── schema.py
     ├── docs
-    │   ├── LICENSE
-    │   └── README.md
+    │   ├── README.md
+    │   ├── CHANGELOG.md
+    │   └── LICENSE
     ├── external_service
     │   ├── __init__.py
     │   ├── api_factory.py
     │   ├── base_api.py
     │   ├── claude_api.py
-    │   ├── gemini_api.py
-    │   └── openai_api.py
+    │   └── gemini_api.py
     ├── scripts
+    │   ├── AnthropicBedrock_API.py
     │   ├── db_reset.py
     │   ├── init_db.py
-    │   └── project_structure.py
+    │   ├── json_minifier.py
+    │   ├── project_structure.py
+    │   ├── project_structure.txt
+    │   └── VertexAI_API.py
     ├── services
     │   ├── __init__.py
     │   └── summary_service.py
@@ -46,6 +50,8 @@
     ├── config.ini
     ├── Procfile
     ├── requirements.txt
+    ├── .python-version
     ├── app.py
-    ├── runtime.txt
+    ├── CLAUDE.md
+    ├── pyrightconfig.json
     └── setup.sh

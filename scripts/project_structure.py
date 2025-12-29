@@ -8,17 +8,17 @@ class ProjectStructureGenerator:
     def __init__(self):
         self.ignore_patterns = {
             '__pycache__', '*.pyc', '*.pyo', '*.pyd', '.pytest_cache',
-            '*.egg-info', 'dist', 'build', '.tox', '.coverage', 'htmlcov',
-            '.venv', 'venv', '.env', 'env', 'tests','alembic',
+            '*.egg-info', 'dist', '.tox', '.coverage', 'htmlcov','.claude','.serena','alembic',
+            '.venv', 'venv', '.env', 'env', 'tests','nul','logs','assets',
             '.vscode', '.idea', '*.swp', '*.swo', '*~',
             '.git', '.gitignore', '.hg', '.svn',
             '.DS_Store', 'Thumbs.db', 'desktop.ini','pytest.ini',
             'node_modules', '.npm',
-            '*.log', '*.tmp', '.cache', 'project_structure.txt'
+            '*.log', '*.tmp', '.cache', 'CLAUDE.md',
         }
 
         self.important_files = {
-            'README.txt', 'requirements.txt',
+            'README.md', 'requirements.txt',
             'setup.py', 'pyproject.toml', 'Dockerfile',
             'config.ini', 'alembic.ini', '.env', 'Procfile'
         }
