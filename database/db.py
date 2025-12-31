@@ -1,12 +1,18 @@
 import os
+from typing import Any, Dict, List, Optional, Type
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 
+from database.models import Base
 from utils.config import (
-    POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER,
-    POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_SSL
+    POSTGRES_DB,
+    POSTGRES_HOST,
+    POSTGRES_PASSWORD,
+    POSTGRES_PORT,
+    POSTGRES_SSL,
+    POSTGRES_USER,
 )
 from utils.exceptions import DatabaseError
 
@@ -81,43 +87,260 @@ class DatabaseManager:
             raise DatabaseError("データベース接続が初期化されていません")
         return DatabaseManager._session_factory()
 
-    def execute_query(self, query, params=None, fetch=True):
+    def query_all(self, model_class: Type[Base], filters: Optional[Dict[str, Any]] = None,
+                  order_by: Optional[Any] = None) -> List[Dict[str, Any]]:
+        """
+        ORMを使用して全レコードを取得する
+
+        Args:
+            model_class: クエリ対象のモデルクラス
+            filters: フィルタ条件の辞書
+            order_by: ソート条件
+
+        Returns:
+            辞書形式のレコードリスト
+        """
         session = self.get_session()
         try:
-            result = session.execute(text(query), params or {})
-            if fetch:
-                data = []
-                for row in result:
-                    if hasattr(row, '_mapping'):
-                        data.append(dict(row._mapping))
-                session.commit()
-                return data
-            session.commit()
-            return None
+            query = session.query(model_class)
+
+            if filters:
+                for key, value in filters.items():
+                    if hasattr(model_class, key):
+                        query = query.filter(getattr(model_class, key) == value)
+
+            if order_by is not None:
+                query = query.order_by(order_by)
+
+            results = query.all()
+            return [self._model_to_dict(record) for record in results]
+
         except Exception as e:
             session.rollback()
             raise DatabaseError(f"クエリ実行中にエラーが発生しました: {str(e)}")
         finally:
             session.close()
 
+    def query_one(self, model_class: Type[Base], filters: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        ORMを使用して1レコードを取得する
 
-def get_usage_collection():
-    try:
-        db_manager = DatabaseManager.get_instance()
-        query = "SELECT * FROM summary_usage"
-        return db_manager.execute_query(query)
-    except Exception as e:
-        raise DatabaseError(f"使用状況の取得に失敗しました: {str(e)}")
+        Args:
+            model_class: クエリ対象のモデルクラス
+            filters: フィルタ条件の辞書
 
+        Returns:
+            辞書形式のレコード、見つからない場合はNone
+        """
+        session = self.get_session()
+        try:
+            query = session.query(model_class)
 
-def get_settings_collection(app_type=None):
-    try:
-        db_manager = DatabaseManager.get_instance()
-        if app_type:
-            query = "SELECT * FROM app_settings WHERE app_type = :app_type"
-            return db_manager.execute_query(query, {"app_type": app_type})
-        else:
-            query = "SELECT * FROM app_settings"
-            return db_manager.execute_query(query)
-    except Exception as e:
-        raise DatabaseError(f"設定の取得に失敗しました: {str(e)}")
+            for key, value in filters.items():
+                if hasattr(model_class, key):
+                    query = query.filter(getattr(model_class, key) == value)
+
+            record = query.first()
+            return self._model_to_dict(record) if record else None
+
+        except Exception as e:
+            session.rollback()
+            raise DatabaseError(f"クエリ実行中にエラーが発生しました: {str(e)}")
+        finally:
+            session.close()
+
+    def get_by_id(self, model_class: Type[Base], record_id: int) -> Optional[Dict[str, Any]]:
+        """
+        IDでレコードを取得する
+
+        Args:
+            model_class: クエリ対象のモデルクラス
+            record_id: 取得するレコードのID
+
+        Returns:
+            辞書形式のレコード、見つからない場合はNone
+        """
+        session = self.get_session()
+        try:
+            record = session.get(model_class, record_id)
+            return self._model_to_dict(record) if record else None
+
+        except Exception as e:
+            session.rollback()
+            raise DatabaseError(f"レコード取得中にエラーが発生しました: {str(e)}")
+        finally:
+            session.close()
+
+    def insert(self, model_class: Type[Base], data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        レコードを挿入する
+
+        Args:
+            model_class: 挿入対象のモデルクラス
+            data: 挿入するデータの辞書
+
+        Returns:
+            挿入されたレコードの辞書形式
+        """
+        session = self.get_session()
+        try:
+            record = model_class(**data)
+            session.add(record)
+            session.commit()
+            session.refresh(record)
+            return self._model_to_dict(record)
+
+        except Exception as e:
+            session.rollback()
+            raise DatabaseError(f"レコード挿入中にエラーが発生しました: {str(e)}")
+        finally:
+            session.close()
+
+    def update(self, model_class: Type[Base], filters: Dict[str, Any],
+               update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        レコードを更新する
+
+        Args:
+            model_class: 更新対象のモデルクラス
+            filters: 検索条件の辞書
+            update_data: 更新データの辞書
+
+        Returns:
+            更新されたレコードの辞書形式、見つからない場合はNone
+        """
+        session = self.get_session()
+        try:
+            query = session.query(model_class)
+
+            for key, value in filters.items():
+                if hasattr(model_class, key):
+                    query = query.filter(getattr(model_class, key) == value)
+
+            record = query.first()
+            if record is None:
+                return None
+
+            for key, value in update_data.items():
+                if hasattr(record, key):
+                    setattr(record, key, value)
+
+            session.commit()
+            session.refresh(record)
+            return self._model_to_dict(record)
+
+        except Exception as e:
+            session.rollback()
+            raise DatabaseError(f"レコード更新中にエラーが発生しました: {str(e)}")
+        finally:
+            session.close()
+
+    def upsert(self, model_class: Type[Base], filters: Dict[str, Any],
+               data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        レコードを挿入または更新する
+
+        Args:
+            model_class: 対象のモデルクラス
+            filters: 検索条件の辞書
+            data: 挿入/更新するデータの辞書
+
+        Returns:
+            挿入/更新されたレコードの辞書形式
+        """
+        session = self.get_session()
+        try:
+            query = session.query(model_class)
+
+            for key, value in filters.items():
+                if hasattr(model_class, key):
+                    query = query.filter(getattr(model_class, key) == value)
+
+            record = query.first()
+
+            if record:
+                for key, value in data.items():
+                    if hasattr(record, key):
+                        setattr(record, key, value)
+            else:
+                merged_data = {**filters, **data}
+                record = model_class(**merged_data)
+                session.add(record)
+
+            session.commit()
+            session.refresh(record)
+            return self._model_to_dict(record)
+
+        except Exception as e:
+            session.rollback()
+            raise DatabaseError(f"レコードのupsert中にエラーが発生しました: {str(e)}")
+        finally:
+            session.close()
+
+    def delete(self, model_class: Type[Base], filters: Dict[str, Any]) -> bool:
+        """
+        レコードを削除する
+
+        Args:
+            model_class: 削除対象のモデルクラス
+            filters: 検索条件の辞書
+
+        Returns:
+            削除成功時はTrue、見つからない場合はFalse
+        """
+        session = self.get_session()
+        try:
+            query = session.query(model_class)
+
+            for key, value in filters.items():
+                if hasattr(model_class, key):
+                    query = query.filter(getattr(model_class, key) == value)
+
+            record = query.first()
+            if record is None:
+                return False
+
+            session.delete(record)
+            session.commit()
+            return True
+
+        except Exception as e:
+            session.rollback()
+            raise DatabaseError(f"レコード削除中にエラーが発生しました: {str(e)}")
+        finally:
+            session.close()
+
+    def count(self, model_class: Type[Base], filters: Optional[Dict[str, Any]] = None) -> int:
+        """
+        レコード数をカウントする
+
+        Args:
+            model_class: カウント対象のモデルクラス
+            filters: フィルタ条件の辞書
+
+        Returns:
+            レコード数
+        """
+        session = self.get_session()
+        try:
+            query = session.query(model_class)
+
+            if filters:
+                for key, value in filters.items():
+                    if hasattr(model_class, key):
+                        query = query.filter(getattr(model_class, key) == value)
+
+            return query.count()
+
+        except Exception as e:
+            session.rollback()
+            raise DatabaseError(f"カウント実行中にエラーが発生しました: {str(e)}")
+        finally:
+            session.close()
+
+    @staticmethod
+    def _model_to_dict(record) -> Dict[str, Any]:
+        """モデルインスタンスを辞書に変換する"""
+        if record is None:
+            return {}
+        return {c.name: getattr(record, c.name) for c in record.__table__.columns}

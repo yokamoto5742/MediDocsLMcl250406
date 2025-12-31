@@ -1,160 +1,160 @@
 import datetime
-
-from sqlalchemy import text
+from typing import Any, Dict, List, Optional, Tuple
 
 from database.db import DatabaseManager
-from utils.config import get_config
-from utils.constants import DEFAULT_DEPARTMENT, DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPE
-from utils.exceptions import DatabaseError, AppError
+from database.models import Prompt
 from database.schema import initialize_database as init_schema
+from utils.config import get_config
+from utils.constants import DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE, DEPARTMENT_DOCTORS_MAPPING, DOCUMENT_TYPES
+from utils.exceptions import AppError, DatabaseError
 
 
-def get_prompt_collection():
+def get_db_manager() -> DatabaseManager:
+    """DatabaseManagerのインスタンスを取得する"""
     try:
-        db_manager = DatabaseManager.get_instance()
-        return db_manager
+        return DatabaseManager.get_instance()
     except Exception as e:
-        raise DatabaseError(f"プロンプトコレクションの取得に失敗しました: {str(e)}")
+        raise DatabaseError(f"データベース接続の取得に失敗しました: {str(e)}")
 
 
-def get_current_datetime():
+def get_current_datetime() -> datetime.datetime:
+    """現在日時を取得する"""
     return datetime.datetime.now()
 
 
-def update_document(collection, query_dict, update_data):
-    try:
-        now = get_current_datetime()
-        update_data.update({"updated_at": now})
-
-        if "department" in query_dict:
-            query = """
-                    UPDATE prompts
-                    SET name       = :name, \
-                        content    = :content, \
-                        updated_at = :updated_at
-                    WHERE department = :department \
-                    """
-            params = {
-                "name": update_data.get("name"),
-                "content": update_data.get("content"),
-                "updated_at": update_data["updated_at"],
-                "department": query_dict["department"]
-            }
-        elif "name" in query_dict:
-            set_clauses = []
-            params = {"name": query_dict["name"], "updated_at": update_data["updated_at"]}
-
-            if "default_model" in update_data:
-                set_clauses.append("default_model = :default_model")
-                params["default_model"] = update_data["default_model"]
-
-            if "order_index" in update_data:
-                set_clauses.append("order_index = :order_index")
-                params["order_index"] = update_data["order_index"]
-
-            query = f"""
-            UPDATE departments
-            SET {', '.join(set_clauses)}, updated_at = :updated_at
-            WHERE name = :name
-            """
-        else:
-            raise ValueError("不明な更新条件です")
-
-        collection.execute_query(query, params, fetch=False)
-        return True
-
-    except Exception as e:
-        raise DatabaseError(f"ドキュメントの更新に失敗しました: {str(e)}")
-
-
-def get_all_departments():
+def get_all_departments() -> List[str]:
+    """全ての診療科を取得する"""
     return DEFAULT_DEPARTMENT
 
 
-def get_all_prompts():
+def get_all_prompts() -> List[Dict[str, Any]]:
+    """全てのプロンプトを取得する（ORM使用）"""
     try:
-        prompt_collection = get_prompt_collection()
-        query = "SELECT * FROM prompts ORDER BY department"
-        return prompt_collection.execute_query(query)
+        db_manager = get_db_manager()
+        return db_manager.query_all(Prompt, order_by=Prompt.department)
     except Exception as e:
         raise DatabaseError(f"プロンプト一覧の取得に失敗しました: {str(e)}")
 
 
-def create_or_update_prompt(department, document_type, doctor, content, selected_model=None):
+def get_prompt(department: str = "default", document_type: str = DEFAULT_DOCUMENT_TYPE,
+               doctor: str = "default") -> Optional[Dict[str, Any]]:
+    """
+    指定条件のプロンプトを取得する（ORM使用）
+
+    Args:
+        department: 診療科
+        document_type: 文書タイプ
+        doctor: 医師名
+
+    Returns:
+        プロンプト情報の辞書、見つからない場合はデフォルトプロンプト
+    """
     try:
-        if not department or not document_type or not doctor or not content:
-            return False, "すべての項目を入力してください"
+        db_manager = get_db_manager()
 
-        prompt_collection = get_prompt_collection()
-
-        query = "SELECT * FROM prompts WHERE department = :department AND document_type = :document_type AND doctor = :doctor"
-        existing = prompt_collection.execute_query(query, {
+        prompt = db_manager.query_one(Prompt, {
             "department": department,
             "document_type": document_type,
             "doctor": doctor
         })
 
-        if existing:
-            update_query = """
-                           UPDATE prompts
-                           SET content       = :content, \
-                               selected_model = :selected_model, \
-                               updated_at = CURRENT_TIMESTAMP
-                           WHERE department = :department AND document_type = :document_type AND doctor = :doctor \
-                           """
+        if not prompt:
+            prompt = db_manager.query_one(Prompt, {
+                "department": "default",
+                "document_type": DEFAULT_DOCUMENT_TYPE,
+                "doctor": "default",
+                "is_default": True
+            })
 
-            prompt_collection.execute_query(update_query, {
-                "department": department,
-                "document_type": document_type,
-                "doctor": doctor,
+        return prompt
+
+    except Exception as e:
+        raise DatabaseError(f"プロンプトの取得に失敗しました: {str(e)}")
+
+
+def create_or_update_prompt(department: str, document_type: str, doctor: str,
+                            content: str, selected_model: Optional[str] = None) -> Tuple[bool, str]:
+    """
+    プロンプトを作成または更新する（ORM使用）
+
+    Args:
+        department: 診療科
+        document_type: 文書タイプ
+        doctor: 医師名
+        content: プロンプト内容
+        selected_model: 選択されたモデル
+
+    Returns:
+        (成功フラグ, メッセージ)のタプル
+    """
+    try:
+        if not department or not document_type or not doctor or not content:
+            return False, "すべての項目を入力してください"
+
+        db_manager = get_db_manager()
+
+        filters = {
+            "department": department,
+            "document_type": document_type,
+            "doctor": doctor
+        }
+
+        existing = db_manager.query_one(Prompt, filters)
+
+        if existing:
+            db_manager.update(Prompt, filters, {
                 "content": content,
                 "selected_model": selected_model
-            }, fetch=False)
+            })
             return True, "プロンプトを更新しました"
         else:
-            insert_document(prompt_collection, {
+            now = get_current_datetime()
+            db_manager.insert(Prompt, {
                 "department": department,
                 "document_type": document_type,
                 "doctor": doctor,
                 "content": content,
                 "selected_model": selected_model,
-                "is_default": False
+                "is_default": False,
+                "created_at": now,
+                "updated_at": now
             })
             return True, "プロンプトを新規作成しました"
+
     except DatabaseError as e:
         return False, str(e)
     except Exception as e:
         raise AppError(f"プロンプトの作成/更新中にエラーが発生しました: {str(e)}")
 
 
-def delete_prompt(department, document_type, doctor):
+def delete_prompt(department: str, document_type: str, doctor: str) -> Tuple[bool, str]:
+    """
+    プロンプトを削除する（ORM使用）
+
+    Args:
+        department: 診療科
+        document_type: 文書タイプ
+        doctor: 医師名
+
+    Returns:
+        (成功フラグ, メッセージ)のタプル
+    """
     try:
         if department == "default" and document_type == DEFAULT_DOCUMENT_TYPE and doctor == "default":
             return False, "デフォルトプロンプトは削除できません"
 
-        prompt_collection = get_prompt_collection()
+        db_manager = get_db_manager()
 
-        session = prompt_collection.get_session()
-        try:
-            prompt_query = "DELETE FROM prompts WHERE department = :department AND document_type = :document_type AND doctor = :doctor"
-            result = session.execute(text(prompt_query), {
-                "department": department,
-                "document_type": document_type,
-                "doctor": doctor
-            })
-            deleted_count = result.rowcount
+        deleted = db_manager.delete(Prompt, {
+            "department": department,
+            "document_type": document_type,
+            "doctor": doctor
+        })
 
-            if deleted_count == 0:
-                session.rollback()
-                return False, "プロンプトが見つかりません"
-
-            session.commit()
+        if deleted:
             return True, "プロンプトを削除しました"
-        except Exception as e:
-            session.rollback()
-            raise e
-        finally:
-            session.close()
+        else:
+            return False, "プロンプトが見つかりません"
 
     except DatabaseError as e:
         return False, str(e)
@@ -162,98 +162,44 @@ def delete_prompt(department, document_type, doctor):
         raise AppError(f"プロンプトの削除中にエラーが発生しました: {str(e)}")
 
 
-def insert_document(collection, document):
+def initialize_default_prompt() -> None:
+    """デフォルトプロンプトを初期化する（ORM使用）"""
     try:
-        now = get_current_datetime()
-        document.update({
-            "created_at": now,
-            "updated_at": now
+        db_manager = get_db_manager()
+
+        default_prompt = db_manager.query_one(Prompt, {
+            "department": "default",
+            "document_type": DEFAULT_DOCUMENT_TYPE,
+            "doctor": "default",
+            "is_default": True
         })
-
-        if "name" in document and "order_index" in document:
-            query = """
-                    INSERT INTO departments (name, order_index, default_model, created_at, updated_at)
-                    VALUES (:name, :order_index, :default_model, :created_at, :updated_at) RETURNING id; \
-                    """
-            params = {
-                "name": document["name"],
-                "order_index": document["order_index"],
-                "default_model": document.get("default_model"),
-                "created_at": document["created_at"],
-                "updated_at": document["updated_at"]
-            }
-        elif "department" in document:
-            query = """
-                    INSERT INTO prompts (department, document_type, doctor, content, selected_model, is_default, created_at, updated_at)
-                    VALUES (:department, :document_type, :doctor, :content, :selected_model, :is_default, :created_at, :updated_at) RETURNING id; \
-                    """
-            params = {
-                "department": document["department"],
-                "document_type": document.get("document_type", "主治医意見書"),
-                "doctor": document["doctor"],
-                "content": document["content"],
-                "selected_model": document.get("selected_model"),
-                "is_default": document.get("is_default", False),
-                "created_at": document["created_at"],
-                "updated_at": document["updated_at"]
-            }
-        else:
-            raise ValueError("不明なドキュメント形式です")
-
-        result = collection.execute_query(query, params)
-        return result[0]["id"] if result else None
-
-    except Exception as e:
-        raise DatabaseError(f"ドキュメントの挿入に失敗しました: {str(e)}")
-
-
-def initialize_default_prompt():
-    try:
-        prompt_collection = get_prompt_collection()
-
-        query = f"SELECT * FROM prompts WHERE department = 'default' AND document_type = '{DEFAULT_DOCUMENT_TYPE}' AND doctor = 'default' AND is_default = true"
-        default_prompt = prompt_collection.execute_query(query)
 
         if not default_prompt:
             config = get_config()
             default_prompt_content = config['PROMPTS']['summary']
+            now = get_current_datetime()
 
-            insert_document(prompt_collection, {
+            db_manager.insert(Prompt, {
                 "department": "default",
                 "document_type": DEFAULT_DOCUMENT_TYPE,
                 "doctor": "default",
                 "content": default_prompt_content,
-                "is_default": True
+                "is_default": True,
+                "created_at": now,
+                "updated_at": now
             })
+
     except Exception as e:
         raise DatabaseError(f"デフォルトプロンプトの初期化に失敗しました: {str(e)}")
 
 
-def get_prompt(department="default", document_type=DEFAULT_DOCUMENT_TYPE, doctor="default"):
-    try:
-        prompt_collection = get_prompt_collection()
-        query = "SELECT * FROM prompts WHERE department = :department AND document_type = :document_type AND doctor = :doctor"
-        prompt = prompt_collection.execute_query(query, {
-            "department": department,
-            "document_type": document_type,
-            "doctor": doctor
-        })
-
-        if not prompt:
-            default_query = f"SELECT * FROM prompts WHERE department = 'default' AND document_type = '{DEFAULT_DOCUMENT_TYPE}' AND doctor = 'default' AND is_default = true"
-            prompt = prompt_collection.execute_query(default_query)
-
-        return prompt[0] if prompt else None
-    except Exception as e:
-        raise DatabaseError(f"プロンプトの取得に失敗しました: {str(e)}")
-
-
-def initialize_database():
+def initialize_database() -> None:
+    """データベースを初期化する（ORM使用）"""
     try:
         init_schema()
         initialize_default_prompt()
 
-        prompt_collection = get_prompt_collection()
+        db_manager = get_db_manager()
         config = get_config()
         default_prompt_content = config['PROMPTS']['summary']
         departments = DEFAULT_DEPARTMENT
@@ -263,28 +209,71 @@ def initialize_database():
             doctors = DEPARTMENT_DOCTORS_MAPPING.get(dept, ["default"])
             for doctor in doctors:
                 for doc_type in document_types:
-                    check_query = """
-                                  SELECT * \
-                                  FROM prompts
-                                  WHERE department = :department
-                                    AND document_type = :document_type
-                                    AND doctor = :doctor \
-                                  """
-
-                    existing = prompt_collection.execute_query(check_query, {
+                    existing = db_manager.query_one(Prompt, {
                         "department": dept,
                         "document_type": doc_type,
                         "doctor": doctor
                     })
 
                     if not existing:
-                        insert_document(prompt_collection, {
+                        now = get_current_datetime()
+                        db_manager.insert(Prompt, {
                             "department": dept,
                             "document_type": doc_type,
                             "doctor": doctor,
                             "content": default_prompt_content,
-                            "is_default": False
+                            "is_default": False,
+                            "created_at": now,
+                            "updated_at": now
                         })
 
     except Exception as e:
         raise DatabaseError(f"データベースの初期化に失敗しました: {str(e)}")
+
+
+# 後方互換性のための関数（非推奨）
+def get_prompt_collection():
+    """
+    非推奨: DatabaseManagerを直接使用してください
+    """
+    return get_db_manager()
+
+
+def update_document(collection, query_dict, update_data):
+    """
+    非推奨: db_manager.update()を直接使用してください
+    """
+    try:
+        now = get_current_datetime()
+        update_data.update({"updated_at": now})
+
+        if "department" in query_dict:
+            collection.update(Prompt, {"department": query_dict["department"]}, {
+                "content": update_data.get("content"),
+                "updated_at": update_data["updated_at"]
+            })
+        return True
+
+    except Exception as e:
+        raise DatabaseError(f"ドキュメントの更新に失敗しました: {str(e)}")
+
+
+def insert_document(collection, document):
+    """
+    非推奨: db_manager.insert()を直接使用してください
+    """
+    try:
+        now = get_current_datetime()
+        document.update({
+            "created_at": now,
+            "updated_at": now
+        })
+
+        if "department" in document:
+            result = collection.insert(Prompt, document)
+            return result.get("id") if result else None
+
+        return None
+
+    except Exception as e:
+        raise DatabaseError(f"ドキュメントの挿入に失敗しました: {str(e)}")

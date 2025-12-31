@@ -1,13 +1,17 @@
 import datetime
-import pytz
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
+import pytz
 import streamlit as st
+from sqlalchemy import and_, func, not_
 
 from database.db import DatabaseManager
+from database.models import SummaryUsage
+from ui_components.navigation import change_page
 from utils.constants import DOCUMENT_TYPE_OPTIONS
 from utils.error_handlers import handle_error
-from ui_components.navigation import change_page
+from utils.exceptions import DatabaseError
 
 JST = pytz.timezone('Asia/Tokyo')
 
@@ -18,13 +22,185 @@ MODEL_MAPPING = {
 }
 
 
+def get_usage_statistics(start_datetime: datetime.datetime, end_datetime: datetime.datetime,
+                         selected_model: str, selected_document_type: str) -> Dict[str, Any]:
+    """
+    使用統計を取得する（ORM使用）
+
+    Args:
+        start_datetime: 開始日時
+        end_datetime: 終了日時
+        selected_model: 選択されたモデル
+        selected_document_type: 選択された文書タイプ
+
+    Returns:
+        統計データの辞書
+    """
+    db_manager = DatabaseManager.get_instance()
+    session = db_manager.get_session()
+
+    try:
+        # 基本フィルタを構築
+        filters = [
+            SummaryUsage.date >= start_datetime,
+            SummaryUsage.date <= end_datetime
+        ]
+
+        # モデルフィルタを追加
+        if selected_model != "すべて":
+            model_config = MODEL_MAPPING.get(selected_model)
+            if model_config:
+                filters.append(SummaryUsage.model_detail.ilike(f"%{model_config['pattern']}%"))
+                if model_config["exclude"]:
+                    filters.append(not_(SummaryUsage.model_detail.ilike(f"%{model_config['exclude']}%")))
+
+        # 文書タイプフィルタを追加
+        if selected_document_type != "すべて":
+            if selected_document_type == "不明":
+                filters.append(SummaryUsage.document_types.is_(None))
+            else:
+                filters.append(SummaryUsage.document_types == selected_document_type)
+
+        # 合計統計を取得
+        total_query = session.query(
+            func.count(SummaryUsage.id).label("count"),
+            func.sum(SummaryUsage.input_tokens).label("total_input_tokens"),
+            func.sum(SummaryUsage.output_tokens).label("total_output_tokens"),
+            func.sum(SummaryUsage.total_tokens).label("total_tokens")
+        ).filter(and_(*filters))
+
+        total_result = total_query.first()
+
+        if not total_result or total_result.count == 0:
+            return {"total": None, "by_department": [], "records": []}
+
+        # 診療科・医師・文書タイプ別の統計を取得
+        dept_query = session.query(
+            func.coalesce(SummaryUsage.department, 'default').label("department"),
+            func.coalesce(SummaryUsage.doctor, 'default').label("doctor"),
+            SummaryUsage.document_types,
+            func.count(SummaryUsage.id).label("count"),
+            func.sum(SummaryUsage.input_tokens).label("input_tokens"),
+            func.sum(SummaryUsage.output_tokens).label("output_tokens"),
+            func.sum(SummaryUsage.total_tokens).label("total_tokens"),
+            func.sum(SummaryUsage.processing_time).label("processing_time")
+        ).filter(and_(*filters)).group_by(
+            SummaryUsage.department,
+            SummaryUsage.doctor,
+            SummaryUsage.document_types
+        ).order_by(func.count(SummaryUsage.id).desc())
+
+        dept_results = dept_query.all()
+
+        # 個別レコードを取得
+        records_query = session.query(SummaryUsage).filter(
+            and_(*filters)
+        ).order_by(SummaryUsage.date.desc())
+
+        records = records_query.all()
+
+        return {
+            "total": {
+                "count": total_result.count,
+                "total_input_tokens": total_result.total_input_tokens,
+                "total_output_tokens": total_result.total_output_tokens,
+                "total_tokens": total_result.total_tokens
+            },
+            "by_department": [
+                {
+                    "department": row.department,
+                    "doctor": row.doctor,
+                    "document_types": row.document_types,
+                    "count": row.count,
+                    "input_tokens": row.input_tokens,
+                    "output_tokens": row.output_tokens,
+                    "total_tokens": row.total_tokens,
+                    "processing_time": row.processing_time
+                }
+                for row in dept_results
+            ],
+            "records": [
+                {
+                    "date": record.date,
+                    "document_types": record.document_types,
+                    "model_detail": record.model_detail,
+                    "department": record.department,
+                    "doctor": record.doctor,
+                    "input_tokens": record.input_tokens,
+                    "output_tokens": record.output_tokens,
+                    "processing_time": record.processing_time
+                }
+                for record in records
+            ]
+        }
+
+    except Exception as e:
+        raise DatabaseError(f"統計データの取得に失敗しました: {str(e)}")
+    finally:
+        session.close()
+
+
+def format_department_data(dept_stats: List[Dict[str, Any]]) -> pd.DataFrame:
+    """診療科別統計データをDataFrameに変換する"""
+    data = []
+    for stat in dept_stats:
+        dept_name = "全科共通" if stat["department"] == "default" else stat["department"]
+        doctor_name = "医師共通" if stat["doctor"] == "default" else stat["doctor"]
+        document_types = stat["document_types"] or "不明"
+        data.append({
+            "文書名": document_types,
+            "診療科": dept_name,
+            "医師名": doctor_name,
+            "作成件数": stat["count"],
+            "入力トークン": stat["input_tokens"],
+            "出力トークン": stat["output_tokens"],
+            "合計トークン": stat["total_tokens"],
+        })
+    return pd.DataFrame(data)
+
+
+def format_detail_data(records: List[Dict[str, Any]]) -> pd.DataFrame:
+    """詳細レコードをDataFrameに変換する"""
+    detail_data = []
+    for record in records:
+        model_detail = str(record.get("model_detail", "")).lower()
+        model_info = "Gemini_Pro"
+
+        for model_name, config in MODEL_MAPPING.items():
+            pattern = config["pattern"]
+            exclude = config["exclude"]
+
+            if pattern in model_detail:
+                if exclude and exclude in model_detail:
+                    continue
+                model_info = model_name
+                break
+
+        record_date = record["date"]
+        if record_date.tzinfo:
+            jst_date = record_date.astimezone(JST)
+        else:
+            jst_date = JST.localize(record_date)
+
+        detail_data.append({
+            "作成日": jst_date.strftime("%Y/%m/%d"),
+            "文書名": record.get("document_types") or "不明",
+            "診療科": "全科共通" if record.get("department") == "default" else record.get("department"),
+            "医師名": "医師共通" if record.get("doctor") == "default" else record.get("doctor"),
+            "AIモデル": model_info,
+            "入力トークン": record["input_tokens"],
+            "出力トークン": record["output_tokens"],
+            "処理時間(秒)": round(record["processing_time"]) if record["processing_time"] else 0,
+        })
+    return pd.DataFrame(detail_data)
+
+
 @handle_error
 def usage_statistics_ui():
+    """統計情報画面のUI"""
     if st.button("作成画面に戻る", key="back_to_main_from_stats"):
         change_page("main")
         st.rerun()
-
-    db_manager = DatabaseManager.get_instance()
 
     col1, col2 = st.columns(2)
 
@@ -47,129 +223,17 @@ def usage_statistics_ui():
     start_datetime = datetime.datetime.combine(start_date, datetime.time.min)
     end_datetime = datetime.datetime.combine(end_date, datetime.time.max)
 
-    query_conditions = []
-    query_params = {
-        "start_date": start_datetime,
-        "end_date": end_datetime
-    }
+    # 統計データを取得
+    stats = get_usage_statistics(start_datetime, end_datetime, selected_model, selected_document_type)
 
-    query_conditions.append("date >= :start_date AND date <= :end_date")
-
-    if selected_model != "すべて":
-        model_config = MODEL_MAPPING.get(selected_model)
-        if model_config:
-            query_conditions.append("model_detail ILIKE :model_pattern")
-            query_params["model_pattern"] = f"%{model_config['pattern']}%"
-
-            if model_config["exclude"]:
-                query_conditions.append("model_detail NOT ILIKE :model_exclude")
-                query_params["model_exclude"] = f"%{model_config['exclude']}%"
-
-    if selected_document_type != "すべて":
-        if selected_document_type == "不明":
-            query_conditions.append("document_types IS NULL")
-        else:
-            query_conditions.append("document_types = :doc_type")
-            query_params["doc_type"] = selected_document_type
-
-    where_clause = " AND ".join(query_conditions)
-
-    total_query = f"""
-    SELECT
-        COUNT(*) as count,
-        SUM(input_tokens) as total_input_tokens,
-        SUM(output_tokens) as total_output_tokens,
-        SUM(total_tokens) as total_tokens
-    FROM summary_usage
-    WHERE {where_clause}
-    """
-
-    total_summary = db_manager.execute_query(total_query, query_params)
-
-    if not total_summary or total_summary[0]["count"] == 0:
+    if stats["total"] is None:
         st.info("指定期間のデータがありません")
         return
 
-    dept_query = f"""
-    SELECT
-        COALESCE(department, 'default') as department,
-        COALESCE(doctor, 'default') as doctor,
-        document_types,
-        COUNT(*) as count,
-        SUM(input_tokens) as input_tokens,
-        SUM(output_tokens) as output_tokens,
-        SUM(total_tokens) as total_tokens,
-        SUM(processing_time) as processing_time
-    FROM summary_usage
-    WHERE {where_clause}
-    GROUP BY department, doctor, document_types
-    ORDER BY count DESC
-    """
+    # 診療科別統計を表示
+    dept_df = format_department_data(stats["by_department"])
+    st.dataframe(dept_df, hide_index=True)
 
-    dept_summary = db_manager.execute_query(dept_query, query_params)
-
-    records_query = f"""
-    SELECT
-        date,
-        document_types,
-        model_detail,
-        department,
-        doctor,
-        input_tokens,
-        output_tokens,
-        processing_time
-    FROM summary_usage
-    WHERE {where_clause}
-    ORDER BY date DESC
-    """
-
-    records = db_manager.execute_query(records_query, query_params)
-
-    data = []
-    for stat in dept_summary:
-        dept_name = "全科共通" if stat["department"] == "default" else stat["department"]
-        doctor_name = "医師共通" if stat["doctor"] == "default" else stat["doctor"]
-        document_types = stat["document_types"] or "不明"
-        data.append({
-            "文書名": document_types,
-            "診療科": dept_name,
-            "医師名": doctor_name,
-            "作成件数": stat["count"],
-            "入力トークン": stat["input_tokens"],
-            "出力トークン": stat["output_tokens"],
-            "合計トークン": stat["total_tokens"],
-        })
-
-    df = pd.DataFrame(data)
-    st.dataframe(df, hide_index=True)
-
-    detail_data = []
-    for record in records:
-        model_detail = str(record.get("model_detail", "")).lower()
-        model_info = "Gemini_Pro" # デフォルト値
-
-        for model_name, config in MODEL_MAPPING.items():
-            pattern = config["pattern"]
-            exclude = config["exclude"]
-
-            if pattern in model_detail:
-                if exclude and exclude in model_detail:
-                    continue
-                model_info = model_name
-                break
-
-        jst_date = record["date"].astimezone(JST) if record["date"].tzinfo else JST.localize(record["date"])
-
-        detail_data.append({
-            "作成日": jst_date.strftime("%Y/%m/%d"),
-            "文書名": record.get("document_types") or "不明",
-            "診療科": "全科共通" if record.get("department") == "default" else record.get("department"),
-            "医師名": "医師共通" if record.get("doctor") == "default" else record.get("doctor"),
-            "AIモデル": model_info,
-            "入力トークン": record["input_tokens"],
-            "出力トークン": record["output_tokens"],
-            "処理時間(秒)": round(record["processing_time"]),
-        })
-
-    detail_df = pd.DataFrame(detail_data)
+    # 詳細レコードを表示
+    detail_df = format_detail_data(stats["records"])
     st.dataframe(detail_df, hide_index=True)

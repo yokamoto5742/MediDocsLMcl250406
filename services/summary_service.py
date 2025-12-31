@@ -2,17 +2,24 @@ import datetime
 import queue
 import threading
 import time
-from typing import Dict, Any, Tuple
+from typing import Any, Dict, Tuple
 
 import pytz
 import streamlit as st
 
 from database.db import DatabaseManager
+from database.models import SummaryUsage
 from external_service.api_factory import generate_summary
-from utils.config import (CLAUDE_API_KEY, CLAUDE_MODEL,
-                          GOOGLE_CREDENTIALS_JSON, GEMINI_MODEL,
-                          MAX_INPUT_TOKENS, MIN_INPUT_TOKENS, MAX_TOKEN_THRESHOLD)
-from utils.constants import APP_TYPE, MESSAGES, DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE,DOCUMENT_TYPES
+from utils.config import (
+    CLAUDE_API_KEY,
+    CLAUDE_MODEL,
+    GEMINI_MODEL,
+    GOOGLE_CREDENTIALS_JSON,
+    MAX_INPUT_TOKENS,
+    MAX_TOKEN_THRESHOLD,
+    MIN_INPUT_TOKENS,
+)
+from utils.constants import APP_TYPE, DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE, DOCUMENT_TYPES, MESSAGES
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
 from utils.prompt_manager import get_prompt
@@ -185,6 +192,7 @@ def handle_success_result(result: Dict[str, Any], session_params: Dict[str, Any]
 
 
 def save_usage_to_database(result: Dict[str, Any], session_params: Dict[str, Any]) -> None:
+    """使用状況をデータベースに保存する（ORM使用）"""
     try:
         db_manager = DatabaseManager.get_instance()
         now_jst = datetime.datetime.now().astimezone(JST)
@@ -202,15 +210,7 @@ def save_usage_to_database(result: Dict[str, Any], session_params: Dict[str, Any
             "processing_time": round(result["processing_time"])
         }
 
-        query = """
-                INSERT INTO summary_usage
-                (date, app_type, document_types, model_detail, department, doctor,
-                 input_tokens, output_tokens, total_tokens, processing_time)
-                VALUES (:date, :app_type, :document_types, :model_detail, :department, :doctor,
-                        :input_tokens, :output_tokens, :total_tokens, :processing_time) \
-                """
-
-        db_manager.execute_query(query, usage_data, fetch=False)
+        db_manager.insert(SummaryUsage, usage_data)
 
     except Exception as db_error:
         st.warning(f"データベース保存中にエラーが発生しました: {str(db_error)}")

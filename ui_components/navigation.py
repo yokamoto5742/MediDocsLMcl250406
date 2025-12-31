@@ -1,8 +1,9 @@
 import streamlit as st
 
 from database.db import DatabaseManager
-from utils.config import CLAUDE_API_KEY, GOOGLE_CREDENTIALS_JSON, GEMINI_MODEL, PROMPT_MANAGEMENT
-from utils.constants import DEFAULT_DEPARTMENT, DOCUMENT_TYPES, DEPARTMENT_DOCTORS_MAPPING, DEFAULT_DOCUMENT_TYPE
+from database.models import AppSetting
+from utils.config import CLAUDE_API_KEY, GEMINI_MODEL, GOOGLE_CREDENTIALS_JSON, PROMPT_MANAGEMENT
+from utils.constants import DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE, DEPARTMENT_DOCTORS_MAPPING, DOCUMENT_TYPES
 from utils.prompt_manager import get_prompt
 
 
@@ -151,65 +152,53 @@ def render_sidebar():
 
 
 def save_user_settings(department, model, doctor="default", document_type=DEFAULT_DOCUMENT_TYPE):
+    """ユーザー設定を保存する（ORM使用）"""
     try:
         from utils.constants import APP_TYPE
 
         if department != "default" and department not in DEFAULT_DEPARTMENT:
             department = "default"
-        db_manager = DatabaseManager.get_instance()
 
-        # アプリタイプごとに異なるsetting_idを使用
+        db_manager = DatabaseManager.get_instance()
         setting_id = f"user_preferences_{APP_TYPE}"
 
-        query = """
-                INSERT INTO app_settings
-                (setting_id, app_type, selected_department, selected_model,
-                 selected_document_type, selected_doctor, updated_at)
-                VALUES (:setting_id, :app_type, :department, :model,
-                        :document_type, :doctor, CURRENT_TIMESTAMP) ON CONFLICT (setting_id) 
-                DO \
-                UPDATE SET
-                    app_type = EXCLUDED.app_type, \
-                    selected_department = EXCLUDED.selected_department, \
-                    selected_model = EXCLUDED.selected_model, \
-                    selected_document_type = EXCLUDED.selected_document_type, \
-                    selected_doctor = EXCLUDED.selected_doctor, \
-                    updated_at = CURRENT_TIMESTAMP
-                """
-
-        db_manager.execute_query(query, {
+        filters = {
             "setting_id": setting_id,
-            "app_type": APP_TYPE,
-            "department": department,
-            "model": model,
-            "document_type": document_type,
-            "doctor": doctor
-        }, fetch=False)
+            "app_type": APP_TYPE
+        }
+
+        data = {
+            "selected_department": department,
+            "selected_model": model,
+            "selected_document_type": document_type,
+            "selected_doctor": doctor
+        }
+
+        db_manager.upsert(AppSetting, filters, data)
 
     except Exception as e:
         print(f"設定の保存に失敗しました: {str(e)}")
 
 
 def load_user_settings():
+    """ユーザー設定を読み込む（ORM使用）"""
     try:
         from utils.constants import APP_TYPE
 
         db_manager = DatabaseManager.get_instance()
         setting_id = f"user_preferences_{APP_TYPE}"
 
-        query = """
-                SELECT selected_department, selected_model, selected_document_type, selected_doctor
-                FROM app_settings
-                WHERE setting_id = :setting_id
-                """
-        settings = db_manager.execute_query(query, {"setting_id": setting_id})
+        settings = db_manager.query_one(AppSetting, {"setting_id": setting_id})
 
         if settings:
-            return (settings[0]["selected_department"],
-                    settings[0]["selected_model"],
-                    settings[0].get("selected_document_type", DEFAULT_DOCUMENT_TYPE),
-                    settings[0].get("selected_doctor", "default"))
+            return (
+                settings.get("selected_department"),
+                settings.get("selected_model"),
+                settings.get("selected_document_type", DEFAULT_DOCUMENT_TYPE),
+                settings.get("selected_doctor", "default")
+            )
         return None, None, None, None
+
     except Exception as e:
         print(f"設定の読み込みに失敗しました: {str(e)}")
         return None, None, None, None
