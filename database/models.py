@@ -1,8 +1,10 @@
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, UniqueConstraint
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql import func
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 class AppSetting(Base):
