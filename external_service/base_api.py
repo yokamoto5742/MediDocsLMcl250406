@@ -39,10 +39,15 @@ class BaseAPIClient(ABC):
         return prompt_data.get("selected_model") if prompt_data and prompt_data.get(
             "selected_model") else self.default_model
     
-    def generate_summary(self, medical_text: str, additional_info: str = "",
-                        department: str = "default", document_type: str = DEFAULT_DOCUMENT_TYPE,
-                        doctor: str = "default", model_name: Optional[str] = None,
-                        previous_record: str = "") -> Tuple[str, int, int]:
+    def generate_summary(
+            self, medical_text: str,
+            additional_info: str = "",
+            department: str = "default",
+            document_type: str = DEFAULT_DOCUMENT_TYPE,
+            doctor: str = "default",
+            model_name: Optional[str] = None,
+            previous_record: str = ""
+    ) -> Tuple[str, int, int]:
         try:
             self.initialize()
 
