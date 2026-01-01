@@ -62,7 +62,7 @@ class ClaudeAPIClient(BaseAPIClient):
             if response.content:
                 summary_text = response.content[0].text
             else:
-                summary_text = MESSAGES["EMPTY_RESPONSE"]
+                summary_text = MESSAGES["レスポンスが空です"]
 
             input_tokens = response.usage.input_tokens
             output_tokens = response.usage.output_tokens
@@ -70,4 +70,4 @@ class ClaudeAPIClient(BaseAPIClient):
             return summary_text, input_tokens, output_tokens
 
         except Exception as e:
-            raise APIError(MESSAGES["BEDROCK_API_ERROR"].format(error=str(e)))
+            raise APIError(MESSAGES["Amazon Bedrock Claude APIエラー"].format(error=str(e)))
