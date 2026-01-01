@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql import func
 
