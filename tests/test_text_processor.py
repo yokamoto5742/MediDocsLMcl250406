@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 
 from utils.text_processor import format_output_summary, parse_output_summary, section_aliases

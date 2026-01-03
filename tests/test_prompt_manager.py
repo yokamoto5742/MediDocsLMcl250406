@@ -1,8 +1,9 @@
-import pytest
 import datetime
-from unittest.mock import patch, Mock, MagicMock
-from sqlalchemy import text
+from unittest.mock import patch, Mock
 
+import pytest
+
+from utils.exceptions import DatabaseError, AppError
 from utils.prompt_manager import (
     get_prompt_collection,
     get_current_datetime,
@@ -16,7 +17,6 @@ from utils.prompt_manager import (
     get_prompt,
     initialize_database
 )
-from utils.exceptions import DatabaseError, AppError
 
 
 class TestGetPromptCollection:
@@ -48,7 +48,7 @@ class TestGetCurrentDatetime:
     def test_get_current_datetime(self):
         """現在時刻の取得テスト"""
         with patch('utils.prompt_manager.datetime') as mock_datetime:
-            mock_now = datetime.datetime(2024, 1, 1, 12, 0, 0)
+            mock_now = datetime.datetime(2024, 1, 1, 12)
             mock_datetime.datetime.now.return_value = mock_now
             
             result = get_current_datetime()
@@ -67,7 +67,7 @@ class TestUpdateDocument:
         
         with patch('utils.prompt_manager.get_prompt_collection', return_value=mock_database_manager):
             with patch('utils.prompt_manager.get_current_datetime') as mock_datetime:
-                mock_now = datetime.datetime(2024, 1, 1, 12, 0, 0)
+                mock_now = datetime.datetime(2024, 1, 1, 12)
                 mock_datetime.return_value = mock_now
                 
                 result = update_document(mock_database_manager, query_dict, update_data)
@@ -87,7 +87,7 @@ class TestUpdateDocument:
         
         with patch('utils.prompt_manager.get_prompt_collection', return_value=mock_database_manager):
             with patch('utils.prompt_manager.get_current_datetime') as mock_datetime:
-                mock_now = datetime.datetime(2024, 1, 1, 12, 0, 0)
+                mock_now = datetime.datetime(2024, 1, 1, 12)
                 mock_datetime.return_value = mock_now
                 
                 result = update_document(mock_database_manager, query_dict, update_data)
@@ -283,7 +283,7 @@ class TestInsertDocument:
         mock_database_manager.execute_query.return_value = [{"id": 1}]
         
         with patch('utils.prompt_manager.get_current_datetime') as mock_datetime:
-            mock_now = datetime.datetime(2024, 1, 1, 12, 0, 0)
+            mock_now = datetime.datetime(2024, 1, 1, 12)
             mock_datetime.return_value = mock_now
             
             result = insert_document(mock_database_manager, document)
@@ -304,7 +304,7 @@ class TestInsertDocument:
         mock_database_manager.execute_query.return_value = [{"id": 1}]
         
         with patch('utils.prompt_manager.get_current_datetime') as mock_datetime:
-            mock_now = datetime.datetime(2024, 1, 1, 12, 0, 0)
+            mock_now = datetime.datetime(2024, 1, 1, 12)
             mock_datetime.return_value = mock_now
             
             result = insert_document(mock_database_manager, document)

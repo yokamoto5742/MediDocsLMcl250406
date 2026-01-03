@@ -1,17 +1,11 @@
-import pytest
 import os
-from unittest.mock import patch, Mock
 from pathlib import Path
+from unittest.mock import patch, Mock
 
 # テスト対象のモジュールをインポート
 from utils.config import (
-    get_config, 
-    parse_database_url,
-    POSTGRES_HOST,
-    POSTGRES_PORT,
-    POSTGRES_USER,
-    POSTGRES_PASSWORD,
-    POSTGRES_DB
+    get_config,
+    parse_database_url
 )
 
 

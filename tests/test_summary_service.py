@@ -1,18 +1,14 @@
-import datetime
 import queue
-import threading
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-import pytz
 
 # テスト対象のモジュールをインポート
 from services.summary_service import (
     generate_summary_task,
-    process_summary,
     validate_api_credentials,
     validate_input_text,
     get_session_parameters,
-    execute_summary_generation_with_ui,
     handle_success_result,
     save_usage_to_database,
     normalize_selection_params,
@@ -279,10 +275,8 @@ class TestGenerateSummaryTask:
 
         result_queue = queue.Queue()
 
-        generate_summary_task(
-            TEST_INPUT_TEXT, '内科', 'Claude', result_queue,
-            TEST_ADDITIONAL_INFO, '診療録', '田中医師', False
-        )
+        generate_summary_task(TEST_INPUT_TEXT, '内科', 'Claude', result_queue, TEST_ADDITIONAL_INFO, '診療録',
+                              '田中医師')
 
         result = result_queue.get()
 
@@ -293,7 +287,7 @@ class TestGenerateSummaryTask:
         assert result['output_tokens'] == 200
         assert result['model_detail'] == 'Claude'  # providerが'gemini'以外の場合はfinal_modelが使用される
         assert result['model_switched'] == False
-        assert result['original_model'] == None
+        assert result['original_model'] is None
 
     @patch('services.summary_service.normalize_selection_params')
     def test_generate_summary_task_exception(self, mock_normalize):

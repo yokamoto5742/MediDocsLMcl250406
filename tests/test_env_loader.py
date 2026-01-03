@@ -1,7 +1,8 @@
-import pytest
 import os
-from unittest.mock import patch, Mock
 from pathlib import Path
+from unittest.mock import patch
+
+import pytest
 
 from utils.env_loader import load_environment_variables
 

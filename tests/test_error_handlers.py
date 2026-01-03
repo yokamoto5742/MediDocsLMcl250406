@@ -1,5 +1,4 @@
-import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 
 from utils.error_handlers import handle_error
 from utils.exceptions import AppError, APIError, DatabaseError
@@ -140,7 +139,7 @@ class TestHandleErrorDecorator:
             return "OK"
         
         # 1回目: 正常
-        result1 = test_func(False)
+        result1 = test_func()
         assert result1 == "OK"
         
         # 2回目: エラー
@@ -148,7 +147,7 @@ class TestHandleErrorDecorator:
         assert result2 is None
         
         # 3回目: 正常
-        result3 = test_func(False)
+        result3 = test_func()
         assert result3 == "OK"
         
         # エラーメッセージが1回だけ表示されることを確認
