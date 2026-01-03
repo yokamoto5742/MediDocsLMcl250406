@@ -40,8 +40,6 @@ class GeminiAPIClient(BaseAPIClient):
                         credentials=credentials
                     )
                     
-                    print(f"Vertex AI Client initialized successfully for project: {GOOGLE_PROJECT_ID}")
-                    
                 except json.JSONDecodeError as e:
                     raise APIError(f"GOOGLE_CREDENTIALS_JSON環境変数の解析エラー: {str(e)}")
                 except KeyError as e:
