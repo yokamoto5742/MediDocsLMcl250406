@@ -28,12 +28,17 @@ from utils.text_processor import format_output_summary, parse_output_summary
 JST = pytz.timezone('Asia/Tokyo')
 
 
-def generate_summary_task(input_text: str, selected_department: str, selected_model: str,
-                          result_queue: queue.Queue, additional_info: str = "",
-                          selected_document_type: str = DEFAULT_DOCUMENT_TYPE,
-                          selected_doctor: str = "default",
-                          model_explicitly_selected: bool = False,
-                          previous_record: str = "") -> None:
+def generate_summary_task(
+        input_text: str,
+        selected_department: str,
+        selected_model: str,
+        result_queue: queue.Queue,
+        additional_info: str = "",
+        selected_document_type: str = DEFAULT_DOCUMENT_TYPE,
+        selected_doctor: str = "default",
+        model_explicitly_selected: bool = False,
+        previous_record: str = ""
+) -> None:
     try:
         normalized_dept, normalized_doc_type = normalize_selection_params(
             selected_department, selected_document_type
@@ -133,9 +138,12 @@ def get_session_parameters() -> Dict[str, Any]:
     }
 
 
-def execute_summary_generation_with_ui(input_text: str, additional_info: str,
-                                       session_params: Dict[str, Any],
-                                       previous_record: str = "") -> Dict[str, Any]:
+def execute_summary_generation_with_ui(
+        input_text: str,
+        additional_info: str,
+        session_params: Dict[str, Any],
+        previous_record: str = ""
+) -> Dict[str, Any]:
     start_time = datetime.datetime.now()
     status_placeholder = st.empty()
     result_queue = queue.Queue()
@@ -170,8 +178,11 @@ def execute_summary_generation_with_ui(input_text: str, additional_info: str,
     return result
 
 
-def display_progress_with_timer(thread: threading.Thread, placeholder: st.empty,
-                                start_time: datetime.datetime) -> None:
+def display_progress_with_timer(
+        thread: threading.Thread,
+        placeholder: st.empty,
+        start_time: datetime.datetime
+) -> None:
     elapsed_time = 0
     with st.spinner("作成中..."):
         placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
@@ -192,7 +203,6 @@ def handle_success_result(result: Dict[str, Any], session_params: Dict[str, Any]
 
 
 def save_usage_to_database(result: Dict[str, Any], session_params: Dict[str, Any]) -> None:
-    """使用状況をデータベースに保存する（ORM使用）"""
     try:
         db_manager = DatabaseManager.get_instance()
         now_jst = datetime.datetime.now().astimezone(JST)
@@ -222,9 +232,15 @@ def normalize_selection_params(department: str, document_type: str) -> Tuple[str
     return normalized_dept, normalized_doc_type
 
 
-def determine_final_model(department: str, document_type: str, doctor: str,
-                          selected_model: str, model_explicitly_selected: bool,
-                          input_text: str, additional_info: str) -> Tuple[str, bool, str]:
+def determine_final_model(
+        department: str,
+        document_type: str,
+        doctor: str,
+        selected_model: str,
+        model_explicitly_selected: bool,
+        input_text: str,
+        additional_info: str
+) -> Tuple[str, bool, str]:
     prompt_data = get_prompt(department, document_type, doctor)
     prompt_selected_model = prompt_data.get("selected_model") if prompt_data else None
 

@@ -14,7 +14,7 @@ def minify_json_file(input_path, output_path=None):
     """
     try:
         # JSONファイルを読み込み
-        with open(input_path, 'r', encoding='utf-8') as file:
+        with open(input_path, encoding='utf-8') as file:
             data = json.load(file)
 
         # JSONを一行にまとめる（separatorsでスペースを削除）
@@ -46,7 +46,6 @@ def minify_json_file(input_path, output_path=None):
 
 
 def get_file_path_interactive():
-    """対話的にファイルパスを取得する関数"""
     while True:
         input_path = input("入力JSONファイルのパスを入力してください: ").strip()
 
@@ -140,7 +139,6 @@ def main():
         input_path = get_file_path_interactive()
         output_path = get_output_path_interactive(input_path)
 
-    # JSONファイルをminify
     print(f"\n処理中...")
     success = minify_json_file(input_path, output_path)
 
