@@ -20,12 +20,12 @@ class TestGetConfig:
         mock_config = Mock()
         mock_configparser.return_value = mock_config
         mock_path.return_value.parent.parent = Path('/test/base')
-        
-        with patch('os.path.join', return_value='/test/base/config.ini'):
+
+        with patch('os.path.join', return_value='/test/base/utils/config.ini'):
             result = get_config()
-            
+
         # 検証
-        mock_config.read.assert_called_once_with('/test/base/config.ini', encoding='utf-8')
+        mock_config.read.assert_called_once_with('/test/base/utils/config.ini', encoding='utf-8')
         assert result == mock_config
     
     @patch('utils.config.Path')
@@ -35,12 +35,12 @@ class TestGetConfig:
         mock_config = Mock()
         mock_configparser.return_value = mock_config
         mock_path.return_value.parent.parent = Path('/test/base')
-        
+
         # ファイルが存在しない場合でもConfigParserは例外を投げないため、
         # 正常に動作することを確認
-        with patch('os.path.join', return_value='/nonexistent/config.ini'):
+        with patch('os.path.join', return_value='/nonexistent/utils/config.ini'):
             result = get_config()
-            
+
         assert result == mock_config
 
 
