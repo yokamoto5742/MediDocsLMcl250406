@@ -3,7 +3,7 @@ import os
 from unittest.mock import Mock, patch, MagicMock
 from sqlalchemy.exc import SQLAlchemyError
 
-from database.db import DatabaseManager, get_usage_collection, get_settings_collection
+from database.db import DatabaseManager
 from utils.exceptions import DatabaseError
 
 
@@ -138,122 +138,6 @@ class TestDatabaseManager:
 
         mock_sqlalchemy['session_factory'].assert_called_once()
         assert session == mock_sqlalchemy['session_factory'].return_value
-
-    def test_execute_query_with_fetch(self, mock_config, mock_sqlalchemy):
-        """execute_queryメソッド（fetch=True）のテスト"""
-        db_manager = DatabaseManager.get_instance()
-
-        # モックセッションの設定
-        mock_session = Mock()
-        mock_sqlalchemy['session_factory'].return_value = mock_session
-
-        # モック結果の設定
-        mock_row = Mock()
-        mock_row._mapping = {'id': 1, 'name': 'test'}
-        mock_result = [mock_row]
-        mock_session.execute.return_value = mock_result
-
-        result = db_manager.execute_query("SELECT * FROM test", {'param': 'value'})
-
-        mock_session.execute.assert_called_once()
-        mock_session.commit.assert_called_once()
-        mock_session.close.assert_called_once()
-        assert result == [{'id': 1, 'name': 'test'}]
-
-    def test_execute_query_without_fetch(self, mock_config, mock_sqlalchemy):
-        """execute_queryメソッド（fetch=False）のテスト"""
-        db_manager = DatabaseManager.get_instance()
-
-        mock_session = Mock()
-        mock_sqlalchemy['session_factory'].return_value = mock_session
-
-        result = db_manager.execute_query("INSERT INTO test VALUES (1)", fetch=False)
-
-        mock_session.execute.assert_called_once()
-        mock_session.commit.assert_called_once()
-        mock_session.close.assert_called_once()
-        assert result is None
-
-    def test_execute_query_error_handling(self, mock_config, mock_sqlalchemy):
-        """execute_queryメソッドのエラーハンドリングテスト"""
-        db_manager = DatabaseManager.get_instance()
-
-        mock_session = Mock()
-        mock_sqlalchemy['session_factory'].return_value = mock_session
-        mock_session.execute.side_effect = SQLAlchemyError("Query failed")
-
-        with pytest.raises(DatabaseError, match="クエリ実行中にエラーが発生しました"):
-            db_manager.execute_query("SELECT * FROM test")
-
-        mock_session.rollback.assert_called_once()
-        mock_session.close.assert_called_once()
-
-
-class TestUtilityFunctions:
-    """ユーティリティ関数のテストクラス"""
-
-    @pytest.fixture(autouse=True)
-    def reset_singleton(self):
-        """各テスト前にシングルトンインスタンスをリセット"""
-        DatabaseManager._instance = None
-        DatabaseManager._engine = None
-        DatabaseManager._session_factory = None
-        yield
-
-    @patch('database.db.DatabaseManager.get_instance')
-    def test_get_usage_collection_success(self, mock_get_instance):
-        """get_usage_collection成功テスト"""
-        mock_db_manager = Mock()
-        mock_db_manager.execute_query.return_value = [{'usage': 100}]
-        mock_get_instance.return_value = mock_db_manager
-
-        result = get_usage_collection()
-
-        mock_db_manager.execute_query.assert_called_once_with("SELECT * FROM summary_usage")
-        assert result == [{'usage': 100}]
-
-    @patch('database.db.DatabaseManager.get_instance')
-    def test_get_usage_collection_error(self, mock_get_instance):
-        """get_usage_collectionエラーテスト"""
-        mock_get_instance.side_effect = Exception("Database error")
-
-        with pytest.raises(DatabaseError, match="使用状況の取得に失敗しました"):
-            get_usage_collection()
-
-    @patch('database.db.DatabaseManager.get_instance')
-    def test_get_settings_collection_with_app_type(self, mock_get_instance):
-        """get_settings_collection（app_type指定）のテスト"""
-        mock_db_manager = Mock()
-        mock_db_manager.execute_query.return_value = [{'setting': 'value'}]
-        mock_get_instance.return_value = mock_db_manager
-
-        result = get_settings_collection('web')
-
-        mock_db_manager.execute_query.assert_called_once_with(
-            "SELECT * FROM app_settings WHERE app_type = :app_type",
-            {"app_type": "web"}
-        )
-        assert result == [{'setting': 'value'}]
-
-    @patch('database.db.DatabaseManager.get_instance')
-    def test_get_settings_collection_without_app_type(self, mock_get_instance):
-        """get_settings_collection（app_type未指定）のテスト"""
-        mock_db_manager = Mock()
-        mock_db_manager.execute_query.return_value = [{'setting': 'value'}]
-        mock_get_instance.return_value = mock_db_manager
-
-        result = get_settings_collection()
-
-        mock_db_manager.execute_query.assert_called_once_with("SELECT * FROM app_settings")
-        assert result == [{'setting': 'value'}]
-
-    @patch('database.db.DatabaseManager.get_instance')
-    def test_get_settings_collection_error(self, mock_get_instance):
-        """get_settings_collectionエラーテスト"""
-        mock_get_instance.side_effect = Exception("Database error")
-
-        with pytest.raises(DatabaseError, match="設定の取得に失敗しました"):
-            get_settings_collection()
 
 
 # テスト実行用のconftest.pyファイルに追加する設定例

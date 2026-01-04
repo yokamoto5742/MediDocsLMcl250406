@@ -10,7 +10,6 @@ from utils.exceptions import AppError, DatabaseError
 
 
 def get_db_manager() -> DatabaseManager:
-    """DatabaseManagerのインスタンスを取得する"""
     try:
         return DatabaseManager.get_instance()
     except Exception as e:
@@ -18,17 +17,14 @@ def get_db_manager() -> DatabaseManager:
 
 
 def get_current_datetime() -> datetime.datetime:
-    """現在日時を取得する"""
     return datetime.datetime.now()
 
 
 def get_all_departments() -> List[str]:
-    """全ての診療科を取得する"""
     return DEFAULT_DEPARTMENT
 
 
 def get_all_prompts() -> List[Dict[str, Any]]:
-    """全てのプロンプトを取得する（ORM使用）"""
     try:
         db_manager = get_db_manager()
         return db_manager.query_all(Prompt, order_by=Prompt.department)
@@ -36,19 +32,11 @@ def get_all_prompts() -> List[Dict[str, Any]]:
         raise DatabaseError(f"プロンプト一覧の取得に失敗しました: {str(e)}")
 
 
-def get_prompt(department: str = "default", document_type: str = DEFAULT_DOCUMENT_TYPE,
-               doctor: str = "default") -> Optional[Dict[str, Any]]:
-    """
-    指定条件のプロンプトを取得する（ORM使用）
-
-    Args:
-        department: 診療科
-        document_type: 文書タイプ
-        doctor: 医師名
-
-    Returns:
-        プロンプト情報の辞書、見つからない場合はデフォルトプロンプト
-    """
+def get_prompt(
+        department: str = "default",
+        document_type: str = DEFAULT_DOCUMENT_TYPE,
+        doctor: str = "default"
+) -> Optional[Dict[str, Any]]:
     try:
         db_manager = get_db_manager()
 

@@ -116,7 +116,7 @@ class TestNormalizeSelectionParams:
 class TestGetProviderAndModel:
     """プロバイダーとモデル取得のテストクラス"""
 
-    @patch('services.summary_service.CLAUDE_MODEL', 'claude-3-sonnet')
+    @patch('services.summary_service.ANTHROPIC_MODEL', 'claude-3-sonnet')
     @patch('services.summary_service.GEMINI_MODEL', 'gemini-pro')
     def test_get_provider_and_model_claude(self):
         """Claudeモデルの取得テスト"""
@@ -316,8 +316,10 @@ class TestSaveUsageToDatabase:
     @patch('streamlit.warning')
     def test_save_usage_to_database_success(self, mock_warning, mock_db_manager):
         """データベース保存成功のテスト"""
+        from database.models import SummaryUsage
         mock_db_instance = Mock()
         mock_db_manager.get_instance.return_value = mock_db_instance
+        mock_db_instance.insert.return_value = {"id": 1}
 
         result = {
             'model_detail': 'claude-3-sonnet',
@@ -334,7 +336,9 @@ class TestSaveUsageToDatabase:
 
         save_usage_to_database(result, session_params)
 
-        mock_db_instance.execute_query.assert_called_once()
+        mock_db_instance.insert.assert_called_once()
+        call_args = mock_db_instance.insert.call_args
+        assert call_args[0][0] == SummaryUsage
         mock_warning.assert_not_called()
 
     @patch('services.summary_service.DatabaseManager')

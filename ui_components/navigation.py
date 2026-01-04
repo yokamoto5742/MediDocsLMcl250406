@@ -3,7 +3,7 @@ import streamlit as st
 from database.db import DatabaseManager
 from database.models import AppSetting
 from utils.config import CLAUDE_API_KEY, GEMINI_MODEL, GOOGLE_CREDENTIALS_JSON, PROMPT_MANAGEMENT
-from utils.constants import DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE, DEPARTMENT_DOCTORS_MAPPING, DOCUMENT_TYPES
+from utils.constants import APP_TYPE,DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE, DEPARTMENT_DOCTORS_MAPPING, DOCUMENT_TYPES
 from utils.prompt_manager import get_prompt
 
 
@@ -152,10 +152,7 @@ def render_sidebar():
 
 
 def save_user_settings(department, model, doctor="default", document_type=DEFAULT_DOCUMENT_TYPE):
-    """ユーザー設定を保存する（ORM使用）"""
     try:
-        from utils.constants import APP_TYPE
-
         if department != "default" and department not in DEFAULT_DEPARTMENT:
             department = "default"
 
@@ -181,10 +178,7 @@ def save_user_settings(department, model, doctor="default", document_type=DEFAUL
 
 
 def load_user_settings():
-    """ユーザー設定を読み込む（ORM使用）"""
     try:
-        from utils.constants import APP_TYPE
-
         db_manager = DatabaseManager.get_instance()
         setting_id = f"user_preferences_{APP_TYPE}"
 

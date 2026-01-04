@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from urllib.parse import urlparse
 
 
 def get_config():
@@ -18,8 +19,8 @@ load_dotenv()
 
 def parse_database_url():
     database_url = os.environ.get("DATABASE_URL")
+
     if database_url:
-        from urllib.parse import urlparse
         parsed = urlparse(database_url)
         return {
             "host": parsed.hostname,
@@ -59,7 +60,6 @@ AWS_REGION = os.environ.get("AWS_REGION")
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL")
 
 CLAUDE_API_KEY = True if all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, ANTHROPIC_MODEL]) else None
-CLAUDE_MODEL = ANTHROPIC_MODEL  # モデル名も互換性のため維持
 
 SELECTED_AI_MODEL = os.environ.get("SELECTED_AI_MODEL", "claude")
 

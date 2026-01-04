@@ -11,8 +11,8 @@ from database.db import DatabaseManager
 from database.models import SummaryUsage
 from external_service.api_factory import generate_summary
 from utils.config import (
+    ANTHROPIC_MODEL,
     CLAUDE_API_KEY,
-    CLAUDE_MODEL,
     GEMINI_MODEL,
     GOOGLE_CREDENTIALS_JSON,
     MAX_INPUT_TOKENS,
@@ -263,7 +263,7 @@ def determine_final_model(
 
 def get_provider_and_model(selected_model: str) -> Tuple[str, str]:
     provider_mapping = {
-        "Claude": ("claude", CLAUDE_MODEL),
+        "Claude": ("claude", ANTHROPIC_MODEL),
         "Gemini_Pro": ("gemini", GEMINI_MODEL),
     }
 

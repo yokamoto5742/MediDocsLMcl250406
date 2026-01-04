@@ -143,7 +143,7 @@ class TestEnvironmentVariables:
             assert utils.config.GOOGLE_CREDENTIALS_JSON == 'test_gemini_creds'
             assert utils.config.GEMINI_MODEL == 'gemini-pro'
             assert utils.config.CLAUDE_API_KEY == True  # AWS設定があればTrue
-            assert utils.config.CLAUDE_MODEL == 'claude-3-sonnet'
+            assert utils.config.ANTHROPIC_MODEL == 'claude-3-sonnet'
             assert utils.config.SELECTED_AI_MODEL == 'claude'
     
     def test_token_limits_config(self):
