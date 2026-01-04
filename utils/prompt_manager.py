@@ -40,14 +40,18 @@ def get_prompt(
     try:
         db_manager = get_db_manager()
 
-        prompt = db_manager.query_one(Prompt, {
+        prompt = db_manager.query_one(
+            Prompt,
+            {
             "department": department,
             "document_type": document_type,
             "doctor": doctor
         })
 
         if not prompt:
-            prompt = db_manager.query_one(Prompt, {
+            prompt = db_manager.query_one(
+                Prompt,
+                {
                 "department": "default",
                 "document_type": DEFAULT_DOCUMENT_TYPE,
                 "doctor": "default",
@@ -60,8 +64,13 @@ def get_prompt(
         raise DatabaseError(f"プロンプトの取得に失敗しました: {str(e)}")
 
 
-def create_or_update_prompt(department: str, document_type: str, doctor: str,
-                            content: str, selected_model: Optional[str] = None) -> Tuple[bool, str]:
+def create_or_update_prompt(
+        department: str,
+        document_type: str,
+        doctor: str,
+        content: str,
+        selected_model: Optional[str] = None
+) -> Tuple[bool, str]:
     """
     プロンプトを作成または更新する（ORM使用）
 
@@ -90,14 +99,19 @@ def create_or_update_prompt(department: str, document_type: str, doctor: str,
         existing = db_manager.query_one(Prompt, filters)
 
         if existing:
-            db_manager.update(Prompt, filters, {
+            db_manager.update(
+                Prompt,
+                filters,
+                {
                 "content": content,
                 "selected_model": selected_model
             })
             return True, "プロンプトを更新しました"
         else:
             now = get_current_datetime()
-            db_manager.insert(Prompt, {
+            db_manager.insert(
+                Prompt,
+                {
                 "department": department,
                 "document_type": document_type,
                 "doctor": doctor,
@@ -112,28 +126,23 @@ def create_or_update_prompt(department: str, document_type: str, doctor: str,
     except DatabaseError as e:
         return False, str(e)
     except Exception as e:
-        raise AppError(f"プロンプトの作成/更新中にエラーが発生しました: {str(e)}")
+        raise AppError(f"プロンプトの作成または更新中にエラーが発生しました: {str(e)}")
 
 
-def delete_prompt(department: str, document_type: str, doctor: str) -> Tuple[bool, str]:
-    """
-    プロンプトを削除する（ORM使用）
-
-    Args:
-        department: 診療科
-        document_type: 文書タイプ
-        doctor: 医師名
-
-    Returns:
-        (成功フラグ, メッセージ)のタプル
-    """
+def delete_prompt(
+        department: str,
+        document_type: str,
+        doctor: str
+) -> Tuple[bool, str]:
     try:
         if department == "default" and document_type == DEFAULT_DOCUMENT_TYPE and doctor == "default":
             return False, "デフォルトプロンプトは削除できません"
 
         db_manager = get_db_manager()
 
-        deleted = db_manager.delete(Prompt, {
+        deleted = db_manager.delete(
+            Prompt,
+            {
             "department": department,
             "document_type": document_type,
             "doctor": doctor
@@ -151,11 +160,12 @@ def delete_prompt(department: str, document_type: str, doctor: str) -> Tuple[boo
 
 
 def initialize_default_prompt() -> None:
-    """デフォルトプロンプトを初期化する（ORM使用）"""
     try:
         db_manager = get_db_manager()
 
-        default_prompt = db_manager.query_one(Prompt, {
+        default_prompt = db_manager.query_one(
+            Prompt,
+            {
             "department": "default",
             "document_type": DEFAULT_DOCUMENT_TYPE,
             "doctor": "default",
@@ -167,7 +177,8 @@ def initialize_default_prompt() -> None:
             default_prompt_content = config['PROMPTS']['summary']
             now = get_current_datetime()
 
-            db_manager.insert(Prompt, {
+            db_manager.insert(
+                Prompt, {
                 "department": "default",
                 "document_type": DEFAULT_DOCUMENT_TYPE,
                 "doctor": "default",
@@ -182,7 +193,6 @@ def initialize_default_prompt() -> None:
 
 
 def initialize_database() -> None:
-    """データベースを初期化する（ORM使用）"""
     try:
         init_schema()
         initialize_default_prompt()
@@ -197,7 +207,9 @@ def initialize_database() -> None:
             doctors = DEPARTMENT_DOCTORS_MAPPING.get(dept, ["default"])
             for doctor in doctors:
                 for doc_type in document_types:
-                    existing = db_manager.query_one(Prompt, {
+                    existing = db_manager.query_one(
+                        Prompt,
+                        {
                         "department": dept,
                         "document_type": doc_type,
                         "doctor": doctor
@@ -205,7 +217,9 @@ def initialize_database() -> None:
 
                     if not existing:
                         now = get_current_datetime()
-                        db_manager.insert(Prompt, {
+                        db_manager.insert(
+                            Prompt,
+                            {
                             "department": dept,
                             "document_type": doc_type,
                             "doctor": doctor,
@@ -217,51 +231,3 @@ def initialize_database() -> None:
 
     except Exception as e:
         raise DatabaseError(f"データベースの初期化に失敗しました: {str(e)}")
-
-
-# 後方互換性のための関数（非推奨）
-def get_prompt_collection():
-    """
-    非推奨: DatabaseManagerを直接使用してください
-    """
-    return get_db_manager()
-
-
-def update_document(collection, query_dict, update_data):
-    """
-    非推奨: db_manager.update()を直接使用してください
-    """
-    try:
-        now = get_current_datetime()
-        update_data.update({"updated_at": now})
-
-        if "department" in query_dict:
-            collection.update(Prompt, {"department": query_dict["department"]}, {
-                "content": update_data.get("content"),
-                "updated_at": update_data["updated_at"]
-            })
-        return True
-
-    except Exception as e:
-        raise DatabaseError(f"ドキュメントの更新に失敗しました: {str(e)}")
-
-
-def insert_document(collection, document):
-    """
-    非推奨: db_manager.insert()を直接使用してください
-    """
-    try:
-        now = get_current_datetime()
-        document.update({
-            "created_at": now,
-            "updated_at": now
-        })
-
-        if "department" in document:
-            result = collection.insert(Prompt, document)
-            return result.get("id") if result else None
-
-        return None
-
-    except Exception as e:
-        raise DatabaseError(f"ドキュメントの挿入に失敗しました: {str(e)}")
