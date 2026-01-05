@@ -16,7 +16,7 @@ def clear_inputs():
     st.session_state.clear_input = True
 
     for key in list(st.session_state.keys()):
-        if key.startswith("input_text"):
+        if isinstance(key, str) and key.startswith("input_text"):
             st.session_state[key] = ""
 
 

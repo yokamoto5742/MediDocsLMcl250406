@@ -2,8 +2,8 @@ import streamlit as st
 
 from database.db import DatabaseManager
 from database.models import AppSetting
-from utils.config import CLAUDE_API_KEY, GEMINI_MODEL, GOOGLE_CREDENTIALS_JSON, PROMPT_MANAGEMENT
-from utils.constants import APP_TYPE,DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE, DEPARTMENT_DOCTORS_MAPPING, DOCUMENT_TYPES
+from utils.config import APP_TYPE, CLAUDE_API_KEY, GEMINI_MODEL, GOOGLE_CREDENTIALS_JSON, PROMPT_MANAGEMENT
+from utils.constants import DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE, DEPARTMENT_DOCTORS_MAPPING, DOCUMENT_TYPES
 from utils.prompt_manager import get_prompt
 
 
@@ -89,7 +89,7 @@ def render_sidebar():
     if "selected_document_type" not in st.session_state:
         st.session_state.selected_document_type = document_types[0] if document_types else DEFAULT_DOCUMENT_TYPE
     if len(document_types) > 1:
-        selected_document_type = st.sidebar.selectbox(
+        st.sidebar.selectbox(
             "文書名",
             document_types,
             index=document_types.index(
@@ -99,7 +99,6 @@ def render_sidebar():
         )
     else:
         st.session_state.selected_document_type = document_types[0]
-        selected_document_type = document_types[0]
 
     st.session_state.available_models = []
     if GEMINI_MODEL and GOOGLE_CREDENTIALS_JSON:

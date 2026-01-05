@@ -1,5 +1,3 @@
-from utils.config import APP_TYPE
-
 MESSAGES = {
     "PROMPT_UPDATED": "プロンプトを更新しました",
     "PROMPT_CREATED": "プロンプトを新規作成しました",

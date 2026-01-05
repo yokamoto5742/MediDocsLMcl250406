@@ -6,12 +6,14 @@ from typing import Any, Dict, Tuple
 
 import pytz
 import streamlit as st
+from streamlit.delta_generator import DeltaGenerator
 
 from database.db import DatabaseManager
 from database.models import SummaryUsage
 from external_service.api_factory import generate_summary
 from utils.config import (
     ANTHROPIC_MODEL,
+    APP_TYPE,
     CLAUDE_API_KEY,
     GEMINI_MODEL,
     GOOGLE_CREDENTIALS_JSON,
@@ -19,7 +21,7 @@ from utils.config import (
     MAX_TOKEN_THRESHOLD,
     MIN_INPUT_TOKENS,
 )
-from utils.constants import APP_TYPE, DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE, DOCUMENT_TYPES, MESSAGES
+from utils.constants import DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE, DOCUMENT_TYPES, MESSAGES
 from utils.error_handlers import handle_error
 from utils.exceptions import APIError
 from utils.prompt_manager import get_prompt
@@ -180,7 +182,7 @@ def execute_summary_generation_with_ui(
 
 def display_progress_with_timer(
         thread: threading.Thread,
-        placeholder: st.empty,
+        placeholder: DeltaGenerator,
         start_time: datetime.datetime
 ) -> None:
     elapsed_time = 0
@@ -261,7 +263,7 @@ def determine_final_model(
     return selected_model, model_switched, original_model
 
 
-def get_provider_and_model(selected_model: str) -> Tuple[str, str]:
+def get_provider_and_model(selected_model: str) -> Tuple[str, str | None]:
     provider_mapping = {
         "Claude": ("claude", ANTHROPIC_MODEL),
         "Gemini_Pro": ("gemini", GEMINI_MODEL),

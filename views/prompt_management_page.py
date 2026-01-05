@@ -53,7 +53,6 @@ def prompt_management_ui():
     col1, col2 = st.columns(2)
 
     with col1:
-        previous_doc_type = st.session_state.selected_doc_type_for_prompt
         selected_doc_type = st.selectbox(
             "文書名",
             document_types,
