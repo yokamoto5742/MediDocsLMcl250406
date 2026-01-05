@@ -21,20 +21,13 @@ MODEL_MAPPING = {
 }
 
 
-def get_usage_statistics(start_datetime: datetime.datetime, end_datetime: datetime.datetime,
-                         selected_model: str, selected_document_type: str) -> Dict[str, Any]:
-    """
-    使用統計を取得する（ORM使用）
+def get_usage_statistics(
+        start_datetime: datetime.datetime,
+        end_datetime: datetime.datetime,
+        selected_model: str,
+        selected_document_type: str
+) -> Dict[str, Any]:
 
-    Args:
-        start_datetime: 開始日時
-        end_datetime: 終了日時
-        selected_model: 選択されたモデル
-        selected_document_type: 選択された文書タイプ
-
-    Returns:
-        統計データの辞書
-    """
     db_manager = DatabaseManager.get_instance()
     session = db_manager.get_session()
 
@@ -60,7 +53,6 @@ def get_usage_statistics(start_datetime: datetime.datetime, end_datetime: dateti
             else:
                 filters.append(SummaryUsage.document_types == selected_document_type)
 
-        # 合計統計を取得
         total_query = session.query(
             func.count(SummaryUsage.id).label("count"),
             func.sum(SummaryUsage.input_tokens).label("total_input_tokens"),
@@ -196,7 +188,6 @@ def format_detail_data(records: List[Dict[str, Any]]) -> pd.DataFrame:
 
 @handle_error
 def usage_statistics_ui():
-    """統計情報画面のUI"""
     if st.button("作成画面に戻る", key="back_to_main_from_stats"):
         change_page("main")
         st.rerun()
