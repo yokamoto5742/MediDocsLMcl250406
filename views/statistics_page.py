@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 import pandas as pd
 import pytz
 import streamlit as st
-from sqlalchemy import and_, func, not_
+from sqlalchemy import and_, func
 
 from database.db import DatabaseManager
 from database.models import SummaryUsage
@@ -16,8 +16,8 @@ from utils.exceptions import DatabaseError
 JST = pytz.timezone('Asia/Tokyo')
 
 MODEL_MAPPING = {
-    "Gemini_Pro": {"pattern": "gemini", "exclude": None},
-    "Claude": {"pattern": "claude", "exclude": None},
+    "Gemini_Pro": "gemini",
+    "Claude": "claude",
 }
 
 
@@ -40,11 +40,9 @@ def get_usage_statistics(
 
         # モデルフィルタを追加
         if selected_model != "すべて":
-            model_config = MODEL_MAPPING.get(selected_model)
-            if model_config:
-                filters.append(SummaryUsage.model_detail.ilike(f"%{model_config['pattern']}%"))
-                if model_config["exclude"]:
-                    filters.append(not_(SummaryUsage.model_detail.ilike(f"%{model_config['exclude']}%")))
+            pattern = MODEL_MAPPING.get(selected_model)
+            if pattern:
+                filters.append(SummaryUsage.model_detail.ilike(f"%{pattern}%"))
 
         # 文書タイプフィルタを追加
         if selected_document_type != "すべて":
@@ -157,13 +155,8 @@ def format_detail_data(records: List[Dict[str, Any]]) -> pd.DataFrame:
         model_detail = str(record.get("model_detail", "")).lower()
         model_info = "Gemini_Pro"
 
-        for model_name, config in MODEL_MAPPING.items():
-            pattern = config["pattern"]
-            exclude = config["exclude"]
-
+        for model_name, pattern in MODEL_MAPPING.items():
             if pattern in model_detail:
-                if exclude and exclude in model_detail:
-                    continue
                 model_info = model_name
                 break
 
