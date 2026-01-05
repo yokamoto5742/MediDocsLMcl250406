@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import pandas as pd
 import pytz
@@ -16,8 +16,7 @@ from utils.exceptions import DatabaseError
 JST = pytz.timezone('Asia/Tokyo')
 
 MODEL_MAPPING = {
-    "Gemini_Pro": {"pattern": "gemini", "exclude": "flash"},
-    "Gemini_Flash": {"pattern": "flash", "exclude": None},
+    "Gemini_Pro": {"pattern": "gemini", "exclude": None},
     "Claude": {"pattern": "claude", "exclude": None},
 }
 
@@ -209,7 +208,7 @@ def usage_statistics_ui():
         start_date = st.date_input("開始日", today - datetime.timedelta(days=7))
 
     with col2:
-        models = ["すべて", "Claude", "Gemini_Pro", "Gemini_Flash"]
+        models = ["すべて", "Claude", "Gemini_Pro"]
         selected_model = st.selectbox("AIモデル", models, index=0)
 
     col3, col4 = st.columns(2)

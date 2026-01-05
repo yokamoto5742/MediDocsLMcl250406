@@ -49,4 +49,4 @@ def parse_output_summary(summary_text):
         elif current_section and line and found_section:
             sections[current_section] = line
 
-    return sections
+    return {k: sections.get(k, "") for k in DEFAULT_SECTION_NAMES}
