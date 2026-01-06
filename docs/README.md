@@ -156,6 +156,7 @@ DEPARTMENT_DOCTORS_MAPPING = {
 ├── ui_components/           # UIコンポーネント
 │   └── navigation.py        # ナビゲーション・設定
 ├── utils/                   # ユーティリティ
+│   ├── config.ini           # 設定管理
 │   ├── config.py            # 設定管理
 │   ├── constants.py         # 定数定義
 │   ├── exceptions.py        # 例外クラス
