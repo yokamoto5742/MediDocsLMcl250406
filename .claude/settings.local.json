@@ -87,7 +87,7 @@
         "/c",
         "npx",
         "-y",
-        "vibe-kanban",
+        "vibe-kanban@latest",
         "--mcp"
       ],
       "env": {}
