@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-01-06
+
 ### 追加
 - プロンプト管理機能のORM化：データベース操作をSQLAlchemyORM に統一し、保守性を向上
 - 使用統計ページの機能向上：モデルマッピングを簡略化し、フィルタリングロジックを改善
@@ -33,7 +35,7 @@
 
 ### セキュリティ
 
-## [0.1.0] - 2025-12-04
+## [1.1.0] - 2025-12-04
 
 ### 追加
 - 複数AI API対応：Claude（Anthropic/Bedrock）とGeminiの統合
@@ -52,6 +54,3 @@
 
 ### 削除
 - 不要な依存関係の削除：`pywin32`
-
-[Unreleased]: https://github.com/yokamoto5742-h/MediDocsLMcl/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/yokamoto5742-h/MediDocsLMcl/releases/tag/v0.1.0
