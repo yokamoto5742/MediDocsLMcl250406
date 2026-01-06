@@ -4,6 +4,7 @@ from subprocess import PIPE, run
 
 from database.db import DatabaseManager
 from database.models import Base
+from utils.constants import MESSAGES
 from utils.exceptions import DatabaseError
 
 
@@ -39,7 +40,7 @@ def create_tables():
         Base.metadata.create_all(engine)
         return True
     except Exception as e:
-        raise DatabaseError(f"テーブル作成中にエラーが発生しました: {str(e)}")
+        raise DatabaseError(MESSAGES["DATABASE_TABLE_CREATE_ERROR"].format(error=str(e)))
 
 
 def initialize_database():
@@ -60,4 +61,4 @@ def initialize_database():
             print(f"{wait_time}秒後に再試行します...")
             time.sleep(wait_time)
 
-    raise DatabaseError(f"データベースの初期化に失敗しました: {str(last_error)}")
+    raise DatabaseError(MESSAGES["DATABASE_INIT_FAILED"].format(error=str(last_error)))

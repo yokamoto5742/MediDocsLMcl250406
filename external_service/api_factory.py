@@ -4,6 +4,7 @@ from typing import Union
 from external_service.base_api import BaseAPIClient
 from external_service.claude_api import ClaudeAPIClient
 from external_service.gemini_api import GeminiAPIClient
+from utils.constants import MESSAGES
 from utils.exceptions import APIError
 
 
@@ -19,7 +20,7 @@ class APIFactory:
             try:
                 provider = APIProvider(provider.lower())
             except ValueError:
-                raise APIError(f"未対応のAPIプロバイダー: {provider}")
+                raise APIError(MESSAGES["UNSUPPORTED_API_PROVIDER"].format(provider=provider))
         
         client_mapping = {
             APIProvider.CLAUDE: ClaudeAPIClient,
@@ -29,7 +30,7 @@ class APIFactory:
         if provider in client_mapping:
             return client_mapping[provider]()
         else:
-            raise APIError(f"未対応のAPIプロバイダー: {provider}")
+            raise APIError(MESSAGES["UNSUPPORTED_API_PROVIDER"].format(provider=provider))
     
     @staticmethod
     def generate_summary_with_provider(provider: Union[APIProvider, str],

@@ -18,6 +18,9 @@ MESSAGES = {
     "VERTEX_AI_PROJECT_MISSING": "⚠️ GOOGLE_PROJECT_ID環境変数が設定されていません。",
     "VERTEX_AI_INIT_ERROR": "Vertex AI Gemini API初期化エラー: {error}",
     "VERTEX_AI_API_ERROR": "Vertex AI Gemini API呼び出しエラー: {error}",
+    "VERTEX_AI_CREDENTIALS_JSON_PARSE_ERROR": "GOOGLE_CREDENTIALS_JSON環境変数の解析エラー: {error}",
+    "VERTEX_AI_CREDENTIALS_FIELD_MISSING": "認証情報に必要なフィールドが不足: {error}",
+    "VERTEX_AI_CREDENTIALS_ERROR": "認証情報の作成エラー: {error}",
 
     "AWS_CREDENTIALS_MISSING": "⚠️ AWS認証情報が設定されていません。環境変数を確認してください。",
     "ANTHROPIC_MODEL_MISSING": "⚠️ ANTHROPIC_MODELが設定されていません。環境変数を確認してください。",
@@ -25,6 +28,22 @@ MESSAGES = {
     "BEDROCK_API_ERROR": "Amazon Bedrock Claude API呼び出しエラー: {error}",
 
     "EMPTY_RESPONSE": "レスポンスが空です",
+
+    "UNSUPPORTED_API_PROVIDER": "未対応のAPIプロバイダー: {provider}",
+
+    "DATABASE_URL_PARSE_ERROR": "DATABASE_URLの解析に失敗しました: {error}",
+    "DATABASE_CONNECTION_INFO_MISSING": "PostgreSQL接続情報が設定されていません。環境変数または設定ファイルを確認してください。",
+    "DATABASE_CONNECTION_ERROR": "PostgreSQLへの接続に失敗しました: {error}",
+    "DATABASE_NOT_INITIALIZED": "データベース接続が初期化されていません",
+    "DATABASE_QUERY_ERROR": "クエリ実行中にエラーが発生しました: {error}",
+    "DATABASE_GET_RECORD_ERROR": "レコード取得中にエラーが発生しました: {error}",
+    "DATABASE_INSERT_ERROR": "レコード挿入中にエラーが発生しました: {error}",
+    "DATABASE_UPDATE_ERROR": "レコード更新中にエラーが発生しました: {error}",
+    "DATABASE_UPSERT_ERROR": "レコードのupsert中にエラーが発生しました: {error}",
+    "DATABASE_DELETE_ERROR": "レコード削除中にエラーが発生しました: {error}",
+    "DATABASE_COUNT_ERROR": "カウント実行中にエラーが発生しました: {error}",
+    "DATABASE_TABLE_CREATE_ERROR": "テーブル作成中にエラーが発生しました: {error}",
+    "DATABASE_INIT_FAILED": "データベースの初期化に失敗しました: {error}",
 
     "COPY_INSTRUCTION": "💡 テキストエリアの右上にマウスを合わせて左クリックでコピーできます",
     "PROCESSING_TIME": "⏱️ 処理時間: {processing_time:.0f}秒",

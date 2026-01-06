@@ -41,11 +41,11 @@ class GeminiAPIClient(BaseAPIClient):
                     )
                     
                 except json.JSONDecodeError as e:
-                    raise APIError(f"GOOGLE_CREDENTIALS_JSON環境変数の解析エラー: {str(e)}")
+                    raise APIError(MESSAGES["VERTEX_AI_CREDENTIALS_JSON_PARSE_ERROR"].format(error=str(e)))
                 except KeyError as e:
-                    raise APIError(f"認証情報に必要なフィールドが不足: {str(e)}")
+                    raise APIError(MESSAGES["VERTEX_AI_CREDENTIALS_FIELD_MISSING"].format(error=str(e)))
                 except Exception as e:
-                    raise APIError(f"認証情報の作成エラー: {str(e)}")
+                    raise APIError(MESSAGES["VERTEX_AI_CREDENTIALS_ERROR"].format(error=str(e)))
             else:
                 self.client = genai.Client(
                     vertexai=True,

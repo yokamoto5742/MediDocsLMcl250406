@@ -14,6 +14,7 @@ from utils.config import (
     POSTGRES_SSL,
     POSTGRES_USER,
 )
+from utils.constants import MESSAGES
 from utils.exceptions import DatabaseError
 
 
@@ -47,11 +48,10 @@ class DatabaseManager:
                 connection_string = database_url
 
             except Exception as e:
-                raise DatabaseError(f"DATABASE_URLの解析に失敗しました: {str(e)}")
+                raise DatabaseError(MESSAGES["DATABASE_URL_PARSE_ERROR"].format(error=str(e)))
         else:
             if not all([POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB]):
-                raise DatabaseError(
-                    "PostgreSQL接続情報が設定されていません。環境変数または設定ファイルを確認してください。")
+                raise DatabaseError(MESSAGES["DATABASE_CONNECTION_INFO_MISSING"])
 
             connection_string = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
@@ -75,7 +75,7 @@ class DatabaseManager:
                 conn.execute(text("SELECT 1"))
 
         except Exception as e:
-            raise DatabaseError(f"PostgreSQLへの接続に失敗しました: {str(e)}")
+            raise DatabaseError(MESSAGES["DATABASE_CONNECTION_ERROR"].format(error=str(e)))
 
     @staticmethod
     def get_engine():
@@ -84,7 +84,7 @@ class DatabaseManager:
     @staticmethod
     def get_session():
         if DatabaseManager._session_factory is None:
-            raise DatabaseError("データベース接続が初期化されていません")
+            raise DatabaseError(MESSAGES["DATABASE_NOT_INITIALIZED"])
         return DatabaseManager._session_factory()
 
     def query_all(self, model_class: Type[Base], filters: Optional[Dict[str, Any]] = None,
@@ -117,7 +117,7 @@ class DatabaseManager:
 
         except Exception as e:
             session.rollback()
-            raise DatabaseError(f"クエリ実行中にエラーが発生しました: {str(e)}")
+            raise DatabaseError(MESSAGES["DATABASE_QUERY_ERROR"].format(error=str(e)))
         finally:
             session.close()
 
@@ -145,7 +145,7 @@ class DatabaseManager:
 
         except Exception as e:
             session.rollback()
-            raise DatabaseError(f"クエリ実行中にエラーが発生しました: {str(e)}")
+            raise DatabaseError(MESSAGES["DATABASE_QUERY_ERROR"].format(error=str(e)))
         finally:
             session.close()
 
@@ -167,7 +167,7 @@ class DatabaseManager:
 
         except Exception as e:
             session.rollback()
-            raise DatabaseError(f"レコード取得中にエラーが発生しました: {str(e)}")
+            raise DatabaseError(MESSAGES["DATABASE_GET_RECORD_ERROR"].format(error=str(e)))
         finally:
             session.close()
 
@@ -192,7 +192,7 @@ class DatabaseManager:
 
         except Exception as e:
             session.rollback()
-            raise DatabaseError(f"レコード挿入中にエラーが発生しました: {str(e)}")
+            raise DatabaseError(MESSAGES["DATABASE_INSERT_ERROR"].format(error=str(e)))
         finally:
             session.close()
 
@@ -231,7 +231,7 @@ class DatabaseManager:
 
         except Exception as e:
             session.rollback()
-            raise DatabaseError(f"レコード更新中にエラーが発生しました: {str(e)}")
+            raise DatabaseError(MESSAGES["DATABASE_UPDATE_ERROR"].format(error=str(e)))
         finally:
             session.close()
 
@@ -273,7 +273,7 @@ class DatabaseManager:
 
         except Exception as e:
             session.rollback()
-            raise DatabaseError(f"レコードのupsert中にエラーが発生しました: {str(e)}")
+            raise DatabaseError(MESSAGES["DATABASE_UPSERT_ERROR"].format(error=str(e)))
         finally:
             session.close()
 
@@ -306,7 +306,7 @@ class DatabaseManager:
 
         except Exception as e:
             session.rollback()
-            raise DatabaseError(f"レコード削除中にエラーが発生しました: {str(e)}")
+            raise DatabaseError(MESSAGES["DATABASE_DELETE_ERROR"].format(error=str(e)))
         finally:
             session.close()
 
@@ -334,7 +334,7 @@ class DatabaseManager:
 
         except Exception as e:
             session.rollback()
-            raise DatabaseError(f"カウント実行中にエラーが発生しました: {str(e)}")
+            raise DatabaseError(MESSAGES["DATABASE_COUNT_ERROR"].format(error=str(e)))
         finally:
             session.close()
 

@@ -24,10 +24,10 @@ class ClaudeAPIClient(BaseAPIClient):
     def initialize(self) -> bool:
         try:
             if not all([self.aws_access_key_id, self.aws_secret_access_key, self.aws_region]):
-                raise APIError("AWS認証情報が設定されていません。環境変数を確認してください。")
+                raise APIError(MESSAGES["AWS_CREDENTIALS_MISSING"])
 
             if not self.anthropic_model:
-                raise APIError("ANTHROPIC_MODELが設定されていません。環境変数を確認してください。")
+                raise APIError(MESSAGES["ANTHROPIC_MODEL_MISSING"])
 
             self.client = AnthropicBedrock(
                 aws_access_key=self.aws_access_key_id,
@@ -37,7 +37,7 @@ class ClaudeAPIClient(BaseAPIClient):
             return True
 
         except Exception as e:
-            raise APIError(f"Amazon Bedrock Claude API初期化エラー: {str(e)}")
+            raise APIError(MESSAGES["BEDROCK_INIT_ERROR"].format(error=str(e)))
 
     def _generate_content(self, prompt: str, model_name: str) -> Tuple[str, int, int]:
         """
@@ -62,7 +62,7 @@ class ClaudeAPIClient(BaseAPIClient):
             if response.content:
                 summary_text = response.content[0].text
             else:
-                summary_text = MESSAGES["レスポンスが空です"]
+                summary_text = MESSAGES["EMPTY_RESPONSE"]
 
             input_tokens = response.usage.input_tokens
             output_tokens = response.usage.output_tokens
@@ -70,4 +70,4 @@ class ClaudeAPIClient(BaseAPIClient):
             return summary_text, input_tokens, output_tokens
 
         except Exception as e:
-            raise APIError(MESSAGES["Amazon Bedrock Claude APIエラー"].format(error=str(e)))
+            raise APIError(MESSAGES["BEDROCK_API_ERROR"].format(error=str(e)))
