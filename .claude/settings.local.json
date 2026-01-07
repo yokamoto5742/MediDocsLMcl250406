@@ -78,19 +78,5 @@
         ]
       }
     ]
-  },
-  "mcpServers": {
-    "vibe_kanban": {
-      "type": "stdio",
-      "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "vibe-kanban@latest",
-        "--mcp"
-      ],
-      "env": {}
-    }
   }
 }

@@ -22,7 +22,8 @@ def format_output_summary(summary_text):
 def parse_output_summary(summary_text):
     sections = {section: "" for section in DEFAULT_SECTION_NAMES}
     lines = summary_text.split('\n')
-    current_section = None
+    # 最初のセクションをデフォルトとして設定しスキップを防ぐ
+    current_section = DEFAULT_SECTION_NAMES[0]
 
     for line in lines:
         line = line.strip()
