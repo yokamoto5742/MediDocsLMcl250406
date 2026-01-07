@@ -1,3 +1,5 @@
+import re
+
 from utils.constants import DEFAULT_SECTION_NAMES
 
 section_aliases = {
@@ -25,29 +27,54 @@ def parse_output_summary(summary_text):
     # 最初のセクションをデフォルトとして設定しスキップを防ぐ
     current_section = DEFAULT_SECTION_NAMES[0]
 
+    all_section_names = list(sections.keys()) + list(section_aliases.keys())
+
     for line in lines:
         line = line.strip()
         if not line:
             continue
 
         found_section = False
-        for section in list(sections.keys()) + list(section_aliases.keys()):
-            if section in line:
-                if section in section_aliases:
-                    current_section = section_aliases[section]
-                else:
-                    current_section = section
+        detected_section = None
+        remaining_content = ""
 
-                line = line.replace(section, "").replace(":", "").strip()
-                found_section = True
+        for section in all_section_names:
+            # パターン1: 行頭から始まり、セクション名の後に「:」「：」「】」「」または行末が続く
+            # パターン2: 「【」「■」「●」などの記号で始まる
+            patterns = [
+                rf'^[【\[■●\s]*{re.escape(section)}[】\]\s]*[:：]?\s*(.*)$',  # 【治療経過】: 内容 など
+                rf'^{re.escape(section)}\s*[:：]\s*(.*)$',  # 治療経過: 内容
+                rf'^{re.escape(section)}\s*$',  # 治療経過（行全体がセクション名のみ）
+            ]
+
+            for pattern in patterns:
+                match = re.match(pattern, line)
+                if match:
+                    if section in section_aliases:
+                        detected_section = section_aliases[section]
+                    else:
+                        detected_section = section
+
+                    if match.groups():
+                        remaining_content = match.group(1).strip()
+                    else:
+                        remaining_content = ""
+
+                    found_section = True
+                    break
+
+            if found_section:
                 break
 
-        if current_section and line and not found_section:
+        if found_section:
+            current_section = detected_section
+            if remaining_content:
+                sections[current_section] = remaining_content
+        elif current_section and line:
+            # セクションヘッダーではない行を現在のセクションに追加
             if sections[current_section]:
                 sections[current_section] += "\n" + line
             else:
                 sections[current_section] = line
-        elif current_section and line and found_section:
-            sections[current_section] = line
 
     return {k: sections.get(k, "") for k in DEFAULT_SECTION_NAMES}
