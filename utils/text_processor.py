@@ -1,6 +1,6 @@
 import re
 
-from utils.constants import DEFAULT_SECTION_NAMES
+from utils.constants import DEFAULT_SECTION_NAMES, SECTION_DETECTION_PATTERNS
 
 section_aliases = {
     "治療内容": "治療経過",
@@ -38,12 +38,8 @@ def parse_output_summary(summary_text):
         remaining_content = ""
 
         for section in all_section_names:
-            # パターン1: 行頭から始まり、セクション名の後に「:」「：」「】」「」または行末が続く
-            # パターン2: 「【」「■」「●」などの記号で始まる
             patterns = [
-                rf'^[【\[■●\s]*{re.escape(section)}[】\]\s]*[:：]?\s*(.*)$',  # 【治療経過】: 内容 など
-                rf'^{re.escape(section)}\s*[:：]\s*(.*)$',  # 治療経過: 内容
-                rf'^{re.escape(section)}\s*$',  # 治療経過（行全体がセクション名のみ）
+                pattern.format(section=re.escape(section)) for pattern in SECTION_DETECTION_PATTERNS
             ]
 
             for pattern in patterns:
