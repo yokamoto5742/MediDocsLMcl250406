@@ -1,5 +1,6 @@
 import streamlit as st
 
+from services.evaluation_service import process_evaluation
 from services.summary_service import process_summary
 from utils.constants import MESSAGES, TAB_NAMES
 from utils.error_handlers import handle_error
@@ -13,6 +14,8 @@ def clear_inputs():
     st.session_state.output_summary = ""
     st.session_state.parsed_summary = {}
     st.session_state.summary_generation_time = None
+    st.session_state.evaluation_result = ""
+    st.session_state.evaluation_processing_time = None
     st.session_state.clear_input = True
 
     for key in list(st.session_state.keys()):
@@ -42,13 +45,23 @@ def render_input_section():
         key="additional_info"
     )
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         if st.button("作成", type="primary"):
             process_summary(input_text, additional_info, previous_record)
 
     with col2:
+        if st.session_state.output_summary:
+            if st.button("出力評価"):
+                process_evaluation(
+                    st.session_state.get("previous_record", ""),
+                    st.session_state.get("input_text", ""),
+                    st.session_state.get("additional_info", ""),
+                    st.session_state.output_summary
+                )
+
+    with col3:
         if st.button("テキストをクリア", on_click=clear_inputs):
             pass
 
@@ -80,8 +93,20 @@ def render_summary_results():
             st.info(MESSAGES["PROCESSING_TIME"].format(processing_time=processing_time))
 
 
+def render_evaluation_results():
+    """評価結果をタブの下に表示"""
+    if st.session_state.get("evaluation_result"):
+        st.markdown("---")
+        st.subheader("出力評価結果")
+        st.code(st.session_state.evaluation_result, language=None, height=200)
+
+        if st.session_state.get("evaluation_processing_time"):
+            st.info(f"⏱️ 評価処理時間: {st.session_state.evaluation_processing_time:.0f}秒")
+
+
 @handle_error
 def main_page_app():
     render_sidebar()
     render_input_section()
     render_summary_results()
+    render_evaluation_results()

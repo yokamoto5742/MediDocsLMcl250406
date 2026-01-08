@@ -52,3 +52,13 @@ class SummaryUsage(Base):
     output_tokens = Column(Integer)
     total_tokens = Column(Integer)
     processing_time = Column(Integer)
+
+
+class EvaluationPrompt(Base):
+    __tablename__ = 'evaluation_prompts'
+
+    id = Column(Integer, primary_key=True)
+    content = Column(Text, nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())

@@ -149,6 +149,10 @@ def render_sidebar():
         change_page("statistics")
         st.rerun()
 
+    if st.sidebar.button("出力評価設定", key="sidebar_evaluation_settings"):
+        change_page("evaluation_settings")
+        st.rerun()
+
 
 def save_user_settings(department, model, doctor="default", document_type=DEFAULT_DOCUMENT_TYPE):
     try:

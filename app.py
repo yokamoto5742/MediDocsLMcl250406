@@ -3,9 +3,10 @@ import streamlit as st
 from ui_components.navigation import load_user_settings
 from utils.env_loader import load_environment_variables
 from utils.error_handlers import handle_error
+from views.evaluation_settings_page import evaluation_settings_ui
 from views.main_page import main_page_app
-from views.statistics_page import usage_statistics_ui
 from views.prompt_management_page import prompt_management_ui
+from views.statistics_page import usage_statistics_ui
 
 load_environment_variables()
 
@@ -36,6 +37,10 @@ if "available_models" not in st.session_state:
     st.session_state.available_models = []
 if "summary_generation_time" not in st.session_state:
     st.session_state.summary_generation_time = None
+if "evaluation_result" not in st.session_state:
+    st.session_state.evaluation_result = ""
+if "evaluation_processing_time" not in st.session_state:
+    st.session_state.evaluation_processing_time = None
 
 
 @handle_error
@@ -45,6 +50,9 @@ def main():
         return
     elif st.session_state.current_page == "statistics":
         usage_statistics_ui()
+        return
+    elif st.session_state.current_page == "evaluation_settings":
+        evaluation_settings_ui()
         return
 
     main_page_app()
