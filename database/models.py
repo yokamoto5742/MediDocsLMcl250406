@@ -58,7 +58,12 @@ class EvaluationPrompt(Base):
     __tablename__ = 'evaluation_prompts'
 
     id = Column(Integer, primary_key=True)
+    document_type = Column(String(100), nullable=False)
     content = Column(Text, nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=func.now())
     updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint('document_type', name='unique_evaluation_prompt_per_document_type'),
+    )

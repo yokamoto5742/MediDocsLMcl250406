@@ -15,28 +15,28 @@ from utils.error_handlers import handle_error
 from utils.exceptions import APIError, DatabaseError
 
 
-def get_evaluation_prompt() -> Optional[Dict[str, Any]]:
-    """DBから有効な評価プロンプトを取得"""
+def get_evaluation_prompt(document_type: str) -> Optional[Dict[str, Any]]:
+    """DBから指定された文書種別の評価プロンプトを取得"""
     try:
         db_manager = DatabaseManager.get_instance()
-        return db_manager.query_one(EvaluationPrompt, {"is_active": True})
+        return db_manager.query_one(EvaluationPrompt, {"document_type": document_type})
     except Exception as e:
         raise DatabaseError(f"評価プロンプトの取得に失敗しました: {str(e)}")
 
 
-def create_or_update_evaluation_prompt(content: str) -> Tuple[bool, str]:
+def create_or_update_evaluation_prompt(document_type: str, content: str) -> Tuple[bool, str]:
     """評価プロンプトを作成または更新"""
     try:
         if not content:
             return False, "プロンプト内容を入力してください"
 
         db_manager = DatabaseManager.get_instance()
-        existing = db_manager.query_one(EvaluationPrompt, {"is_active": True})
+        existing = db_manager.query_one(EvaluationPrompt, {"document_type": document_type})
 
         if existing:
             db_manager.update(
                 EvaluationPrompt,
-                {"is_active": True},
+                {"document_type": document_type},
                 {"content": content, "updated_at": datetime.datetime.now()}
             )
             return True, "評価プロンプトを更新しました"
@@ -44,6 +44,7 @@ def create_or_update_evaluation_prompt(content: str) -> Tuple[bool, str]:
             db_manager.insert(
                 EvaluationPrompt,
                 {
+                    "document_type": document_type,
                     "content": content,
                     "is_active": True,
                     "created_at": datetime.datetime.now(),
@@ -80,6 +81,7 @@ def build_evaluation_prompt(
 
 
 def evaluate_output_task(
+    document_type: str,
     previous_record: str,
     input_text: str,
     additional_info: str,
@@ -88,9 +90,9 @@ def evaluate_output_task(
 ) -> None:
     """バックグラウンドで評価を実行するタスク"""
     try:
-        prompt_data = get_evaluation_prompt()
+        prompt_data = get_evaluation_prompt(document_type)
         if not prompt_data:
-            raise APIError("評価プロンプトが設定されていません。出力評価設定から設定してください。")
+            raise APIError(f"{document_type}の評価プロンプトが設定されていません。出力評価設定から設定してください。")
 
         prompt_template = prompt_data.get("content", "")
 
@@ -140,6 +142,7 @@ def display_evaluation_progress(
 
 @handle_error
 def process_evaluation(
+    document_type: str,
     previous_record: str,
     input_text: str,
     additional_info: str,
@@ -162,7 +165,7 @@ def process_evaluation(
 
     evaluation_thread = threading.Thread(
         target=evaluate_output_task,
-        args=(previous_record, input_text, additional_info, output_summary, result_queue)
+        args=(document_type, previous_record, input_text, additional_info, output_summary, result_queue)
     )
     evaluation_thread.start()
 

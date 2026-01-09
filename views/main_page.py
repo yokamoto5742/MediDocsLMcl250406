@@ -2,7 +2,7 @@ import streamlit as st
 
 from services.evaluation_service import process_evaluation
 from services.summary_service import process_summary
-from utils.constants import MESSAGES, TAB_NAMES
+from utils.constants import DEFAULT_DOCUMENT_TYPE, MESSAGES, TAB_NAMES
 from utils.error_handlers import handle_error
 from ui_components.navigation import render_sidebar
 
@@ -54,7 +54,9 @@ def render_input_section():
     with col2:
         if st.session_state.output_summary:
             if st.button("出力評価"):
+                document_type = st.session_state.get("selected_document_type", DEFAULT_DOCUMENT_TYPE)
                 process_evaluation(
+                    document_type,
                     st.session_state.get("previous_record", ""),
                     st.session_state.get("input_text", ""),
                     st.session_state.get("additional_info", ""),
