@@ -33,15 +33,15 @@ def evaluation_settings_ui():
     existing_content = prompt_data.get("content", "") if prompt_data else ""
 
     if not existing_content:
-        st.info("出力評価用プロンプトが設定されていません。デフォルトプロンプトを参考に設定してください。")
+        st.info("評価プロンプトが設定されていません。デフォルトプロンプトを参考に設定してください。")
 
     with st.form(key="evaluation_prompt_form"):
         prompt_content = st.text_area(
-            "出力評価用プロンプト",
+            "評価プロンプト",
             value=existing_content if existing_content else DEFAULT_EVALUATION_PROMPT,
             height=400,
             key="evaluation_prompt_content",
-            help="出力評価用プロンプトを入力してください"
+            help="評価プロンプトを入力してください"
         )
 
         submit = st.form_submit_button("保存", type="primary")
