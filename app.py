@@ -16,6 +16,16 @@ st.set_page_config(
     layout="wide"
 )
 
+st.markdown("""
+    <style>
+    div[data-testid="stCode"] code {
+        white-space: pre-wrap !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 if "output_summary" not in st.session_state:
     st.session_state.output_summary = ""
 if "parsed_summary" not in st.session_state:
