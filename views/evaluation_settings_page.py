@@ -34,20 +34,19 @@ DEFAULT_EVALUATION_PROMPTS = {
 
 
 def _render_evaluation_form(document_type: str) -> None:
-    """文書種別ごとの評価プロンプトフォームを表示"""
     prompt_data = get_evaluation_prompt(document_type)
     existing_content = prompt_data.get("content", "") if prompt_data else ""
 
     if not existing_content:
-        st.info(f"{document_type}の評価プロンプトが設定されていません。デフォルトプロンプトを参考に設定してください。")
+        st.info(f"{document_type}の評価プロンプトを設定してください。")
 
     default_prompt = DEFAULT_EVALUATION_PROMPTS.get(document_type, "")
 
     with st.form(key=f"evaluation_prompt_form_{document_type}"):
         prompt_content = st.text_area(
-            "評価プロンプト",
+            "プロンプト内容",
             value=existing_content if existing_content else default_prompt,
-            height=400,
+            height=200,
             key=f"evaluation_prompt_content_{document_type}",
             help="評価プロンプトを入力してください"
         )

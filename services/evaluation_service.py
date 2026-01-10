@@ -16,7 +16,7 @@ from utils.exceptions import APIError, DatabaseError
 
 
 def get_evaluation_prompt(document_type: str) -> Optional[Dict[str, Any]]:
-    """DBから指定された文書種別の評価プロンプトを取得"""
+    """文書種別の評価プロンプトを取得"""
     try:
         db_manager = DatabaseManager.get_instance()
         return db_manager.query_one(EvaluationPrompt, {"document_type": document_type})
@@ -25,10 +25,9 @@ def get_evaluation_prompt(document_type: str) -> Optional[Dict[str, Any]]:
 
 
 def create_or_update_evaluation_prompt(document_type: str, content: str) -> Tuple[bool, str]:
-    """評価プロンプトを作成または更新"""
     try:
         if not content:
-            return False, "プロンプト内容を入力してください"
+            return False, "プロンプトを入力してください"
 
         db_manager = DatabaseManager.get_instance()
         existing = db_manager.query_one(EvaluationPrompt, {"document_type": document_type})
@@ -63,7 +62,6 @@ def build_evaluation_prompt(
     additional_info: str,
     output_summary: str
 ) -> str:
-    """評価用の完全なプロンプトを構築"""
     return f"""{prompt_template}
 
 【前回の記載】
@@ -88,7 +86,6 @@ def evaluate_output_task(
     output_summary: str,
     result_queue: queue.Queue
 ) -> None:
-    """バックグラウンドで評価を実行するタスク"""
     try:
         prompt_data = get_evaluation_prompt(document_type)
         if not prompt_data:
@@ -130,7 +127,6 @@ def display_evaluation_progress(
     placeholder: DeltaGenerator,
     start_time: datetime.datetime
 ) -> None:
-    """評価中の進捗を表示"""
     elapsed_time = 0
     with st.spinner("評価中..."):
         placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
@@ -148,7 +144,6 @@ def process_evaluation(
     additional_info: str,
     output_summary: str
 ) -> None:
-    """評価処理のメインエントリーポイント"""
     if not GOOGLE_CREDENTIALS_JSON:
         raise APIError("Gemini APIの認証情報が設定されていません。")
 
