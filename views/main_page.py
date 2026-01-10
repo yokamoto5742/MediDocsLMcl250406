@@ -54,14 +54,7 @@ def render_input_section():
     with col2:
         if st.session_state.output_summary:
             if st.button("出力評価"):
-                document_type = st.session_state.get("selected_document_type", DEFAULT_DOCUMENT_TYPE)
-                process_evaluation(
-                    document_type,
-                    st.session_state.get("previous_record", ""),
-                    st.session_state.get("input_text", ""),
-                    st.session_state.get("additional_info", ""),
-                    st.session_state.output_summary
-                )
+                st.session_state.run_evaluation = True
 
     with col3:
         if st.button("テキストをクリア", on_click=clear_inputs):
@@ -111,4 +104,17 @@ def main_page_app():
     render_sidebar()
     render_input_section()
     render_summary_results()
+
+    if st.session_state.get("run_evaluation"):
+        document_type = st.session_state.get("selected_document_type", DEFAULT_DOCUMENT_TYPE)
+        process_evaluation(
+            document_type,
+            st.session_state.get("previous_record", ""),
+            st.session_state.get("input_text", ""),
+            st.session_state.get("additional_info", ""),
+            st.session_state.output_summary
+        )
+        st.session_state.run_evaluation = False
+        st.rerun()
+
     render_evaluation_results()
