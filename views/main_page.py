@@ -16,6 +16,7 @@ def clear_inputs():
     st.session_state.summary_generation_time = None
     st.session_state.evaluation_result = ""
     st.session_state.evaluation_processing_time = None
+    st.session_state.evaluation_just_completed = False
     st.session_state.clear_input = True
 
     for key in list(st.session_state.keys()):
@@ -61,6 +62,10 @@ def render_input_section():
             pass
 
     evaluation_progress_placeholder = st.empty()
+
+    if st.session_state.get("evaluation_just_completed"):
+        st.info(MESSAGES["EVALUATION_COMPLETED"])
+
     return evaluation_progress_placeholder
 
 
@@ -93,6 +98,9 @@ def render_summary_results():
 
 def render_evaluation_results():
     if st.session_state.get("evaluation_result"):
+        if st.session_state.get("evaluation_just_completed"):
+            st.session_state.evaluation_just_completed = False
+
         st.markdown("---")
         st.code(st.session_state.evaluation_result, language=None, height=200)
 

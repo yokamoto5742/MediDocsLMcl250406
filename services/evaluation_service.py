@@ -174,5 +174,6 @@ def process_evaluation(
         st.session_state.evaluation_result = result["evaluation_result"]
         processing_time = (datetime.datetime.now() - start_time).total_seconds()
         st.session_state.evaluation_processing_time = processing_time
+        st.session_state.evaluation_just_completed = True
     else:
         raise APIError(f"評価中にエラーが発生しました: {result['error']}")

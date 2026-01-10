@@ -47,6 +47,7 @@ MESSAGES = {
 
     "COPY_INSTRUCTION": "💡 テキストエリアの右上にマウスを合わせて左クリックでコピーできます",
     "PROCESSING_TIME": "⏱️ 処理時間: {processing_time:.0f}秒",
+    "EVALUATION_COMPLETED": "評価が完了しました。画面を下までスクロールしてください。",
 }
 
 TAB_NAMES = {
