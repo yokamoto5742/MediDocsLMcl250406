@@ -35,7 +35,7 @@ def _render_evaluation_form(document_type: str) -> None:
 
         submit = st.form_submit_button("保存", type="primary")
 
-        if submit:
+        if submit and prompt_content:
             success, message = create_or_update_evaluation_prompt(document_type, prompt_content)
             if success:
                 st.session_state.success_message = message

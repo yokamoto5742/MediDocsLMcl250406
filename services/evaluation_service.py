@@ -129,11 +129,11 @@ def display_evaluation_progress(
 ) -> None:
     elapsed_time = 0
     with st.spinner("評価中..."):
-        placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
+        placeholder.text(f"⏱️ 評価時間: {elapsed_time}秒")
         while thread.is_alive():
             time.sleep(1)
             elapsed_time = int((datetime.datetime.now() - start_time).total_seconds())
-            placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
+            placeholder.text(f"⏱️ 評価時間: {elapsed_time}秒")
 
 
 @handle_error
@@ -142,7 +142,8 @@ def process_evaluation(
     previous_record: str,
     input_text: str,
     additional_info: str,
-    output_summary: str
+    output_summary: str,
+    progress_placeholder: DeltaGenerator
 ) -> None:
     if not GOOGLE_CREDENTIALS_JSON:
         raise APIError("Gemini APIの認証情報が設定されていません。")
@@ -155,7 +156,6 @@ def process_evaluation(
         return
 
     start_time = datetime.datetime.now()
-    status_placeholder = st.empty()
     result_queue = queue.Queue()
 
     evaluation_thread = threading.Thread(
@@ -164,10 +164,10 @@ def process_evaluation(
     )
     evaluation_thread.start()
 
-    display_evaluation_progress(evaluation_thread, status_placeholder, start_time)
+    display_evaluation_progress(evaluation_thread, progress_placeholder, start_time)
 
     evaluation_thread.join()
-    status_placeholder.empty()
+    progress_placeholder.empty()
     result = result_queue.get()
 
     if result["success"]:

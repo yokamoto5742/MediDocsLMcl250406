@@ -60,6 +60,9 @@ def render_input_section():
         if st.button("テキストをクリア", on_click=clear_inputs):
             pass
 
+    evaluation_progress_placeholder = st.empty()
+    return evaluation_progress_placeholder
+
 
 def render_summary_results():
     if st.session_state.output_summary:
@@ -100,7 +103,7 @@ def render_evaluation_results():
 @handle_error
 def main_page_app():
     render_sidebar()
-    render_input_section()
+    evaluation_progress_placeholder = render_input_section()
     render_summary_results()
 
     if st.session_state.get("run_evaluation"):
@@ -110,7 +113,8 @@ def main_page_app():
             st.session_state.get("previous_record", ""),
             st.session_state.get("input_text", ""),
             st.session_state.get("additional_info", ""),
-            st.session_state.output_summary
+            st.session_state.output_summary,
+            evaluation_progress_placeholder
         )
         st.session_state.run_evaluation = False
         st.rerun()

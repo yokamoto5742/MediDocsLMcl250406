@@ -187,11 +187,11 @@ def display_progress_with_timer(
 ) -> None:
     elapsed_time = 0
     with st.spinner("作成中..."):
-        placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
+        placeholder.text(f"⏱️ 作成時間: {elapsed_time}秒")
         while thread.is_alive():
             time.sleep(1)
             elapsed_time = int((datetime.datetime.now() - start_time).total_seconds())
-            placeholder.text(f"⏱️ 経過時間: {elapsed_time}秒")
+            placeholder.text(f"⏱️ 作成時間: {elapsed_time}秒")
 
 
 def handle_success_result(result: Dict[str, Any], session_params: Dict[str, Any]) -> None:
