@@ -89,14 +89,12 @@ def render_summary_results():
 
 
 def render_evaluation_results():
-    """評価結果をタブの下に表示"""
     if st.session_state.get("evaluation_result"):
         st.markdown("---")
-        st.subheader("出力評価結果")
         st.code(st.session_state.evaluation_result, language=None, height=200)
 
         if st.session_state.get("evaluation_processing_time"):
-            st.info(f"⏱️ 評価処理時間: {st.session_state.evaluation_processing_time:.0f}秒")
+            st.info(f"⏱️ 評価時間: {st.session_state.evaluation_processing_time:.0f}秒")
 
 
 @handle_error
