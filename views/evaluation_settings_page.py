@@ -2,35 +2,17 @@ import streamlit as st
 
 from services.evaluation_service import create_or_update_evaluation_prompt, get_evaluation_prompt
 from ui_components.navigation import change_page
-from utils.constants import DOCUMENT_TYPES
+from utils.config import get_config
+from utils.constants import DEFAULT_DOCUMENT_TYPE, DOCUMENT_TYPES
 from utils.error_handlers import handle_error
 from utils.exceptions import AppError
 
 
-DEFAULT_EVALUATION_PROMPTS = {
-    "主治医意見書": """以下の主治医意見書の出力を評価してください。
-
-評価基準:
-1. 正確性: 入力情報が正確に反映されているか
-2. 完全性: 必要な情報が漏れなく含まれているか
-3. 一貫性: 前回の記載との一貫性があるか
-4. 文書構造: 適切なセクション分けがされているか
-5. 専門性: 医療文書として適切な表現が使用されているか
-
-各評価基準について5段階で評価し、改善点があれば具体的に指摘してください。
-""",
-    "訪問看護指示書": """以下の訪問看護指示書の出力を評価してください。
-
-評価基準:
-1. 正確性: 入力情報が正確に反映されているか
-2. 完全性: 訪問看護に必要な指示内容が網羅されているか
-3. 一貫性: 前回の記載との一貫性があるか
-4. 指示内容の明確性: 看護師が実施すべき内容が明確に記載されているか
-5. 専門性: 医療文書として適切な表現が使用されているか
-
-各評価基準について5段階で評価し、改善点があれば具体的に指摘してください。
-"""
-}
+def _get_default_evaluation_prompts() -> dict:
+    config = get_config()
+    if config.has_section("EVALUATION_PROMPTS"):
+        return dict(config.items("EVALUATION_PROMPTS"))
+    return {}
 
 
 def _render_evaluation_form(document_type: str) -> None:
@@ -40,7 +22,7 @@ def _render_evaluation_form(document_type: str) -> None:
     if not existing_content:
         st.info(f"{document_type}の評価プロンプトを設定してください。")
 
-    default_prompt = DEFAULT_EVALUATION_PROMPTS.get(document_type, "")
+    default_prompt = _get_default_evaluation_prompts().get(document_type, "")
 
     with st.form(key=f"evaluation_prompt_form_{document_type}"):
         prompt_content = st.text_area(
@@ -64,6 +46,13 @@ def _render_evaluation_form(document_type: str) -> None:
 
 @handle_error
 def evaluation_settings_ui():
+    if "selected_doc_type_for_evaluation" not in st.session_state:
+        st.session_state.selected_doc_type_for_evaluation = DEFAULT_DOCUMENT_TYPE
+
+    document_types = DOCUMENT_TYPES
+    if not document_types:
+        document_types = [DEFAULT_DOCUMENT_TYPE]
+
     if st.session_state.get("success_message"):
         st.success(st.session_state.success_message)
         st.session_state.success_message = None
@@ -72,8 +61,12 @@ def evaluation_settings_ui():
         change_page("main")
         st.rerun()
 
-    tabs = st.tabs(DOCUMENT_TYPES)
+    selected_doc_type = st.selectbox(
+        "文書名",
+        document_types,
+        index=document_types.index(st.session_state.selected_doc_type_for_evaluation) if st.session_state.selected_doc_type_for_evaluation in document_types else 0,
+        key="evaluation_document_type_selector"
+    )
+    st.session_state.selected_doc_type_for_evaluation = selected_doc_type
 
-    for i, document_type in enumerate(DOCUMENT_TYPES):
-        with tabs[i]:
-            _render_evaluation_form(document_type)
+    _render_evaluation_form(selected_doc_type)
