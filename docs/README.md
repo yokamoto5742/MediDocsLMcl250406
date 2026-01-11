@@ -81,7 +81,6 @@ GOOGLE_CREDENTIALS_JSON={"type":"service_account","project_id":"your-project"...
 GOOGLE_PROJECT_ID=your-google-cloud-project-id
 GOOGLE_LOCATION=us-central1
 GEMINI_MODEL=gemini-2.0-flash-thinking-exp
-GEMINI_THINKING_BUDGET=10000
 
 # トークン制限設定
 MAX_INPUT_TOKENS=200000
