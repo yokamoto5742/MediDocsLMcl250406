@@ -8,6 +8,12 @@
 - **主治医意見書**と**訪問看護指示書**の文書の自動生成
 - 前回の記載、カルテ情報、追加情報を入力するだけで高精度な文書を作成
 - 生成結果は「全文」「治療経過」「特記事項」「備考」のタブ形式で表示
+- 改行と折り返しが適切に表示されるコードブロック対応
+
+### 🔍 文書評価機能
+- 生成された医療文書を自動評価
+- 評価進捗表示と処理時間の表示機能
+- 評価完了時のメッセージ通知機能
 
 ### 🤖 複数AIモデル対応
 - **Claude** (Anthropic)
@@ -116,7 +122,12 @@ streamlit run app.py
 3. プロンプト内容を編集
 4. **「保存」**をクリック
 
-#### 3.統計情報確認
+#### 3. 文書評価設定
+1. サイドバーの**「評価設定」**をクリック
+2. 文書タイプごとの評価プロンプントを設定
+3. 評価ルールをカスタマイズ
+
+#### 4. 統計情報確認
 1. サイドバーの**「統計情報」**をクリック
 2. 期間、モデル、文書タイプで絞り込み
 3. 使用状況と詳細レコードを確認
@@ -151,8 +162,10 @@ DEPARTMENT_DOCTORS_MAPPING = {
 │   ├── base_api.py          # 基底APIクラス
 │   ├── claude_api.py        # Claude API
 │   ├── gemini_api.py        # Gemini API
+│   └── gemini_evaluation.py # 文書評価用API
 ├── services/                # ビジネスロジック
-│   └── summary_service.py   # サマリー生成サービス
+│   ├── summary_service.py   # サマリー生成サービス
+│   └── evaluation_service.py# 文書評価サービス
 ├── ui_components/           # UIコンポーネント
 │   └── navigation.py        # ナビゲーション・設定
 ├── utils/                   # ユーティリティ
@@ -165,12 +178,14 @@ DEPARTMENT_DOCTORS_MAPPING = {
 └── views/                   # ページビュー
     ├── main_page.py         # メインページ
     ├── prompt_management_page.py  # プロンプト管理
+    ├── evaluation_settings_page.py# 評価設定ページ
     └── statistics_page.py   # 統計ページ
 ```
 
 ### データベーステーブル
 - **prompts**: プロンプト管理
 - **summary_usage**: 使用統計
+- **evaluation_prompts**: 文書評価プロンプト
 - **app_settings**: アプリケーション設定
 
 ### APIクライアント追加
@@ -179,6 +194,15 @@ DEPARTMENT_DOCTORS_MAPPING = {
 1. `external_service/`に新しいAPIクライアントを作成
 2. `BaseAPIClient`を継承
 3. `api_factory.py`にプロバイダーを追加
+
+### 文書評価機能
+文書評価機能は以下のコンポーネントで構成されています：
+- **evaluation_service.py**: 評価プロンプトの管理と評価実行
+- **gemini_evaluation.py**: Gemini APIによる文書評価
+- **evaluation_settings_page.py**: 評価プロンプト設定UI
+- **evaluation_prompts テーブル**: 文書タイプごとの評価ルール保存
+
+評価は非同期で実行され、進捗表示と処理時間を表示します。
 
 ## トラブルシューティング
 
@@ -199,6 +223,11 @@ DEPARTMENT_DOCTORS_MAPPING = {
 - 入力テキストの長さを調整
 - `MAX_TOKEN_THRESHOLD`の値を調整
 - Gemini APIを有効にして自動切り替えを利用
+
+#### 文書評価エラー
+- 評価設定ページで評価プロンプントが正しく設定されているか確認
+- Gemini APIの認証情報が正しく設定されているか確認
+- 文書タイプが評価プロンプントデータベースに登録されているか確認
 
 ### ログ確認
 アプリケーションのログはコンソールに出力されます。エラーの詳細は実行時のログを確認してください。

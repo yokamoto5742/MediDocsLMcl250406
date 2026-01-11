@@ -24,7 +24,14 @@
       "Bash(move teststest_indexed_file_searcher.py testsservice )",
       "Bash(move teststest_file_opener.py testsservice )",
       "Bash(move teststest_handlers.py testsservice)",
-      "Bash(python -m pytest tests/ -v --tb=short --disable-warnings)"
+      "Bash(python -m pytest tests/ -v --tb=short --disable-warnings)",
+      "mcp__plugin_serena_serena__get_current_config",
+      "mcp__plugin_serena_serena__check_onboarding_performed",
+      "mcp__plugin_serena_serena__list_dir",
+      "mcp__plugin_serena_serena__find_symbol",
+      "mcp__plugin_serena_serena__read_file",
+      "mcp__plugin_serena_serena__list_memories",
+      "mcp__plugin_serena_serena__search_for_pattern"
     ],
     "deny": [
       "Bash(sudo:*)",
@@ -55,6 +62,7 @@
     ],
     "ask": []
   },
+  "enableAllProjectMcpServers": True,
   "hooks": {
     "Stop": [
       {
