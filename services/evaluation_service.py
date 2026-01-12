@@ -16,7 +16,6 @@ from utils.exceptions import APIError, DatabaseError
 
 
 def get_evaluation_prompt(document_type: str) -> Optional[Dict[str, Any]]:
-    """文書種別の評価プロンプトを取得"""
     try:
         db_manager = DatabaseManager.get_instance()
         return db_manager.query_one(EvaluationPrompt, {"document_type": document_type})
@@ -27,7 +26,7 @@ def get_evaluation_prompt(document_type: str) -> Optional[Dict[str, Any]]:
 def create_or_update_evaluation_prompt(document_type: str, content: str) -> Tuple[bool, str]:
     try:
         if not content:
-            return False, "プロンプトを入力してください"
+            return False, "評価プロンプトを作成してください"
 
         db_manager = DatabaseManager.get_instance()
         existing = db_manager.query_one(EvaluationPrompt, {"document_type": document_type})

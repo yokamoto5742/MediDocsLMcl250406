@@ -20,16 +20,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # document_typeカラムを追加（既存レコードには主治医意見書を設定）
     op.add_column(
         'evaluation_prompts',
         sa.Column('document_type', sa.String(100), nullable=True)
     )
 
-    # 既存レコードに主治医意見書を設定
     op.execute("UPDATE evaluation_prompts SET document_type = '主治医意見書' WHERE document_type IS NULL")
 
-    # NOT NULL制約を追加
     op.alter_column('evaluation_prompts', 'document_type', nullable=False)
 
     # ユニーク制約を追加

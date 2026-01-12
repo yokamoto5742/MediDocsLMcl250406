@@ -62,7 +62,6 @@
     ],
     "ask": []
   },
-  "enableAllProjectMcpServers": True,
   "hooks": {
     "Stop": [
       {
