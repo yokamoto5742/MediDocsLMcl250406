@@ -4,7 +4,7 @@ from typing import Union
 from external_service.base_api import BaseAPIClient
 from external_service.claude_api import ClaudeAPIClient
 from external_service.gemini_api import GeminiAPIClient
-from utils.constants import MESSAGES
+from utils.constants import DEFAULT_DOCUMENT_TYPE, MESSAGES
 from utils.exceptions import APIError
 
 
@@ -37,7 +37,7 @@ class APIFactory:
                                      medical_text: str,
                                      additional_info: str = "",
                                      department: str = "default",
-                                     document_type: str = "主治医意見書",
+                                     document_type: str = DEFAULT_DOCUMENT_TYPE,
                                      doctor: str = "default",
                                      model_name: str = None,
                                      previous_record: str = ""):
