@@ -1,3 +1,15 @@
+DEFAULT_DEPARTMENT = ["default"]
+DEFAULT_DOCTOR = ["default"]
+DEFAULT_DOCUMENT_TYPE = "主治医意見書"
+DEFAULT_SECTION_NAMES = ["治療経過", "特記事項", "備考"]
+
+DEPARTMENT_DOCTORS_MAPPING = {
+    "default": ["default"],
+}
+
+DOCUMENT_TYPE_OPTIONS = ["すべて", "主治医意見書", "訪問看護指示書"]
+DOCUMENT_TYPES = ["主治医意見書", "訪問看護指示書"]
+
 MESSAGES = {
     "PROMPT_UPDATED": "プロンプトを更新しました",
     "PROMPT_CREATED": "プロンプトを新規作成しました",
@@ -50,30 +62,18 @@ MESSAGES = {
     "EVALUATION_COMPLETED": "評価が完了しました。画面を下までスクロールしてください。",
 }
 
+# 【治療経過】: 内容 など(改行含む)
+# 治療経過: 内容 など(改行含む)
+# 治療経過(行全体がセクション名のみ)
+SECTION_DETECTION_PATTERNS = [
+    r'^[【\[■●\s]*{section}[】\]\s]*[::]?\s*(.*)$',
+    r'^{section}\s*[::]?\s*(.*)$',
+    r'^{section}\s*$',
+]
+
 TAB_NAMES = {
     "ALL": "全文",
     "TREATMENT": "治療経過",
     "SPECIAL": "特記事項",
     "NOTE": "備考"
 }
-
-DEFAULT_SECTION_NAMES = ["治療経過", "特記事項", "備考"]
-
-DEFAULT_DEPARTMENT = ["default"]
-DEFAULT_DOCTOR = ["default"]
-DEFAULT_DOCUMENT_TYPE = "主治医意見書"
-DOCUMENT_TYPES = ["主治医意見書", "訪問看護指示書"]
-DOCUMENT_TYPE_OPTIONS = ["すべて", "主治医意見書", "訪問看護指示書"]
-
-DEPARTMENT_DOCTORS_MAPPING = {
-    "default": ["default"],
-}
-
-# 【治療経過】: 内容 など(改行含む)
-# 治療経過: 内容 など(改行含む)
-# 治療経過（行全体がセクション名のみ）
-SECTION_DETECTION_PATTERNS = [
-    r'^[【\[■●\s]*{section}[】\]\s]*[::]?\s*(.*)$',
-    r'^{section}\s*[::]?\s*(.*)$',
-    r'^{section}\s*$',
-]
