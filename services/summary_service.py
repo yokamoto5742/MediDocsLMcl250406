@@ -103,7 +103,7 @@ def process_summary(input_text: str, additional_info: str = "", previous_record:
         if result["success"]:
             handle_success_result(result, session_params)
         else:
-            raise result['error']
+            raise APIError(result['error'])
 
     except Exception as e:
         raise APIError(f"作成中にエラーが発生しました: {str(e)}")
@@ -218,7 +218,6 @@ def save_usage_to_database(result: Dict[str, Any], session_params: Dict[str, Any
             "doctor": session_params["selected_doctor"],
             "input_tokens": result["input_tokens"],
             "output_tokens": result["output_tokens"],
-            "total_tokens": result["input_tokens"] + result["output_tokens"],
             "processing_time": round(result["processing_time"])
         }
 
