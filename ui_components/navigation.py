@@ -2,7 +2,7 @@ import streamlit as st
 
 from database.db import DatabaseManager
 from database.models import AppSetting
-from utils.config import APP_TYPE, CLAUDE_API_KEY, GEMINI_MODEL, GOOGLE_CREDENTIALS_JSON, PROMPT_MANAGEMENT
+from utils.config import CLAUDE_API_KEY, GEMINI_MODEL, GOOGLE_CREDENTIALS_JSON, PROMPT_MANAGEMENT
 from utils.constants import DEFAULT_DEPARTMENT, DEFAULT_DOCUMENT_TYPE, DEPARTMENT_DOCTORS_MAPPING, DOCUMENT_TYPES
 from utils.prompt_manager import get_prompt
 
@@ -160,11 +160,10 @@ def save_user_settings(department, model, doctor="default", document_type=DEFAUL
             department = "default"
 
         db_manager = DatabaseManager.get_instance()
-        setting_key = f"user_preferences_{APP_TYPE}"
+        setting_key = "user_preferences_default"
 
         filters = {
-            "setting_key": setting_key,
-            "app_type": APP_TYPE
+            "setting_key": setting_key
         }
 
         data = {
@@ -183,7 +182,7 @@ def save_user_settings(department, model, doctor="default", document_type=DEFAUL
 def load_user_settings():
     try:
         db_manager = DatabaseManager.get_instance()
-        setting_key = f"user_preferences_{APP_TYPE}"
+        setting_key = "user_preferences_default"
 
         settings = db_manager.query_one(AppSetting, {"setting_key": setting_key})
 
