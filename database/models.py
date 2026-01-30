@@ -50,7 +50,6 @@ class SummaryUsage(Base):
     doctor = Column(String(100))
     input_tokens = Column(Integer)
     output_tokens = Column(Integer)
-    total_tokens = Column(Integer)
     processing_time = Column(Integer)
 
 

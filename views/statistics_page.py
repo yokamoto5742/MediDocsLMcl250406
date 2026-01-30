@@ -55,7 +55,7 @@ def get_usage_statistics(
             func.count(SummaryUsage.id).label("count"),
             func.sum(SummaryUsage.input_tokens).label("total_input_tokens"),
             func.sum(SummaryUsage.output_tokens).label("total_output_tokens"),
-            func.sum(SummaryUsage.total_tokens).label("total_tokens")
+            (func.sum(SummaryUsage.input_tokens) + func.sum(SummaryUsage.output_tokens)).label("total_tokens")
         ).filter(and_(*filters))
 
         total_result = total_query.first()
@@ -71,7 +71,7 @@ def get_usage_statistics(
             func.count(SummaryUsage.id).label("count"),
             func.sum(SummaryUsage.input_tokens).label("input_tokens"),
             func.sum(SummaryUsage.output_tokens).label("output_tokens"),
-            func.sum(SummaryUsage.total_tokens).label("total_tokens"),
+            (func.sum(SummaryUsage.input_tokens) + func.sum(SummaryUsage.output_tokens)).label("total_tokens"),
             func.sum(SummaryUsage.processing_time).label("processing_time")
         ).filter(and_(*filters)).group_by(
             SummaryUsage.department,
