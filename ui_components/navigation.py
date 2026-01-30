@@ -160,10 +160,10 @@ def save_user_settings(department, model, doctor="default", document_type=DEFAUL
             department = "default"
 
         db_manager = DatabaseManager.get_instance()
-        setting_id = f"user_preferences_{APP_TYPE}"
+        setting_key = f"user_preferences_{APP_TYPE}"
 
         filters = {
-            "setting_id": setting_id,
+            "setting_key": setting_key,
             "app_type": APP_TYPE
         }
 
@@ -183,9 +183,9 @@ def save_user_settings(department, model, doctor="default", document_type=DEFAUL
 def load_user_settings():
     try:
         db_manager = DatabaseManager.get_instance()
-        setting_id = f"user_preferences_{APP_TYPE}"
+        setting_key = f"user_preferences_{APP_TYPE}"
 
-        settings = db_manager.query_one(AppSetting, {"setting_id": setting_id})
+        settings = db_manager.query_one(AppSetting, {"setting_key": setting_key})
 
         if settings:
             return (
